@@ -3,25 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0f2742">
+<meta name="theme-color" content="#14304F">
 <meta name="robots" content="noindex, nofollow">
 <title>NeuroTrilha — Avaliador</title>
-<link rel="icon" href="data:,">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 96 96' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='96' height='96' rx='26' fill='%232563A8'/%3E%3Ccircle cx='22' cy='74' r='4' fill='%23fff' opacity='.55'/%3E%3Ccircle cx='34' cy='66' r='5' fill='%23fff' opacity='.7'/%3E%3Ccircle cx='44' cy='55' r='6' fill='%23fff' opacity='.85'/%3E%3Ccircle cx='50' cy='42' r='7' fill='%23fff'/%3E%3Cpath d='M72 14 L76.7 24.2 L87.8 25.4 L79.5 32.9 L81.8 43.8 L72 38.2 L62.2 43.8 L64.5 32.9 L56.2 25.4 L67.3 24.2 Z' fill='%23F6C453'/%3E%3C/svg%3E"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilo.css">
 <style>
 /* NeuroTrilha pela internet — tela do avaliador (feita para o celular, funciona também no computador) */
-body{background:radial-gradient(900px 400px at 100% -10%,#e5f1ff 0,transparent 60%),#f2f6fb}
-.nt-topo{position:sticky;top:0;z-index:20;background:linear-gradient(90deg,#0f2742,#163a60);color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+body{background:#F4F7FB}
+.nt-topo{position:sticky;top:0;z-index:20;background:#14304F;color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .nt-marca{display:flex;align-items:center;gap:9px;font-weight:800;font-size:17px;margin-right:auto}.nt-marca small{display:block;font-size:10px;font-weight:600;color:#9fc2e6;letter-spacing:.6px}
-.nt-marca i{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,#18b7a4,#3179ed);display:grid;place-items:center;font-style:normal;font-weight:900}
+.nt-marca i{width:36px;height:36px;display:block;font-style:normal}.nt-marca i svg{width:100%;height:100%;display:block}.nt-marca{font-family:Nunito,"Plus Jakarta Sans",sans-serif;font-weight:900}
 .nt-menu{display:flex;gap:6px;overflow-x:auto;width:100%;order:3;scrollbar-width:none}.nt-menu::-webkit-scrollbar{display:none}
 .nt-menu button{flex:none;background:#ffffff14;color:#d8e6f5;border:1px solid #ffffff22;border-radius:99px;padding:8px 14px;font-weight:700}
-.nt-menu button.active{background:#fff;color:#0f2742}
+.nt-menu button.active{background:#fff;color:#14304F}
 .nt-quem{font-size:12px;color:#c4d6ea;text-align:right}.nt-quem button{margin-left:6px;background:#ffffff1a;color:#fff;padding:6px 10px;border-radius:9px}
 .nt-conteudo{max-width:1200px;margin:auto;padding:14px}
 .nt-titulo{margin:4px 0 14px}.nt-titulo h1{font-size:21px;margin:0}.nt-titulo p{margin:2px 0 0;color:var(--muted);font-size:13px}
 .nt-aviso{background:#fff5dc;border-left:4px solid #e0ad45;border-radius:0 10px 10px 0;padding:10px 12px;font-size:13px;color:#76551c;margin-bottom:12px}
-.nt-cartoes{display:grid;gap:10px}.nt-cartao{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px}
+.nt-cartoes{display:grid;gap:10px}.nt-cartao{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 4px 14px rgba(20,48,79,.05);transition:box-shadow .25s ease,transform .25s ease}.nt-cartao:hover{box-shadow:0 12px 28px rgba(20,48,79,.10);transform:translateY(-1px)}@media (prefers-reduced-motion:reduce){.nt-cartao{transition:none}.nt-cartao:hover{transform:none}}
 .nt-cartao .nt-av{width:44px;height:44px;border-radius:13px;background:#eaf2ff;display:grid;place-items:center;font-weight:800;color:#24558e;flex:none}
 .nt-cartao div{flex:1;min-width:0}.nt-cartao b{display:block}.nt-cartao small{color:var(--muted)}
 .nt-form{display:grid;gap:10px}.nt-form label{font-size:12px;font-weight:700;display:block;margin-bottom:4px}
@@ -41,11 +41,12 @@ html,body{max-width:100%;overflow-x:hidden}
 @media(min-width:1850px){#nt-app,#nt-entrar{zoom:1.25}}
 @media(max-width:600px){.nt-dois{grid-template-columns:1fr}.ad-controles button{flex:1 1 45%}.ad-qi b{font-size:38px}}
 </style>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icones/icone-apple-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>
 </head>
 <body>
 <section class="auth-gate" id="nt-entrar">
  <form class="auth-card" id="nt-form-entrar" autocomplete="on">
-  <div class="auth-mark">N</div><h2>NeuroTrilha</h2>
+  <div class="auth-mark"><svg viewBox="0 0 96 96" aria-hidden="true"><rect width="96" height="96" rx="26" fill="#2563A8"/><circle cx="22" cy="74" r="4" fill="#fff" opacity=".55"/><circle cx="34" cy="66" r="5" fill="#fff" opacity=".7"/><circle cx="44" cy="55" r="6" fill="#fff" opacity=".85"/><circle cx="50" cy="42" r="7" fill="#fff"/><path d="M72 14 L76.7 24.2 L87.8 25.4 L79.5 32.9 L81.8 43.8 L72 38.2 L62.2 43.8 L64.5 32.9 L56.2 25.4 L67.3 24.2 Z" fill="#F6C453"/></svg></div><h2>NeuroTrilha</h2>
   <p>NeuroTrilha <b>pela internet</b>. Digite o seu usuário e a sua senha. <b>Primeiro acesso?</b> Digite só o usuário liberado pela RMD e toque em Entrar: você mesmo cria a sua senha.</p>
   <label class="auth-field"><span>Usuário</span><input id="nt-usuario" autocomplete="username" required autocapitalize="none" spellcheck="false"></label>
   <label class="auth-field"><span id="nt-senha-rotulo">Senha</span><input id="nt-senha" type="password" autocomplete="current-password"></label>
@@ -59,7 +60,7 @@ html,body{max-width:100%;overflow-x:hidden}
 
 <div id="nt-app" class="hidden">
  <header class="nt-topo">
-  <div class="nt-marca"><i>N</i><div>NeuroTrilha<small>AVALIADOR · por RMD</small></div></div>
+  <div class="nt-marca"><i><svg viewBox="0 0 96 96" aria-hidden="true"><rect width="96" height="96" rx="26" fill="#2563A8"/><circle cx="22" cy="74" r="4" fill="#fff" opacity=".55"/><circle cx="34" cy="66" r="5" fill="#fff" opacity=".7"/><circle cx="44" cy="55" r="6" fill="#fff" opacity=".85"/><circle cx="50" cy="42" r="7" fill="#fff"/><path d="M72 14 L76.7 24.2 L87.8 25.4 L79.5 32.9 L81.8 43.8 L72 38.2 L62.2 43.8 L64.5 32.9 L56.2 25.4 L67.3 24.2 Z" fill="#F6C453"/></svg></i><div>NeuroTrilha<small>AVALIADOR · por RMD</small></div></div>
   <div class="nt-quem"><span id="nt-nome"></span><button type="button" id="nt-sair">Sair</button></div>
   <nav class="nt-menu"><button data-view="adaptive">◈ Avaliar</button><button data-view="pacientes">♙ Pacientes</button><button data-view="conta">⚙ Conta</button></nav>
  </header>

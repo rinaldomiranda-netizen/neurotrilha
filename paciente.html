@@ -3,21 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#0f2742">
+<meta name="theme-color" content="#2563A8">
 <title>NeuroTrilha — Desafios</title>
-<link rel="icon" href="data:,">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 96 96' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='96' height='96' rx='26' fill='%232563A8'/%3E%3Ccircle cx='22' cy='74' r='4' fill='%23fff' opacity='.55'/%3E%3Ccircle cx='34' cy='66' r='5' fill='%23fff' opacity='.7'/%3E%3Ccircle cx='44' cy='55' r='6' fill='%23fff' opacity='.85'/%3E%3Ccircle cx='50' cy='42' r='7' fill='%23fff'/%3E%3Cpath d='M72 14 L76.7 24.2 L87.8 25.4 L79.5 32.9 L81.8 43.8 L72 38.2 L62.2 43.8 L64.5 32.9 L56.2 25.4 L67.3 24.2 Z' fill='%23F6C453'/%3E%3C/svg%3E"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--fundo1:#eaf4ff;--fundo2:#fdf3ff;--tinta:#172438;--suave:#5d6f86;--azul:#2f6fe4;--verde:#1f9d6b;--vermelho:#e5484d;--cartao:#fff;--sombra:0 10px 30px #1d3b6a1a}
+:root{--fundo1:#EAF3FF;--fundo2:#EAF3FF;--tinta:#172438;--suave:#4A5B72;--azul:#2563A8;--verde:#137A6B;--vermelho:#C2410C;--cartao:#fff;--sol:#F6C453;--sombra:0 10px 30px rgba(20,48,79,.10)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
-body{font:18px/1.4 "Segoe UI",Inter,Arial,sans-serif;color:var(--tinta);background:linear-gradient(160deg,var(--fundo1),var(--fundo2));overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+body{font:18px/1.4 Nunito,"Segoe UI",Arial,sans-serif;font-weight:600;color:var(--tinta);background:var(--fundo1);transition:background-color .4s ease;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 button{font:inherit;cursor:pointer;border:0}
-.topo{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;gap:12px;z-index:5}
-.marca{display:flex;align-items:center;gap:8px;font-weight:800;color:#0f2742;font-size:17px}
-.marca i{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#18b7a4,#3179ed);display:grid;place-items:center;color:#fff;font-style:normal;font-size:15px}
-.estrelas{display:flex;gap:6px}.estrelas span{width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 2px #d4def0;display:grid;place-items:center;font-size:14px}
+.topo{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;gap:12px;z-index:10}
+.marca{display:flex;align-items:center;gap:8px;font-weight:800;color:var(--tinta);font-size:17px}
+.marca i{width:38px;height:38px;display:block;font-style:normal}.marca i svg{width:100%;height:100%;display:block}
+.estrelas{display:flex;gap:6px}.estrelas span{width:26px;height:26px;border-radius:50%;background:var(--cartao);box-shadow:inset 0 0 0 2px #d4def0;display:grid;place-items:center;font-size:14px}
 .estrelas span.feita{background:#ffd76a;box-shadow:none}.estrelas span.agora{box-shadow:inset 0 0 0 3px var(--azul)}
-.ouvir{background:#fff;border-radius:999px;padding:10px 16px;font-weight:700;box-shadow:var(--sombra);display:flex;align-items:center;gap:8px;color:var(--azul)}
+.ouvir{background:var(--cartao);border-radius:999px;padding:10px 16px;font-weight:700;box-shadow:var(--sombra);display:flex;align-items:center;gap:8px;color:var(--azul)}
 .ouvir.grande{font-size:22px;padding:14px 24px}
 .palco{position:absolute;inset:64px 0 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(14px,3vh,28px);padding:12px 16px 24px}
 .instrucao{font-size:clamp(18px,2.6vw,26px);font-weight:700;text-align:center;max-width:900px;min-height:1em}
@@ -26,9 +26,9 @@ button{font:inherit;cursor:pointer;border:0}
 .casa svg,.opcao svg{width:100%;height:100%}
 .matriz{display:grid;gap:clamp(6px,1vw,10px)}.matriz.m2{grid-template-columns:repeat(2,auto)}.matriz.m3{grid-template-columns:repeat(3,auto)}
 .matriz .casa{width:clamp(64px,12vh,120px)}
-.modelo{width:clamp(110px,18vh,170px);background:#fff;border-radius:22px;box-shadow:0 0 0 4px #2f6fe4,var(--sombra);padding:12px}
+.modelo{width:clamp(110px,18vh,170px);background:var(--cartao);border-radius:22px;box-shadow:0 0 0 4px var(--azul),var(--sombra);padding:12px}
 .opcoes{display:flex;gap:clamp(10px,2vw,20px);flex-wrap:wrap;justify-content:center;max-width:min(96vw,1000px)}
-.opcao{width:clamp(92px,14vw,150px);aspect-ratio:1;background:#fff;border-radius:22px;box-shadow:var(--sombra);padding:12px;transition:transform .12s,box-shadow .12s}
+.opcao{width:clamp(92px,14vw,150px);aspect-ratio:1;background:var(--cartao);border-radius:22px;box-shadow:var(--sombra);padding:12px;transition:transform .12s,box-shadow .12s}
 .opcao:active{transform:scale(.94)}
 .opcao.marcada{box-shadow:0 0 0 5px var(--azul),var(--sombra)}
 .opcao.certa{box-shadow:0 0 0 6px var(--verde),var(--sombra)}
@@ -43,71 +43,87 @@ button{font:inherit;cursor:pointer;border:0}
 .corsi button.aceso{background:#ffd23f;transform:scale(1.04)}
 .corsi button.tocado{background:#7fb3ff}
 .corsi.bloqueado button{pointer-events:none}
-.aviso{font-size:clamp(20px,3vw,30px);font-weight:800;color:#0f2742}
-.tela{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;z-index:8;background:linear-gradient(160deg,var(--fundo1),var(--fundo2))}
+.aviso{font-size:clamp(20px,3vw,30px);font-weight:800;color:var(--tinta)}
+.tela{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;z-index:8;background:var(--fundo1)}
 .tela h1{font-size:clamp(28px,5vw,48px);margin:.2em 0}.tela p{color:var(--suave);font-size:clamp(17px,2.2vw,22px);max-width:640px;margin:0 auto 22px}
 .grande{font-size:clamp(70px,12vw,120px);line-height:1}
-.botao{background:linear-gradient(135deg,#18b7a4,#2f6fe4);color:#fff;font-weight:800;font-size:clamp(20px,3vw,28px);padding:18px 44px;border-radius:999px;box-shadow:0 12px 30px #2f6fe455}
-.retorno{position:fixed;left:50%;top:76px;transform:translateX(-50%);background:#fff;border-radius:999px;padding:10px 22px;font-weight:800;font-size:22px;box-shadow:var(--sombra);z-index:9}
+.botao{background:var(--azul);color:#fff;font-weight:800;font-size:clamp(20px,3vw,28px);padding:18px 44px;border-radius:999px;box-shadow:0 12px 30px rgba(37,99,168,.28)}
+.retorno{position:fixed;left:50%;top:76px;transform:translateX(-50%);background:var(--cartao);border-radius:999px;padding:10px 22px;font-weight:800;font-size:22px;box-shadow:var(--sombra);z-index:9}
 .retorno.ok{color:var(--verde)}.retorno.nao{color:#b45309}
 
 /* tarefas novas (30/10/2026) */
-.gonogo{width:min(70vw,460px);aspect-ratio:1;border-radius:36px;background:#fff;box-shadow:var(--sombra);display:grid;place-items:center;padding:30px}
+.gonogo{width:min(70vw,460px);aspect-ratio:1;border-radius:36px;background:var(--cartao);box-shadow:var(--sombra);display:grid;place-items:center;padding:30px}
 .gonogo.vazio{background:#f4f8ff;box-shadow:none}.gonogo svg{width:100%;height:100%}
-.caminho{width:min(92vw,640px)}.caminho .tabuleiro{background:#fff;border-radius:22px;box-shadow:var(--sombra);padding:10px 0}
+.caminho{width:min(92vw,640px)}.caminho .tabuleiro{background:var(--cartao);border-radius:22px;box-shadow:var(--sombra);padding:10px 0}
 .caminho svg{width:100%;height:min(46vh,420px);display:block}
 .caminho .opcoes{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:0;max-width:none;margin-top:10px}
 .caminho .opcao{width:auto;margin:0 6px;aspect-ratio:auto;height:clamp(70px,11vh,110px);overflow:hidden;display:flex;align-items:center;justify-content:center}
 .caminho .opcao svg{height:100%;width:auto;max-width:100%;display:block}
 .teclado{display:grid;grid-template-columns:repeat(3,clamp(70px,13vw,104px));gap:12px}
-.teclado button{aspect-ratio:1;border-radius:20px;background:#fff;box-shadow:var(--sombra);font-size:clamp(28px,5vw,42px);font-weight:800;color:#0f2742}
-.teclado button.apagar{font-size:18px;color:#5d6f86}.digitado{font-size:32px;letter-spacing:.3em;min-height:44px;color:#2f6fe4;font-weight:900}
-.leitura{background:#fff;border-radius:22px;box-shadow:var(--sombra);padding:18px 30px;font-size:clamp(40px,8vw,76px);font-weight:900;letter-spacing:.06em;color:#0f2742;text-align:center;max-width:94vw}
+.teclado button{aspect-ratio:1;border-radius:20px;background:var(--cartao);box-shadow:var(--sombra);font-size:clamp(28px,5vw,42px);font-weight:800;color:var(--tinta)}
+.teclado button.apagar{font-size:18px;color:#5d6f86}.digitado{font-size:32px;letter-spacing:.3em;min-height:44px;color:var(--azul);font-weight:900}
+.leitura{background:var(--cartao);border-radius:22px;box-shadow:var(--sombra);padding:18px 30px;font-size:clamp(40px,8vw,76px);font-weight:900;letter-spacing:.06em;color:var(--tinta);text-align:center;max-width:94vw}
 .leitura.frase{font-size:clamp(22px,3.4vw,34px);letter-spacing:0;font-weight:700;line-height:1.35;max-width:min(94vw,900px)}
-.analogia .seta{font-size:44px;color:#2f6fe4;font-weight:900}.analogia .sep{width:clamp(10px,4vw,40px)}
+.analogia .seta{font-size:44px;color:var(--azul);font-weight:900}.analogia .sep{width:clamp(10px,4vw,40px)}
 .torre-area{display:flex;gap:clamp(14px,3vw,40px);align-items:flex-end;flex-wrap:wrap;justify-content:center}
-.torre-modelo{background:#fff;border-radius:18px;box-shadow:0 0 0 3px #1f9d6b,var(--sombra);padding:8px;width:clamp(120px,18vw,180px);text-align:center;font-size:13px;color:#1f9d6b;font-weight:800}
-.torre{position:relative;background:#fff;border-radius:22px;box-shadow:var(--sombra);width:clamp(260px,44vw,460px);aspect-ratio:1;padding:10px}
+.torre-modelo{background:var(--cartao);border-radius:18px;box-shadow:0 0 0 3px var(--verde),var(--sombra);padding:8px;width:clamp(120px,18vw,180px);text-align:center;font-size:13px;color:var(--verde);font-weight:800}
+.torre{position:relative;background:var(--cartao);border-radius:22px;box-shadow:var(--sombra);width:clamp(260px,44vw,460px);aspect-ratio:1;padding:10px}
 .torre svg{width:100%;height:100%}.torre .pino{position:absolute;top:0;bottom:0;width:33.3%;background:transparent;border-radius:18px}
-.torre .pino.sel{background:#2f6fe41f;box-shadow:inset 0 0 0 3px #2f6fe4}
-.pontos{position:relative;width:min(94vw,860px);height:min(62vh,600px);background:#fff;border-radius:24px;box-shadow:var(--sombra)}
+.torre .pino.sel{background:rgba(37,99,168,.12);box-shadow:inset 0 0 0 3px var(--azul)}
+.pontos{position:relative;width:min(94vw,860px);height:min(62vh,600px);background:var(--cartao);border-radius:24px;box-shadow:var(--sombra)}
 .pontos svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.pontos button{position:absolute;transform:translate(-50%,-50%);width:clamp(48px,7vw,66px);height:clamp(48px,7vw,66px);border-radius:50%;background:#eaf2ff;border:3px solid #2f6fe4;font-size:clamp(18px,3vw,26px);font-weight:900;color:#0f2742}
-.pontos button.ok{background:#1f9d6b;color:#fff;border-color:#1f9d6b}.pontos button.erro{background:#e5484d;color:#fff;border-color:#e5484d}
-.mostrar{width:min(52vw,320px);aspect-ratio:1;background:#fff;border-radius:30px;box-shadow:var(--sombra);display:grid;place-items:center;padding:30px}.mostrar svg{width:100%;height:100%}
-.pronto{background:linear-gradient(135deg,#18b7a4,#2f6fe4);color:#fff;font-weight:800;font-size:22px;padding:14px 40px;border-radius:999px;box-shadow:0 10px 24px #2f6fe455}
+.pontos button{position:absolute;transform:translate(-50%,-50%);width:clamp(48px,7vw,66px);height:clamp(48px,7vw,66px);border-radius:50%;background:#eaf2ff;border:3px solid var(--azul);font-size:clamp(18px,3vw,26px);font-weight:900;color:var(--tinta)}
+.pontos button.ok{background:var(--verde);color:#fff;border-color:var(--verde)}.pontos button.erro{background:#e5484d;color:#fff;border-color:#e5484d}
+.mostrar{width:min(52vw,320px);aspect-ratio:1;background:var(--cartao);border-radius:30px;box-shadow:var(--sombra);display:grid;place-items:center;padding:30px}.mostrar svg{width:100%;height:100%}
+.pronto{background:var(--azul);color:#fff;font-weight:800;font-size:22px;padding:14px 40px;border-radius:999px;box-shadow:0 10px 24px rgba(37,99,168,.28)}
 .hidden{display:none!important}
-.codigo{font-size:clamp(54px,11vw,96px);font-weight:900;letter-spacing:.12em;color:#0f2742;background:#fff;border-radius:24px;padding:10px 30px;box-shadow:var(--sombra);display:inline-block;margin:6px 0 18px;font-variant-numeric:tabular-nums}
+.codigo{font-size:clamp(54px,11vw,96px);font-weight:900;letter-spacing:.12em;color:var(--tinta);background:var(--cartao);border-radius:24px;padding:10px 30px;box-shadow:var(--sombra);display:inline-block;margin:6px 0 18px;font-variant-numeric:tabular-nums}
 /* ampliação (30/10/2026): falar, ler, desenhar, escrever, toque rápido, reação */
-.falar{background:#fff;border-radius:30px;box-shadow:var(--sombra);padding:24px 36px;text-align:center;max-width:min(94vw,900px)}
-.falar .icone{font-size:clamp(80px,14vw,140px);line-height:1}.falar .rotulo{font-size:clamp(24px,4vw,40px);font-weight:900;color:#0f2742;margin-top:8px}
-.relogio-barra{width:min(80vw,600px);height:16px;border-radius:99px;background:#e3ebf5;overflow:hidden}.relogio-barra span{display:block;height:100%;background:linear-gradient(90deg,#18b7a4,#2f6fe4);width:100%;transition:width 1s linear}
+.falar{background:var(--cartao);border-radius:30px;box-shadow:var(--sombra);padding:24px 36px;text-align:center;max-width:min(94vw,900px)}
+.falar .icone{font-size:clamp(80px,14vw,140px);line-height:1}.falar .rotulo{font-size:clamp(24px,4vw,40px);font-weight:900;color:var(--tinta);margin-top:8px}
+.relogio-barra{width:min(80vw,600px);height:16px;border-radius:99px;background:#e3ebf5;overflow:hidden}.relogio-barra span{display:block;height:100%;background:var(--azul);width:100%;transition:width 1s linear}
 .espera{text-align:center}.espera .aviso{margin-top:10px}
-.textoler{background:#fff;border-radius:22px;box-shadow:var(--sombra);padding:22px 30px;font-size:clamp(20px,2.7vw,30px);line-height:1.6;max-width:min(94vw,980px);max-height:62vh;overflow:auto;user-select:text}
-.apoio{background:#fff;border-radius:16px;padding:12px 18px;font-size:clamp(14px,1.7vw,18px);line-height:1.5;max-width:min(94vw,980px);max-height:26vh;overflow:auto;color:#334}
-.enunciado{font-size:clamp(22px,3.2vw,36px);font-weight:800;text-align:center;max-width:min(94vw,980px);color:#0f2742}
+.textoler{background:var(--cartao);border-radius:22px;box-shadow:var(--sombra);padding:22px 30px;font-size:clamp(20px,2.7vw,30px);line-height:1.6;max-width:min(94vw,980px);max-height:62vh;overflow:auto;user-select:text}
+.apoio{background:var(--cartao);border-radius:16px;padding:12px 18px;font-size:clamp(14px,1.7vw,18px);line-height:1.5;max-width:min(94vw,980px);max-height:26vh;overflow:auto;color:#334}
+.enunciado{font-size:clamp(22px,3.2vw,36px);font-weight:800;text-align:center;max-width:min(94vw,980px);color:var(--tinta)}
 .opcoes.textos{flex-direction:column;align-items:stretch;width:min(94vw,760px)}
-.opcao-texto{background:#fff;border-radius:18px;box-shadow:var(--sombra);padding:16px 22px;font-size:clamp(18px,2.4vw,26px);font-weight:700;color:#0f2742;text-align:left}
+.opcao-texto{background:var(--cartao);border-radius:18px;box-shadow:var(--sombra);padding:16px 22px;font-size:clamp(18px,2.4vw,26px);font-weight:700;color:var(--tinta);text-align:left}
 .opcao-texto.marcada{box-shadow:0 0 0 5px var(--azul),var(--sombra)}.opcao-texto.certa{box-shadow:0 0 0 6px var(--verde),var(--sombra)}
 .desenho-area{display:flex;gap:16px;align-items:center;justify-content:center;flex-wrap:wrap}
-.desenho-modelo{width:clamp(150px,22vw,260px);aspect-ratio:1;background:#fff;border-radius:18px;box-shadow:0 0 0 3px #1f9d6b,var(--sombra);padding:10px}.desenho-modelo svg{width:100%;height:100%}
-.quadro{background:#fff;border-radius:18px;box-shadow:var(--sombra);touch-action:none;display:block;width:min(92vw,620px);height:min(52vh,460px)}
-.acoes{display:flex;gap:14px;justify-content:center}.limpar{background:#fff;color:#5d6f86;font-weight:800;font-size:18px;padding:12px 26px;border-radius:999px;box-shadow:var(--sombra)}
-.escrito{min-height:64px;min-width:min(80vw,420px);background:#fff;border-radius:16px;box-shadow:var(--sombra);font-size:clamp(30px,5vw,46px);font-weight:800;letter-spacing:.08em;text-align:center;padding:8px 18px;color:#0f2742}
+.desenho-modelo{width:clamp(150px,22vw,260px);aspect-ratio:1;background:var(--cartao);border-radius:18px;box-shadow:0 0 0 3px var(--verde),var(--sombra);padding:10px}.desenho-modelo svg{width:100%;height:100%}
+.quadro{background:var(--cartao);border-radius:18px;box-shadow:var(--sombra);touch-action:none;display:block;width:min(92vw,620px);height:min(52vh,460px)}
+.acoes{display:flex;gap:14px;justify-content:center}.limpar{background:var(--cartao);color:#5d6f86;font-weight:800;font-size:18px;padding:12px 26px;border-radius:999px;box-shadow:var(--sombra)}
+.escrito{min-height:64px;min-width:min(80vw,420px);background:var(--cartao);border-radius:16px;box-shadow:var(--sombra);font-size:clamp(30px,5vw,46px);font-weight:800;letter-spacing:.08em;text-align:center;padding:8px 18px;color:var(--tinta)}
 .letras{display:grid;grid-template-columns:repeat(10,clamp(32px,8vw,64px));gap:6px;justify-content:center}
-.letras button{height:clamp(44px,7vh,62px);border-radius:12px;background:#fff;box-shadow:0 3px 8px #1d3b6a1a;font-size:clamp(18px,3vw,26px);font-weight:800;color:#0f2742}
-.letras button.larga{grid-column:span 2;font-size:16px}.letras button.ok{background:linear-gradient(135deg,#18b7a4,#2f6fe4);color:#fff}
-.alvo-toque{width:min(60vw,360px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 30%,#7fd3ff,#2f6fe4);box-shadow:0 18px 40px #2f6fe466;color:#fff;font-size:44px;font-weight:900}
+.letras button{height:clamp(44px,7vh,62px);border-radius:12px;background:var(--cartao);box-shadow:0 3px 8px #1d3b6a1a;font-size:clamp(18px,3vw,26px);font-weight:800;color:var(--tinta)}
+.letras button.larga{grid-column:span 2;font-size:16px}.letras button.ok{background:var(--azul);color:#fff}
+.alvo-toque{width:min(60vw,360px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 30%,#7fd3ff,var(--azul));box-shadow:0 18px 40px rgba(37,99,168,.32);color:#fff;font-size:44px;font-weight:900}
 .alvo-toque.parado{background:#d6e1ee;box-shadow:none;color:#5d6f86}
 @media (prefers-reduced-motion:reduce){.opcao,.corsi button{transition:none}}
+
+/* ===== Visual novo NeuroTrilha (30/10/2026): cores da marca e MODO CALMO para crianças sensíveis (autismo) ===== */
+.marca{font-family:Nunito,sans-serif;font-weight:900;color:var(--tinta)}
+.botoes-topo{display:flex;gap:10px;align-items:center}
+.calmo-bt{color:var(--tinta)}.calmo-bt svg{width:20px;height:20px}
+.calmo-bt[aria-pressed="true"]{background:var(--azul);color:#fff}
+.estrelas span.feita{background:var(--sol)}
+.tela .grande svg{width:clamp(96px,14vw,140px);height:auto}
+.opcao{transition:transform .2s ease,box-shadow .2s ease}
+body.calmo{--fundo1:#F3EFE7;--fundo2:#F3EFE7;--tinta:#2E3A48;--suave:#5B6573;--azul:#4F6E91;--verde:#4E7F74;--vermelho:#9A5B43;--cartao:#FBF9F5;--sol:#EAD9B5;--sombra:0 6px 18px rgba(46,58,72,.08)}
+body.calmo .corsi{background:#4F6E91}body.calmo .corsi button{background:#6F8AA8}body.calmo .corsi button.aceso{background:#EAD9B5}body.calmo .corsi button.tocado{background:#A9BDD3}
+body.calmo .alvo-toque{background:#7C9CC0;box-shadow:none}body.calmo .peixes{background:#E6EEF2;box-shadow:none}
+body.calmo .gonogo.vazio{background:#EEE8DC}
+body.calmo *,body.calmo *::before,body.calmo *::after{transition:none!important;animation:none!important}
+body.calmo .opcao:active{transform:none}
 </style>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icones/icone-apple-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>
 </head>
 <body>
-<div class="topo"><div class="marca"><i>N</i>NeuroTrilha</div><div class="estrelas" id="estrelas" aria-label="Progresso"></div><button class="ouvir" id="ouvir" type="button" aria-label="Ouvir a instrução de novo">🔊 Ouvir</button></div>
+<div class="topo"><div class="marca"><i><svg viewBox="0 0 96 96" aria-hidden="true"><rect width="96" height="96" rx="26" fill="#2563A8"/><circle cx="22" cy="74" r="4" fill="#fff" opacity=".55"/><circle cx="34" cy="66" r="5" fill="#fff" opacity=".7"/><circle cx="44" cy="55" r="6" fill="#fff" opacity=".85"/><circle cx="50" cy="42" r="7" fill="#fff"/><path d="M72 14 L76.7 24.2 L87.8 25.4 L79.5 32.9 L81.8 43.8 L72 38.2 L62.2 43.8 L64.5 32.9 L56.2 25.4 L67.3 24.2 Z" fill="#F6C453"/></svg></i>NeuroTrilha</div><div class="estrelas" id="estrelas" aria-label="Progresso"></div><div class="botoes-topo"><button class="ouvir calmo-bt" id="calmo" type="button" aria-pressed="false" title="Cores suaves e sem movimento"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg>Calmo</button><button class="ouvir" id="ouvir" type="button" aria-label="Ouvir a instrução de novo">🔊 Ouvir</button></div></div>
 <main class="palco" id="palco" aria-live="polite"></main>
 <div class="retorno hidden" id="retorno" role="status"></div>
 <section class="tela" id="tela-inicio">
-  <div><div class="grande">🧩</div><h1 id="ola">Olá!</h1><p>Vamos fazer uns desafios divertidos. Escute com atenção e toque na resposta. Se não souber, tudo bem: faça o seu melhor!</p><button class="botao" id="comecar" type="button">Começar ▶</button></div>
+  <div><div class="grande"><svg viewBox="0 0 96 96" aria-hidden="true"><rect width="96" height="96" rx="26" fill="#2563A8"/><circle cx="22" cy="74" r="4" fill="#fff" opacity=".55"/><circle cx="34" cy="66" r="5" fill="#fff" opacity=".7"/><circle cx="44" cy="55" r="6" fill="#fff" opacity=".85"/><circle cx="50" cy="42" r="7" fill="#fff"/><path d="M72 14 L76.7 24.2 L87.8 25.4 L79.5 32.9 L81.8 43.8 L72 38.2 L62.2 43.8 L64.5 32.9 L56.2 25.4 L67.3 24.2 Z" fill="#F6C453"/></svg></div><h1 id="ola">Olá!</h1><p>Vamos fazer uns desafios divertidos. Escute com atenção e toque na resposta. Se não souber, tudo bem: faça o seu melhor!</p><button class="botao" id="comecar" type="button">Começar ▶</button></div>
 </section>
 <section class="tela hidden" id="tela-pausa"><div><div class="grande">⏸️</div><h1>Pausa</h1><p>Espere um pouquinho. Já vamos continuar.</p></div></section>
 <section class="tela hidden" id="tela-fim"><div><div class="grande">🎉</div><h1 id="fim-titulo">Terminamos!</h1><p>Muito obrigado. Você foi ótimo!</p></div></section>
@@ -118,6 +134,15 @@ button{font:inherit;cursor:pointer;border:0}
 <script src="motor-cognitivo.js"></script>
 <script>
 "use strict";
+// Modo calmo: cores suaves e nada se mexe (crianças sensíveis). Fica lembrado neste aparelho; ?calmo=1 no link já abre assim.
+(function () {
+  let ligado = new URLSearchParams(location.search).get("calmo") === "1";
+  try { if (!ligado) ligado = localStorage.getItem("nt_calmo") === "1"; } catch (e) { /* sem armazenamento */ }
+  const bt = document.getElementById("calmo");
+  function aplicarCalmo() { document.body.classList.toggle("calmo", ligado); bt.setAttribute("aria-pressed", ligado ? "true" : "false"); }
+  bt.addEventListener("click", () => { ligado = !ligado; try { localStorage.setItem("nt_calmo", ligado ? "1" : "0"); } catch (e) { /* nada */ } aplicarCalmo(); });
+  aplicarCalmo();
+})();
 const M = window.RmdMotor;
 let TOKEN = (new URLSearchParams(location.search).get("t") || "").replace(/[^A-Za-z0-9_-]/g, "");
 // Na internet (NeuroTrilha pela nuvem) os pedidos vão para a função da nuvem; no computador, para o próprio servidor.

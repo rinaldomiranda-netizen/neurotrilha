@@ -2,28 +2,29 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#0f2742">
+<meta name="theme-color" content="#14304F">
 <title>NeuroTrilha — Questionário</title>
-<link rel="icon" href="data:,">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 96 96' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='96' height='96' rx='26' fill='%232563A8'/%3E%3Ccircle cx='22' cy='74' r='4' fill='%23fff' opacity='.55'/%3E%3Ccircle cx='34' cy='66' r='5' fill='%23fff' opacity='.7'/%3E%3Ccircle cx='44' cy='55' r='6' fill='%23fff' opacity='.85'/%3E%3Ccircle cx='50' cy='42' r='7' fill='%23fff'/%3E%3Cpath d='M72 14 L76.7 24.2 L87.8 25.4 L79.5 32.9 L81.8 43.8 L72 38.2 L62.2 43.8 L64.5 32.9 L56.2 25.4 L67.3 24.2 Z' fill='%23F6C453'/%3E%3C/svg%3E"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box}body{margin:0;font:17px/1.45 "Segoe UI",Roboto,Arial,sans-serif;color:#172438;background:linear-gradient(160deg,#eaf4ff,#fdf3ff);min-height:100vh}
-.topo{background:linear-gradient(90deg,#0f2742,#163a60);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px}
-.topo i{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,#18b7a4,#3179ed);display:grid;place-items:center;font-style:normal;font-weight:900}
+*{box-sizing:border-box}body{margin:0;font:17px/1.45 "Plus Jakarta Sans","Segoe UI",Roboto,Arial,sans-serif;color:#172438;background:#F4F7FB;min-height:100vh}
+.topo{background:#14304F;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px}
+.topo i{width:38px;height:38px;display:block;font-style:normal}.topo i svg{width:100%;height:100%;display:block}.topo b{font-family:Nunito,sans-serif;font-weight:900;font-size:18px}
 main{max-width:760px;margin:auto;padding:16px}
-.cartao{background:#fff;border-radius:18px;box-shadow:0 8px 24px #1d3b6a14;padding:16px;margin-bottom:12px}
+.cartao{background:#fff;border-radius:22px;box-shadow:0 8px 24px rgba(20,48,79,.08);padding:16px;margin-bottom:12px}
 .item p{margin:0 0 10px;font-weight:650}.item small{color:#6b7b90;font-weight:700}
 .escala{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .escala button{border:1px solid #d6e1ee;background:#f7faff;border-radius:12px;padding:10px 4px;font:inherit;font-size:13px;font-weight:700;color:#24558e;cursor:pointer}
-.escala button.on{background:#2f6fe4;color:#fff;border-color:#2f6fe4}
-.barra{position:sticky;top:0;background:#fffffff0;padding:10px 0;z-index:3}.barra div{height:8px;border-radius:99px;background:#e3ebf5;overflow:hidden}.barra span{display:block;height:100%;background:linear-gradient(90deg,#18b7a4,#2f6fe4);width:0}
-.enviar{width:100%;border:0;border-radius:999px;padding:16px;font:inherit;font-weight:800;font-size:19px;color:#fff;background:linear-gradient(135deg,#18b7a4,#2f6fe4)}
+.escala button.on{background:#2563A8;color:#fff;border-color:#2563A8}
+.barra{position:sticky;top:0;background:#fffffff0;padding:10px 0;z-index:3}.barra div{height:8px;border-radius:99px;background:#e3ebf5;overflow:hidden}.barra span{display:block;height:100%;background:#2563A8;width:0}
+.enviar{width:100%;border:0;border-radius:999px;padding:16px;font:inherit;font-weight:800;font-size:19px;color:#fff;background:#2563A8}
 .enviar:disabled{opacity:.5}.erro{color:#b42318;font-weight:700}.ok{text-align:center;padding:40px 16px}.ok div{font-size:64px}
 label.campo{display:block;margin:10px 0}label.campo input{width:100%;padding:11px;border:1px solid #cbd6e3;border-radius:10px;font:inherit}
 @media(max-width:480px){.escala{grid-template-columns:1fr 1fr!important}}
 </style>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icones/icone-apple-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>
 </head>
 <body>
-<div class="topo"><i>N</i><div><b>NeuroTrilha</b><br><small>Questionário</small></div></div>
+<div class="topo"><i><svg viewBox="0 0 96 96" aria-hidden="true"><rect width="96" height="96" rx="26" fill="#2563A8"/><circle cx="22" cy="74" r="4" fill="#fff" opacity=".55"/><circle cx="34" cy="66" r="5" fill="#fff" opacity=".7"/><circle cx="44" cy="55" r="6" fill="#fff" opacity=".85"/><circle cx="50" cy="42" r="7" fill="#fff"/><path d="M72 14 L76.7 24.2 L87.8 25.4 L79.5 32.9 L81.8 43.8 L72 38.2 L62.2 43.8 L64.5 32.9 L56.2 25.4 L67.3 24.2 Z" fill="#F6C453"/></svg></i><div><b>NeuroTrilha</b><br><small>Questionário</small></div></div>
 <main id="principal"><div class="cartao">Carregando…</div></main>
 <script src="config.js"></script>
 <script src="questionario.js"></script>

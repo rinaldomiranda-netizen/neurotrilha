@@ -1,4 +1,24 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex, nofollow"><title>NeuroTrilha</title>
-<style>body{margin:0;min-height:100vh;display:grid;place-items:center;font:17px/1.5 "Segoe UI",Arial,sans-serif;background:linear-gradient(160deg,#eaf4ff,#fdf3ff);color:#172438;text-align:center;padding:20px}
-a{display:block;margin:10px auto;max-width:320px;padding:16px;border-radius:16px;background:linear-gradient(135deg,#18b7a4,#2f6fe4);color:#fff;font-weight:800;text-decoration:none}a.b{background:#fff;color:#2f6fe4;box-shadow:0 8px 24px #1d3b6a1a}</style></head>
-<body><div><h1>NeuroTrilha</h1><p>Avaliação cognitiva adaptativa · desenvolvido por RMD</p><a href="app.html">Sou o avaliador</a><a class="b" href="paciente.html">Este é o tablet do paciente</a><a class="b" href="https://github.com/rinaldomiranda-netizen/neurotrilha/releases/latest/download/NeuroTrilha.apk">📲 Baixar o aplicativo (Android)</a><p style="font-size:13px;color:#5d6f86;max-width:340px;margin:8px auto 0">No Android, depois de baixar, toque no arquivo e permita instalar. O aplicativo se atualiza sozinho.</p></div></body></html>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex, nofollow"><meta name="theme-color" content="#14304F"><title>NeuroTrilha</title>
+<link rel="icon" type="image/svg+xml" href="icones/marca.svg"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icones/icone-apple-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@800;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;font:17px/1.5 "Plus Jakarta Sans","Segoe UI",Arial,sans-serif;background:radial-gradient(900px 500px at 15% 0%,#24507f 0,transparent 60%),#14304F;color:#172438;padding:20px}
+.cartao{background:#fff;border-radius:28px;padding:32px 26px;max-width:440px;width:100%;text-align:center;box-shadow:0 30px 80px rgba(5,15,30,.45)}
+.cartao svg{width:84px;height:84px}h1{font-family:Nunito,sans-serif;font-weight:900;font-size:34px;margin:10px 0 0;line-height:1.1}h1 span{color:#2563A8}
+.sub{color:#4A5B72;margin:4px 0 22px;font-size:15px}
+a,button{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;margin:10px 0;padding:12px 16px;border-radius:16px;font:inherit;font-weight:700;text-decoration:none;cursor:pointer;border:0}
+.p{background:#2563A8;color:#fff}.p:hover{background:#1E5594}.s{background:#EAF1FA;color:#1F4F8A}.s:hover{background:#DCE8F7}
+#instalar{background:#F6C453;color:#172438}
+.dica{font-size:13px;color:#4A5B72;margin:8px 0 0}</style></head>
+<body><main class="cartao"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" rx="26" fill="#2563A8"/><circle cx="22" cy="74" r="4" fill="#fff" opacity=".55"/><circle cx="34" cy="66" r="5" fill="#fff" opacity=".7"/><circle cx="44" cy="55" r="6" fill="#fff" opacity=".85"/><circle cx="50" cy="42" r="7" fill="#fff"/><path d="M72 14 L76.7 24.2 L87.8 25.4 L79.5 32.9 L81.8 43.8 L72 38.2 L62.2 43.8 L64.5 32.9 L56.2 25.4 L67.3 24.2 Z" fill="#F6C453"/></svg><h1>Neuro<span>Trilha</span></h1><p class="sub">Avaliação cognitiva adaptativa · uma solução <b>RMD</b></p>
+<a class="p" href="app.html">Sou o profissional</a><a class="s" href="paciente.html">Este é o tablet do paciente</a>
+<button id="instalar" type="button" hidden>Instalar neste aparelho</button>
+<a class="s" href="https://github.com/rinaldomiranda-netizen/neurotrilha/releases/latest/download/NeuroTrilha.apk">Baixar o aplicativo Android</a>
+<p class="dica" id="dica">Para instalar: no computador (Chrome ou Edge), use o ícone de instalar na barra de endereço. No Android, toque em “Instalar neste aparelho” ou baixe o aplicativo.</p>
+</main>
+<script>
+let pedido = null; const bt = document.getElementById("instalar"), dica = document.getElementById("dica");
+addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); pedido = e; bt.hidden = false; });
+bt.addEventListener("click", async () => { if (!pedido) return; pedido.prompt(); await pedido.userChoice; pedido = null; bt.hidden = true; });
+addEventListener("appinstalled", () => { bt.hidden = true; dica.textContent = "Instalado! Procure o ícone NeuroTrilha entre os seus aplicativos."; });
+if (/iPhone|iPad|iPod/.test(navigator.userAgent) && !navigator.standalone) dica.textContent = "No iPhone ou iPad: abra no Safari, toque em Compartilhar e depois em “Adicionar à Tela de Início”.";
+</script></body></html>
