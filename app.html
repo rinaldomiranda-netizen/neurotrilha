@@ -35,6 +35,10 @@ body{background:radial-gradient(900px 400px at 100% -10%,#e5f1ff 0,transparent 6
 /* no celular nada pode passar da largura da tela: tabelas rolam dentro do próprio quadro */
 .ad-vivo>.panel,.ad-prep>.panel{min-width:0}#ad-areas,.tablewrap{overflow-x:auto;max-width:100%}
 html,body{max-width:100%;overflow-x:hidden}
+/* computador com tela larga: usa a largura do monitor e letras um pouco maiores (antes ficava "tela de tablet" no meio) */
+@media(min-width:1300px){.nt-conteudo{max-width:1500px}}
+@media(min-width:1600px){#nt-app,#nt-entrar{zoom:1.12}}
+@media(min-width:1850px){#nt-app,#nt-entrar{zoom:1.25}}
 @media(max-width:600px){.nt-dois{grid-template-columns:1fr}.ad-controles button{flex:1 1 45%}.ad-qi b{font-size:38px}}
 </style>
 </head>
