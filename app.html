@@ -156,7 +156,7 @@ html,body{max-width:100%;overflow-x:hidden}
      <p class="small">2. Digite o código de 6 números que aparecer:</p><div class="nt-dois"><input id="nt-2fa-codigo" inputmode="numeric" maxlength="6" placeholder="000000"><button class="primary" type="button" id="nt-2fa-confirmar">Confirmar</button></div><div class="small" id="nt-2fa-msg" role="status"></div></div></div>
    <div class="panel hidden" id="nt-admin" style="margin-top:14px">
     <h3>Profissionais (só a RMD vê)</h3>
-    <form class="nt-form" id="nt-form-conta"><div class="nt-dois"><div><label for="c-usuario">Usuário</label><input id="c-usuario" required pattern="[a-z0-9._\-]{3,40}" placeholder="ex.: dra.ana" autocapitalize="none"></div>
+    <form class="nt-form" id="nt-form-conta"><div class="nt-dois"><div><label for="c-usuario">Usuário</label><input id="c-usuario" required maxlength="40" placeholder="ex.: dra.ana" autocapitalize="none" spellcheck="false"><small class="muted" id="c-usuario-vira"></small></div>
      <div><label for="c-nome">Nome do profissional</label><input id="c-nome" required maxlength="100"></div></div>
      <div class="small muted">A senha inicial é 123456 (teste). O profissional troca em Conta.</div>
      <div class="small" id="nt-conta-msg" role="status"></div><button class="secondary" type="submit">Criar acesso</button></form>
@@ -220,6 +220,8 @@ async function api(path, opcoes = {}) {
   if (!r.ok) { const err = new Error(dados.error || "Falha de comunicação."); err.status = r.status; err.precisa2fa = !!dados.precisa2fa; throw err; }
   return dados;
 }
+// usuário sempre no mesmo formato: minúsculas, sem acento, espaço vira ponto ("Doutora Teste" → "doutora.teste")
+function normUsuario(t) { return String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim().replace(/\s+/g, ".").replace(/[^a-z0-9._-]/g, "").replace(/\.{2,}/g, ".").replace(/^\.|\.$/g, "").slice(0, 40); }
 function mostrarEntrar() { $id("nt-app").classList.add("hidden"); $id("nt-entrar").classList.remove("hidden"); }
 // ---- verificação em duas etapas (Supabase: fator TOTP do aplicativo autenticador)
 async function chamarAuth(caminho, metodo, corpo) {
@@ -257,7 +259,7 @@ $id("nt-form-entrar").addEventListener("submit", async (ev) => {
   try {
     // 2ª etapa: já entrou com a senha e falta o código do aplicativo
     if (!$id("nt-codigo-wrap").classList.contains("hidden")) { await confirmarCodigo(fatorLogin, $id("nt-codigo").value.trim()); $id("nt-codigo").value = ""; $id("nt-codigo-wrap").classList.add("hidden"); $id("nt-senha").required = true; await iniciar(); return; }
-    const usuario = $id("nt-usuario").value.trim().toLowerCase();
+    const usuario = normUsuario($id("nt-usuario").value);
     gravarSessao(await pedirToken("password", { email: usuario + "@" + DOMINIO_EMAIL, password: $id("nt-senha").value }));
     $id("nt-senha").value = "";
     if (await pedirSegundaEtapa()) return;
@@ -351,9 +353,12 @@ $id("nt-normas").addEventListener("click", async () => {
     const cols = [...new Set(l.flatMap((x) => Object.keys(x)))]; downloadCSV([cols].concat(l.map((x) => cols.map((c) => x[c] == null ? "" : x[c]))), "NeuroTrilha-pesquisa-anonima.csv"); toast(l.length + " avaliação(ões) exportada(s) sem identificação."); }
   catch (e) { toast(e.message); }
 });
+$id("c-usuario").addEventListener("input", () => { const v = normUsuario($id("c-usuario").value); $id("c-usuario-vira").textContent = v && v !== $id("c-usuario").value ? "Vai ficar: " + v : ""; });
 $id("nt-form-conta").addEventListener("submit", async (ev) => {
   ev.preventDefault(); const msg = $id("nt-conta-msg"); msg.style.color = "#b42318";
-  try { await api("/api/admin/contas", { method: "POST", body: JSON.stringify({ usuario: $id("c-usuario").value.trim().toLowerCase(), nome: $id("c-nome").value.trim() }) }); ev.target.reset(); msg.style.color = "#087764"; msg.textContent = "Acesso criado. Senha inicial: 123456."; desenharContas(); }
+  const usuario = normUsuario($id("c-usuario").value);
+  if (usuario.length < 3) { msg.textContent = "O usuário precisa ter pelo menos 3 letras ou números."; return; }
+  try { await api("/api/admin/contas", { method: "POST", body: JSON.stringify({ usuario, nome: $id("c-nome").value.trim() }) }); ev.target.reset(); $id("c-usuario-vira").textContent = ""; msg.style.color = "#087764"; msg.innerHTML = "Acesso criado. Para entrar: usuário <b>" + esc(usuario) + "</b> e senha <b>123456</b>."; desenharContas(); }
   catch (e) { msg.textContent = e.message; }
 });
 // ---- duas etapas na conta
