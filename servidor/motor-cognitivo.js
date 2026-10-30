@@ -49,9 +49,34 @@
     { id: 'cm', nome: 'Caminhos', chc: 'Rastreio visual', curto: 'Caminhos', grupo: 'executivas', qi: false, idades: [4, 120], desc: 'Seguir com os olhos o caminho do ratinho até o prêmio.' },
     { id: 'fo', nome: 'Rimas e sons (consciência fonológica)', chc: 'Pré-leitura', curto: 'Rimas', grupo: 'aprendizagem', qi: false, idades: [4, 10], desc: 'Rimas, sons iniciais, juntar e trocar pedaços de palavras. Base da alfabetização (triagem de dislexia).' },
     { id: 'le', nome: 'Leitura', chc: 'Leitura', curto: 'Leitura', grupo: 'aprendizagem', qi: false, idades: [6, 120], desc: 'Ler palavras e frases e tocar na figura certa (decodificação e compreensão).' },
-    { id: 'em', nome: 'Emoções e situações sociais', chc: 'Cognição social', curto: 'Emoções', grupo: 'social', qi: false, idades: [4, 120], desc: 'Reconhecer emoções em rostos e situações e entender o que o outro pensa.' }
+    { id: 'em', nome: 'Emoções e situações sociais', chc: 'Cognição social', curto: 'Emoções', grupo: 'social', qi: false, idades: [4, 120], desc: 'Reconhecer emoções em rostos e situações e entender o que o outro pensa.' },
+    // ampliação (30/10/2026) — avaliador: true = o avaliador pontua no celular (o paciente fala ou desenha)
+    { id: 'mp', nome: 'Memória de palavras (lista)', chc: 'Glr verbal', curto: 'Palavras ouvidas', grupo: 'memoria', qi: false, fixo: true, fixoItens: function (idade, curta) { return curta || idade < 8 ? 3 : 5; }, semTreino: true, avaliador: true, idades: [5, 120], desc: 'Ouvir uma lista de palavras várias vezes, dizer as que lembra e lembrar de novo no fim da sessão (e reconhecer entre figuras). O avaliador marca no celular.' },
+    { id: 'fv', nome: 'Fluência verbal', chc: 'Glr / fluência', curto: 'Diga palavras', grupo: 'memoria', qi: false, fixo: true, fixoItens: function (idade) { return idade >= 8 ? 2 : 1; }, semTreino: true, avaliador: true, idades: [5, 120], desc: 'Dizer em 1 minuto o máximo de animais (e, a partir de 8 anos, palavras com F). O avaliador conta no celular.' },
+    { id: 'lx', nome: 'Leitura de texto (fluência e compreensão)', chc: 'Leitura', curto: 'Ler o texto', grupo: 'aprendizagem', qi: false, fixo: true, fixoItens: 4, semTreino: true, avaliador: true, idades: [7, 120], desc: 'Ler um texto em voz alta (o avaliador marca os erros; o sistema calcula palavras por minuto) e responder 3 perguntas sobre ele.' },
+    { id: 'dt', nome: 'Ditado (escrita de palavras)', chc: 'Escrita', curto: 'Escrever', grupo: 'aprendizagem', qi: false, idades: [7, 120], desc: 'Ouvir uma palavra e escrever no teclado da tela. Separa erros de som (fonológicos) de erros de regra (ortográficos).' },
+    { id: 'mt', nome: 'Matemática escolar', chc: 'Gq escolar', curto: 'Contas', grupo: 'aprendizagem', qi: false, idades: [6, 120], desc: 'Contas e problemas: somar, subtrair, tabuada, divisão, frações, porcentagem e equação.' },
+    { id: 'cs', nome: 'Entender o outro (teoria da mente)', chc: 'Cognição social', curto: 'O que ele pensa?', grupo: 'social', qi: false, idades: [4, 120], desc: 'Histórias curtas: o que a pessoa quer, pensa e sabe; crença falsa, ironia e gafes. Apoio na hipótese de TEA.' },
+    { id: 'dc', nome: 'Cópia de figura', chc: 'Visuoconstrução', curto: 'Copiar desenho', grupo: 'motor', qi: false, fixo: true, fixoItens: function (idade) { return idade < 7 ? 2 : 3; }, semTreino: true, avaliador: true, idades: [4, 120], desc: 'Copiar desenhos no tablet com o dedo ou caneta. O avaliador pontua cada elemento.' },
+    { id: 'rl', nome: 'Desenho do relógio', chc: 'Visuoconstrução e planejamento', curto: 'Relógio', grupo: 'motor', qi: false, fixo: true, fixoItens: 1, semTreino: true, avaliador: true, idades: [8, 120], desc: 'Desenhar um relógio marcando 11h10. Também usado no rastreio de idosos. O avaliador pontua.' },
+    { id: 'tp', nome: 'Toque rápido (coordenação fina)', chc: 'Motor fino', curto: 'Toque rápido', grupo: 'motor', qi: false, fixo: true, fixoItens: 4, semTreino: true, idades: [4, 120], desc: 'Tocar o mais rápido possível por 10 segundos com cada mão (duas vezes).' },
+    { id: 'tr', nome: 'Tempo de reação', chc: 'Velocidade de reação', curto: 'Reação', grupo: 'motor', qi: false, fixo: true, fixoItens: 20, idades: [5, 120], desc: 'Reagir rápido a uma estrela (reação simples) e tocar o lado da seta (reação de escolha).' },
+    { id: 'or', nome: 'Orientação (tempo e lugar)', chc: 'Rastreio cognitivo', curto: 'Perguntas', grupo: 'rastreio', qi: false, fixo: true, fixoItens: 7, semTreino: true, avaliador: true, idades: [10, 120], desc: 'Perguntas sobre data, hora e lugar. Rastreio de memória em adultos e idosos. O avaliador marca certo ou errado.' }
   ];
-  var GRUPOS = { inteligencia: 'Inteligência (entra no QI estimado)', executivas: 'Atenção e funções executivas', aprendizagem: 'Aprendizagem (sons e leitura)', social: 'Cognição social' };
+  var GRUPOS = { inteligencia: 'Inteligência (entra no QI estimado)', executivas: 'Atenção e funções executivas', memoria: 'Memória verbal e linguagem', aprendizagem: 'Aprendizagem escolar (sons, leitura, escrita e matemática)',
+    social: 'Cognição social', motor: 'Desenho, coordenação e reação', rastreio: 'Rastreio cognitivo (adultos e idosos)' };
+  // conjuntos prontos de tarefas (o profissional pode mudar). rapida: cerca de 15 minutos, com menos tarefas por área
+  var PROTOCOLOS = {
+    rapida: { nome: 'Avaliação rápida (≈15 min)', itens: 6, curta: true, areas: function (i) { return i >= 60 ? ['or', 'mp', 'rl', 'fv', 'gc'] : i < 7 ? ['gf', 'gwm', 'gc', 'gq', 'gn', 'fo'] : i < 13 ? ['gf', 'gwm', 'gc', 'gq', 'gn', 'le', 'dt'] : ['gf', 'gwm', 'gc', 'gq', 'gn', 'mp']; } },
+    escolar: { nome: 'Dificuldade escolar', itens: 10, areas: function () { return ['fo', 'le', 'lx', 'dt', 'mt', 'dg', 'gwm', 'ac', 'mp']; } },
+    tdah: { nome: 'Atenção e TDAH', itens: 10, areas: function () { return ['gn', 'ac', 'at', 'fx', 'gwm', 'di', 'tr', 'to', 'mp']; } },
+    tea: { nome: 'Cognição social e TEA', itens: 10, areas: function () { return ['em', 'cs', 'rv', 'gc', 'fx', 'gf', 'gwm']; } },
+    idoso: { nome: 'Rastreio de memória (adultos e idosos)', itens: 8, curta: true, areas: function () { return ['or', 'mp', 'rl', 'fv', 'dc', 'tr', 'gc', 'gf']; } }
+  };
+  function protocolo(id, idade) {
+    var p = PROTOCOLOS[id]; if (!p) return null;
+    return { nome: p.nome, itens: p.itens, curta: !!p.curta, areas: p.areas(idade).filter(function (a) { var d = dominio(a); return d && idade >= d.idades[0] && idade <= d.idades[1]; }) };
+  }
   // áreas já marcadas na preparação, conforme a idade (o profissional pode mudar)
   function recomendadas(idade) {
     var base = idade < 7 ? ['gf', 'gwm', 'gv', 'gc', 'gq', 'rv', 'ml', 'gn', 'cm', 'fo', 'em']
@@ -612,7 +637,7 @@
   // recordação tardia: as figuras do 1º item de memória, no fim da sessão, sem mostrar de novo
   function itemTardio(alvos, semente) {
     var r = rng(semente + '|tardia'), m = montarReconhecer(r, alvos, alvos.length);
-    return { tipo: 'reconhecer', layout: 'reconhecer', tardia: true, dominio: 'ml', nivel: 0, id: 'it-tardia-' + hash(semente).toString(36),
+    return { tipo: 'reconhecer', layout: 'reconhecer', tardia: true, fim: 'ml', dominio: 'ml', nivel: 0, id: 'it-tardia-' + hash(semente).toString(36),
       fala: 'Lembra das figuras que você memorizou lá no começo? Toque nelas e depois toque em Pronto.', mostrar: [], opcoes: m.opcoes, certo: m.certo, margem: 0, lentoMs: 30000 };
   }
   function reconhecerConferir(it, sel) {
@@ -621,11 +646,336 @@
     return { acertos: acertos, falsos: falsos, total: it.certo.length };
   }
 
+  // ================================================================== AMPLIAÇÃO (pedido do Rinaldo, 30/10/2026: "faça todos")
+  // Tarefas novas: memória de palavras, fluência verbal, leitura em voz alta e compreensão, ditado, matemática escolar,
+  // cognição social (teoria da mente), cópia de figura, desenho do relógio, toque rápido, tempo de reação e orientação.
+  // Algumas são PONTUADAS PELO AVALIADOR (tipo 'avaliador'): o paciente fala ou desenha e o avaliador marca no celular.
+  // Todas são originais do NeuroTrilha (inspiradas em procedimentos clássicos da neuropsicologia), sem normas brasileiras próprias.
+
+  function opcoesTexto(r, certa, erradas) {
+    var lista = embaralha(r, [certa].concat(erradas)), ids = 'abcdefgh'.split(''), certo = null;
+    var opcoes = lista.map(function (t, k) { if (t === certa) certo = ids[k]; return { id: ids[k], fig: { texto: t } }; });
+    return { opcoes: opcoes, certo: certo };
+  }
+  function contar(texto) { return String(texto).split(/\s+/).filter(function (p) { return /[A-Za-zÀ-ú0-9]/.test(p); }).length; }
+
+  // ---------------------------------------------------------------- Memória de palavras (lista ouvida várias vezes + lembrar no fim)
+  var MP_POOL = [['gato', '🐱'], ['bola', '⚽'], ['casa', '🏠'], ['flor', '🌸'], ['pão', '🍞'], ['carro', '🚗'], ['sol', '☀️'], ['peixe', '🐟'], ['livro', '📚'], ['chave', '🔑'],
+    ['balão', '🎈'], ['sapato', '👟'], ['cavalo', '🐴'], ['maçã', '🍎'], ['relógio', '⏰'], ['barco', '⛵'], ['trem', '🚂'], ['vaca', '🐄'], ['uva', '🍇'], ['cadeira', '🪑'],
+    ['dente', '🦷'], ['lápis', '✏️'], ['estrela', '⭐'], ['foguete', '🚀'], ['tambor', '🥁'], ['leão', '🦁'], ['urso', '🐻'], ['bolo', '🎂'], ['abacaxi', '🍍'], ['tesoura', '✂️'],
+    ['sino', '🔔'], ['violão', '🎸'], ['galinha', '🐔'], ['meia', '🧦'], ['cama', '🛏️'], ['martelo', '🔨'], ['presente', '🎁'], ['avião', '✈️'], ['lua', '🌙'], ['árvore', '🌳'],
+    ['cenoura', '🥕'], ['coelho', '🐰'], ['guarda-chuva', '☂️'], ['óculos', '👓'], ['vela', '🕯️'], ['sorvete', '🍦'], ['tartaruga', '🐢'], ['borboleta', '🦋']];
+  function mpEnsaios(ctx) { return ctx && (ctx.curta || ctx.idade < 8) ? 3 : 5; }
+  function itemMp(r, nivel, ctx) {
+    ctx = ctx || {};
+    var bloco = ctx.bloco || { lista: amostra(r, MP_POOL, ctx.idade < 8 ? 8 : 10) };
+    var ensaio = (ctx.indice || 0) + 1;
+    return { tipo: 'avaliador', layout: 'lista', ensaio: ensaio, bloco: bloco, lista: bloco.lista.map(function (p) { return p[0]; }),
+      fala: ensaio === 1 ? 'Vou falar algumas palavras. Escute com atenção. Quando eu terminar, diga todas as palavras que você lembrar, em qualquer ordem.'
+        : 'Vou falar as mesmas palavras de novo. Depois diga todas que lembrar, inclusive as que você já disse.',
+      pontuacao: { modo: 'palavras', palavras: bloco.lista.map(function (p) { return p[0]; }) } };
+  }
+  // no fim da sessão: lembrar sem ouvir de novo (o avaliador marca) e depois reconhecer entre figuras
+  function itemFimMp(tipo, bloco, semente) {
+    var r = rng(semente), lista = bloco.lista;
+    if (tipo === 'mp-evoc') return { tipo: 'avaliador', layout: 'falar', fim: tipo, tardia: true, dominio: 'mp', nivel: 0, id: 'it-mpevoc-' + hash(semente).toString(36), icone: '🧠',
+      fala: 'Lembra das palavras que eu falei várias vezes lá no começo? Diga todas que você lembrar.', pontuacao: { modo: 'palavras', palavras: lista.map(function (p) { return p[0]; }) } };
+    var novos = amostra(r, MP_POOL.filter(function (p) { return !lista.some(function (q) { return q[0] === p[0]; }); }), lista.length);
+    var ids = 'abcdefghijklmnopqrst'.split(''), todos = embaralha(r, lista.map(function (p) { return { p: p, a: true }; }).concat(novos.map(function (p) { return { p: p, a: false }; })));
+    var certo = [], opcoes = todos.map(function (x, i) { if (x.a) certo.push(ids[i]); return { id: ids[i], fig: { e: x.p[1], rotulo: x.p[0] } }; });
+    return { tipo: 'reconhecer', layout: 'reconhecer', fim: tipo, tardia: true, dominio: 'mp', nivel: 0, id: 'it-mprec-' + hash(semente).toString(36),
+      fala: 'Agora toque nas figuras das palavras que eu falei. Depois toque em Pronto.', mostrar: [], opcoes: opcoes, certo: certo, margem: 0, lentoMs: 60000 };
+  }
+  function itemFim(tipo, sessao, semente) {
+    if (tipo === 'ml') return itemTardio(sessao.mlAlvos, semente);
+    var it = itemFimMp(tipo, (sessao.blocos || {}).mp, semente); it.mostradoEm = null; return it;
+  }
+
+  // ---------------------------------------------------------------- Fluência verbal (falar palavras em 1 minuto; o avaliador conta)
+  function itemFv(r, nivel, ctx) {
+    var i = (ctx && ctx.indice) || 0;
+    if (i === 0) return { tipo: 'avaliador', layout: 'falar', icone: '🐾', rotulo: 'ANIMAIS', duracaoMs: 60000, categoria: 'animais',
+      fala: 'Agora diga o nome de todos os animais que você conseguir lembrar, o mais rápido que puder. Pode ser bicho de casa, da fazenda, da floresta ou do mar. Você tem um minuto. Pode começar!',
+      pontuacao: { modo: 'contador', regra: 'Conta cada animal diferente. Não conta repetição. Raça ou filhote do mesmo animal conta uma vez só.' } };
+    return { tipo: 'avaliador', layout: 'falar', icone: 'F', rotulo: 'PALAVRAS COM F', duracaoMs: 60000, categoria: 'letra F',
+      fala: 'Agora diga todas as palavras que começam com a letra F, como faca. Não vale nome de pessoa nem de cidade, e não vale a mesma palavra com outro final. Você tem um minuto. Pode começar!',
+      pontuacao: { modo: 'contador', regra: 'Conta palavras com F. Não conta nomes próprios, repetições nem a mesma palavra com outro final (ex.: feliz, felizes).' } };
+  }
+
+  // ---------------------------------------------------------------- Leitura em voz alta e compreensão do texto
+  var TEXTOS = [
+    { faixa: 7, t: 'O gato Tito mora numa casa azul. Todo dia ele dorme na janela. Hoje choveu e Tito ficou molhado. A menina Lia secou o gato com uma toalha. Depois deu leite para ele.',
+      q: [['Onde o Tito dorme todo dia?', 'Na janela', ['Na cama', 'No telhado', 'Na rua']], ['Por que o Tito ficou molhado?', 'Porque choveu', ['Porque caiu no rio', 'Porque tomou banho', 'Porque brincou com a mangueira']], ['O que a Lia deu para o gato?', 'Leite', ['Peixe', 'Água', 'Pão']]] },
+    { faixa: 7, t: 'Pedro ganhou uma bicicleta vermelha no aniversário. Ele quis andar logo no parque. No caminho, a corrente saiu. O pai de Pedro consertou a bicicleta e os dois voltaram rindo para casa.',
+      q: [['Qual é a cor da bicicleta?', 'Vermelha', ['Azul', 'Verde', 'Amarela']], ['O que aconteceu no caminho?', 'A corrente saiu', ['O pneu furou', 'Pedro caiu', 'Começou a chover']], ['Quem consertou a bicicleta?', 'O pai', ['O Pedro', 'A mãe', 'Um amigo']]] },
+    { faixa: 9, t: 'Na escola de Ana, os alunos fizeram uma horta. Cada turma ficou com um canteiro. A turma de Ana plantou alface e cenoura e regou as plantas todas as manhãs. Um dia, uma lagarta começou a comer as folhas da alface. A professora explicou que não precisavam de veneno: bastava tirar as lagartas com cuidado e levá-las para longe. No fim do mês, a turma colheu as verduras e fez uma salada para a escola inteira.',
+      q: [['O que a turma de Ana plantou?', 'Alface e cenoura', ['Tomate e milho', 'Feijão e arroz', 'Só flores']], ['Que problema apareceu na horta?', 'Uma lagarta comia as folhas', ['Faltou água', 'O canteiro quebrou', 'Choveu demais']], ['Por que não usaram veneno?', 'Dava para resolver tirando as lagartas', ['O veneno tinha acabado', 'A lagarta era bonita', 'A horta já estava pronta']]] },
+    { faixa: 9, t: 'Miguel queria muito ver o mar. Ele morava no interior e só conhecia o mar pela televisão. Nas férias, a avó o levou de ônibus até a praia. A viagem durou a noite inteira. Quando chegaram, Miguel correu até a areia, mas parou de repente: as ondas eram muito maiores do que ele imaginava. A avó segurou sua mão e os dois entraram juntos na água rasa. No fim do dia, Miguel não queria mais ir embora.',
+      q: [['Como Miguel conhecia o mar antes da viagem?', 'Pela televisão', ['Por livros', 'Por fotos da avó', 'Ele já tinha ido']], ['Por que Miguel parou de repente na areia?', 'As ondas eram maiores do que imaginava', ['A areia estava quente', 'Viu um peixe', 'Estava cansado']], ['Como Miguel se sentiu no fim do dia?', 'Gostou muito da praia', ['Ficou com medo', 'Ficou entediado', 'Ficou com raiva']]] },
+    { faixa: 11, t: 'As abelhas fazem grande parte da polinização das plantas que usamos como alimento. Ao visitar as flores para coletar néctar, elas carregam o pólen de uma flor para outra, o que permite a formação dos frutos. Nos últimos anos, cientistas observaram uma diminuição no número de abelhas em várias regiões do mundo. Entre as causas estão o uso intenso de agrotóxicos, o desmatamento e as mudanças no clima. Se as abelhas desaparecessem, alimentos como maçã, morango e café ficariam mais raros e mais caros. Por isso, algumas cidades já incentivam o cultivo de flores e a criação de abelhas sem ferrão.',
+      q: [['Qual é a ideia principal do texto?', 'As abelhas são importantes e estão diminuindo', ['As abelhas são perigosas', 'O café ficou mais barato', 'Como fazer mel em casa']], ['Por que a polinização é importante?', 'Permite a formação dos frutos', ['Deixa as flores coloridas', 'Produz o mel', 'Afasta as pragas']], ['Sem abelhas, o que aconteceria com o preço do morango?', 'Ficaria mais caro', ['Ficaria mais barato', 'Não mudaria', 'O morango ficaria maior']]] },
+    { faixa: 11, t: 'Em 1969, pela primeira vez, seres humanos pisaram na Lua. A missão Apollo 11 levou três astronautas, mas apenas dois desceram até a superfície; o terceiro ficou em órbita, pilotando a nave que os traria de volta. A viagem de ida durou cerca de quatro dias. Como a Lua não tem atmosfera nem vento, as pegadas deixadas pelos astronautas provavelmente continuam lá até hoje. Milhões de pessoas acompanharam a chegada pela televisão.',
+      q: [['Quantos astronautas desceram na Lua?', 'Dois', ['Três', 'Um', 'Quatro']], ['Por que as pegadas devem continuar na Lua?', 'Lá não há vento nem atmosfera', ['Foram pintadas', 'A Lua é gelada', 'Ninguém mais foi lá']], ['O que fazia o terceiro astronauta?', 'Pilotava a nave em órbita', ['Filmava a chegada', 'Ficou na Terra', 'Consertava o foguete']]] },
+    { faixa: 15, t: 'Dormir bem não é apenas descansar. Durante o sono, o cérebro organiza as informações aprendidas ao longo do dia e reforça as memórias mais importantes. Estudos mostram que pessoas que dormem menos de seis horas por noite, com frequência, têm mais dificuldade de concentração, mais irritabilidade e maior risco de acidentes. Mesmo assim, muitos adultos reduzem as horas de sono para trabalhar ou usar o celular à noite. A luz das telas, além de manter a mente agitada, pode atrasar a liberação da melatonina, substância que ajuda o corpo a reconhecer a hora de dormir. Especialistas recomendam horários regulares, quarto escuro e evitar telas pelo menos uma hora antes de deitar.',
+      q: [['Qual é a ideia principal do texto?', 'O sono é importante para o cérebro e precisa de cuidado', ['O celular deve ser proibido', 'A melatonina causa acidentes', 'Adultos dormem demais']], ['Segundo o texto, a luz das telas pode:', 'Atrasar a liberação da melatonina', ['Melhorar a memória', 'Aumentar a melatonina', 'Curar a insônia']], ['Quem dorme cinco horas por noite com frequência provavelmente:', 'Terá mais dificuldade de concentração', ['Aprenderá mais rápido', 'Ficará mais calmo', 'Não terá mudança nenhuma']]] },
+    { faixa: 15, t: 'Embora cerca de setenta por cento da superfície da Terra seja coberta por água, só uma pequena parte é doce e está disponível para o consumo humano. A maior parte da água doce está congelada nas geleiras ou guardada no subsolo. No Brasil, que tem uma das maiores reservas de água doce do mundo, a distribuição é desigual: a região Norte concentra a maior parte dos recursos, enquanto grande parte da população vive no Sudeste e no Nordeste. Por isso, mesmo num país rico em água, há cidades que enfrentam racionamento. O desperdício em casa, os vazamentos na rede e a poluição dos rios agravam o problema.',
+      q: [['Por que cidades brasileiras podem ter racionamento?', 'A água é mal distribuída e há desperdício', ['O Brasil tem pouca água doce', 'Chove demais', 'As geleiras derreteram']], ['Onde está a maior parte da água doce do planeta?', 'Congelada ou no subsolo', ['Nos rios', 'Nos oceanos', 'Nas cidades']], ['Qual atitude o texto apoiaria?', 'Consertar vazamentos', ['Construir mais piscinas', 'Lavar a calçada com mangueira', 'Usar mais o carro']]] }
+  ];
+  function textoDaIdade(r, idade) { var f = idade >= 15 ? 15 : idade >= 11 ? 11 : idade >= 9 ? 9 : 7; return pega(r, TEXTOS.filter(function (x) { return x.faixa === f; })); }
+  function itemLx(r, nivel, ctx) {
+    ctx = ctx || {};
+    var bloco = ctx.bloco || { t: textoDaIdade(r, ctx.idade || 10) }, tx = bloco.t, i = ctx.indice || 0;
+    if (i === 0) return { tipo: 'avaliador', layout: 'texto', bloco: bloco, texto: tx.t, palavras: contar(tx.t),
+      fala: 'Leia este texto em voz alta, do seu jeito, com atenção. Quando terminar, toque em Terminei.', pontuacao: { modo: 'erros', palavras: tx.t.split(/\s+/) } };
+    var q = tx.q[i - 1], o = opcoesTexto(r, q[1], q[2]);
+    return { tipo: 'escolha', layout: 'textos', bloco: bloco, textoApoio: tx.t, enunciado: q[0], fala: q[0], opcoes: o.opcoes, certo: o.certo, lentoMs: 40000 };
+  }
+
+  // ---------------------------------------------------------------- Ditado (ouvir a palavra e escrever no teclado da tela)
+  var DT = [['bola', 'casa', 'dado', 'pato', 'sapo', 'mala'], ['gato', 'bota', 'vela', 'fada', 'luva', 'tatu'], ['janela', 'boneca', 'macaco', 'tomate', 'sapato', 'panela'],
+    ['chuva', 'ninho', 'folha', 'carro', 'chave', 'galho'], ['prato', 'bruxa', 'flauta', 'livro', 'globo', 'tigre'], ['campo', 'tempo', 'bombom', 'pente', 'canto', 'lembrar'],
+    ['guerra', 'queijo', 'foguete', 'pássaro', 'osso', 'girafa'], ['cabeça', 'açúcar', 'massa', 'sossego', 'crescer', 'nascer'], ['xícara', 'enxada', 'caixa', 'exame', 'lixo', 'enxergar'],
+    ['hora', 'hoje', 'hospital', 'homem', 'horta', 'humor'], ['exceção', 'excesso', 'piscina', 'nascimento', 'descer', 'consciência'], ['privilégio', 'beneficente', 'mendigo', 'cabeleireiro', 'asterisco', 'reivindicar'],
+    ['paralisar', 'analisar', 'pesquisar', 'pretensão', 'obsessão', 'extensão'], ['ascensão', 'exceder', 'prescindir', 'discernir', 'espontâneo', 'hesitar'],
+    ['ressarcir', 'excelência', 'hesitação', 'ojeriza', 'paralisação', 'miscigenação'], ['concessionária', 'ascensorista', 'idiossincrasia', 'prescrição', 'excursão', 'exuberância']];
+  var DT_REGRA = ['sílabas simples', 'sílabas simples', 'palavras de 3 sílabas', 'dígrafos (ch, nh, lh, rr)', 'encontros consonantais', 'm antes de p e b / nasal', 'gu, qu, ss, g e j', 'ç, ss, sc', 'x e ch', 'h inicial', 'sc, xc', 'palavras com erro comum', 's e z / ss e ç', 'sc, xc e acentos', 'palavras difíceis', 'palavras difíceis'];
+  function itemDt(r, nivel) {
+    var w = pega(r, DT[nivel - 1]);
+    return { tipo: 'ditado', layout: 'teclado', fala: 'Escreva a palavra: ' + w + '. ' + w + '.', certo: w, regra: DT_REGRA[nivel - 1], lentoMs: 25000 + w.length * 2500 };
+  }
+  // chave "como se fala": separa erro de som (fonológico) de erro de regra ortográfica
+  function somDe(p) {
+    return String(p || '').toLowerCase().replace(/ç/g, 'S').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/^h/, '').replace(/([^cslnr])h/g, '$1')
+      .replace(/ss|ç|sc(?=[ei])|xc(?=[ei])|c(?=[ei])/g, 'S').replace(/s(?=[ei])/g, 'S').replace(/(?<=[aeiou])s(?=[aeiou])/g, 'Z').replace(/z/g, 'Z')
+      .replace(/ch|x/g, 'X').replace(/g(?=[ei])|j/g, 'J').replace(/gu(?=[ei])/g, 'G').replace(/qu(?=[ei])|c|k|q/g, 'K').replace(/rr/g, 'R').replace(/^r/, 'R')
+      .replace(/m(?=[pb])/g, 'n').replace(/l$/, 'u').replace(/s/g, 'S');
+  }
+
+  // ---------------------------------------------------------------- Matemática escolar (contas e problemas)
+  function itemMt(r, nivel) {
+    var a, b, c, en, certo, perto = [-2, -1, 1, 2, 10, -10];
+    switch (nivel) {
+      case 1: a = int(r, 1, 3); b = int(r, 1, 2); en = a + ' + ' + b + ' = ?'; certo = a + b; perto = [-1, 1, 2]; break;
+      case 2: a = int(r, 2, 6); b = int(r, 2, 4); en = a + ' + ' + b + ' = ?'; certo = a + b; perto = [-1, 1, 2]; break;
+      case 3: a = int(r, 5, 10); b = int(r, 1, a - 1); en = a + ' − ' + b + ' = ?'; certo = a - b; perto = [-1, 1, 2]; break;
+      case 4: a = int(r, 6, 12); b = int(r, 4, 8); en = a + ' + ' + b + ' = ?'; certo = a + b; perto = [-1, 1, -2]; break;
+      case 5: a = int(r, 2, 8) * 10 + int(r, 0, 4); b = int(r, 1, 5); en = a + ' + ' + b + ' = ?'; certo = a + b; perto = [-1, 1, 10]; break;
+      case 6: a = int(r, 15, 48); b = int(r, 15, 47); if ((a % 10) + (b % 10) < 10) b += 5; en = a + ' + ' + b + ' = ?'; certo = a + b; perto = [-10, 10, -1]; break;
+      case 7: a = int(r, 42, 95); b = int(r, 16, 39); if ((a % 10) >= (b % 10)) b += (a % 10) - (b % 10) + 1; en = a + ' − ' + b + ' = ?'; certo = a - b; perto = [10, -10, 2]; break;
+      case 8: a = int(r, 2, 5); b = int(r, 3, 9); en = a + ' × ' + b + ' = ?'; certo = a * b; perto = [a, -a, 1]; break;
+      case 9: a = int(r, 6, 9); b = int(r, 6, 9); en = a + ' × ' + b + ' = ?'; certo = a * b; perto = [a, -a, b]; break;
+      case 10: b = int(r, 3, 9); c = int(r, 3, 9); a = b * c; en = a + ' ÷ ' + b + ' = ?'; certo = c; perto = [1, -1, 2]; break;
+      case 11: a = int(r, 205, 689); b = int(r, 118, 199); en = a + ' − ' + b + ' = ?'; certo = a - b; perto = [100, -10, 10]; break;
+      case 12: a = int(r, 4, 9); b = int(r, 4, 8); en = 'Uma caixa tem ' + a + ' ovos. Quantos ovos há em ' + b + ' caixas?'; certo = a * b; perto = [a, -a, b]; break;
+      case 13: c = pega(r, [2, 3, 4]); a = c * int(r, 4, 12); en = 'Quanto é ' + (c === 2 ? 'a metade' : c === 3 ? 'um terço' : 'um quarto') + ' de ' + a + '?'; certo = a / c; perto = [1, -1, 2]; break;
+      case 14: c = pega(r, [10, 25, 50, 20]); a = pega(r, [40, 80, 120, 200, 60]); en = 'Quanto é ' + c + '% de ' + a + '?'; certo = a * c / 100; perto = [2, -2, 10]; break;
+      case 15: a = int(r, 12, 48) / 4; b = int(r, 6, 30) / 4; en = String(a).replace('.', ',') + ' + ' + String(b).replace('.', ',') + ' = ?'; certo = a + b; perto = [0.25, -0.5, 1]; break;
+      default: c = int(r, 2, 5); b = int(r, 2, 9); a = int(r, 1, 9); en = c + 'x + ' + a + ' = ' + (c * b + a) + '. Quanto vale x?'; certo = b; perto = [1, -1, 2];
+    }
+    var fmt = function (v) { return String(Math.round(v * 100) / 100).replace('.', ','); };
+    var o = opcoesTexto(r, fmt(certo), numOpcoes(r, certo, perto).slice(0, 3).map(fmt));
+    return { tipo: 'escolha', layout: 'textos', enunciado: en, fala: nivel >= 12 ? en : 'Resolva a conta e toque na resposta certa.', opcoes: o.opcoes, certo: o.certo, numerico: true, lentoMs: 15000 + nivel * 2500 };
+  }
+
+  // ---------------------------------------------------------------- Cognição social: entender o que o outro pensa e sente
+  var CS = [
+    [1, 'O menino queria um sorvete. A mãe comprou o sorvete para ele. Como ele fica?', ['😀'], ['😢', '😠']],
+    [1, 'A menina queria brincar no parque, mas começou a chover e ela não pôde ir. Como ela fica?', ['😞'], ['😀', '😲']],
+    [2, 'O cachorro do Lucas fugiu. O Lucas procurou o dia inteiro. Como ele está se sentindo?', ['😟'], ['😀', '😴']],
+    [3, 'Esta é uma caixa de lápis, mas dentro dela tem balas. O João nunca abriu a caixa. O que o João acha que tem dentro?', ['✏️'], ['🍬', '⚽']],
+    [3, 'Esta caixa de ovos está cheia de botões. A Bia ainda não abriu. O que a Bia acha que tem dentro?', ['🥚'], ['🔘', '🍎']],
+    [5, 'Ana guardou a boneca no baú e foi almoçar. O irmão mudou a boneca para o armário. Quando Ana voltar, onde ela vai procurar primeiro?', ['🧳'], ['🚪', '🛏️']],
+    [5, 'Leo deixou o carrinho na caixa vermelha e foi dormir. A mãe arrumou o quarto e pôs o carrinho na caixa azul. Onde Leo vai procurar ao acordar?', ['🟥'], ['🟦', '🟩']],
+    [6, 'Sofia escondeu o chocolate na gaveta. Enquanto ela estava no banho, o primo comeu o chocolate. O que Sofia acha que tem na gaveta?', ['🍫'], ['🗑️', '🍪']],
+    [8, 'Maria e João viram o sorveteiro no parque, e ele disse que ficaria lá a tarde toda. João foi para casa. Depois o sorveteiro avisou Maria que ia para a praça da igreja. No caminho, ele passou pela casa do João e contou que ia para a igreja, mas Maria não viu. Onde Maria acha que o João vai procurar o sorveteiro?', 'No parque', ['Na igreja', 'Na casa do João']],
+    [9, 'Carla comprou um presente para o aniversário da Bia e escondeu no armário. Bia viu escondido onde estava o presente, mas Carla não sabe que Bia viu. O que Carla pensa que Bia sabe sobre o presente?', 'Que Bia não sabe onde está', ['Que Bia sabe onde está', 'Que Bia não quer o presente']],
+    [11, 'O time do Paulo perdeu de dez a zero. Na saída, o Paulo disse: "Que jogo maravilhoso!". O que ele quis dizer?', 'Que o jogo foi muito ruim', ['Que o jogo foi ótimo', 'Que quer jogar de novo amanhã']],
+    [11, 'A vovó fez um bolo que ficou seco. A neta comeu e disse: "Está uma delícia, vó!". Por que a neta disse isso?', 'Para não magoar a avó', ['Porque o bolo estava ótimo', 'Porque queria mais bolo']],
+    [12, 'O chefe chegou atrasado pela terceira vez e o colega comentou: "Chegou cedo hoje, hein!". O colega estava:', 'Fazendo ironia sobre o atraso', ['Elogiando de verdade', 'Perguntando que horas são']],
+    [14, 'Júlia trocou as cortinas da sala. A amiga Ana veio visitar e disse: "Que cortinas feias! Espero que você troque logo." Ana não sabia que eram novas. Alguém disse algo que não devia?', 'Sim: Ana magoou Júlia sem perceber', ['Não, ninguém disse nada errado', 'Sim: Júlia foi mal-educada com Ana']],
+    [14, 'Na festa, Rui disse para um senhor: "Esse bolo está horrível, quem fez?". O senhor respondeu: "Fui eu." Rui sabia que tinha sido o senhor quem fez o bolo?', 'Não, ele não sabia', ['Sim, ele sabia', 'Não dá para saber nada']],
+    [15, 'Na reunião, a nova funcionária perguntou à colega quando nasceria o bebê. A colega respondeu que não estava grávida. Por que essa pergunta foi uma gafe?', 'Supôs algo sobre o corpo da colega sem saber', ['Porque reunião não é lugar de conversa', 'Porque ela já sabia a resposta']]
+  ];
+  function itemCs(r, nivel) {
+    var pool = CS.filter(function (c) { return c[0] <= nivel && c[0] >= nivel - 3; }); if (!pool.length) pool = CS.filter(function (c) { return c[0] <= nivel; });
+    var c = pega(r, pool);
+    if (Array.isArray(c[2])) { var o = montarOpcoes(r, { e: c[2][0] }, c[3].map(function (x) { return { e: x }; }), 3); return { tipo: 'escolha', layout: 'figuras', fala: c[1], enunciado: c[1], opcoes: o.opcoes, certo: o.certo, lentoMs: 30000 }; }
+    var t = opcoesTexto(r, c[2], c[3]);
+    return { tipo: 'escolha', layout: 'textos', fala: c[1], enunciado: c[1], opcoes: t.opcoes, certo: t.certo, lentoMs: 45000 };
+  }
+
+  // ---------------------------------------------------------------- Desenho: cópia de figura e relógio (o avaliador pontua)
+  var FIGURAS = [
+    { nome: 'círculo com cruz', elementos: ['Círculo', 'Linha vertical', 'Linha horizontal', 'Cruz no meio do círculo'] },
+    { nome: 'casa', elementos: ['Parede (quadrado)', 'Telhado (triângulo) em cima', 'Porta', 'Janela', 'Chaminé no telhado'] },
+    { nome: 'figura complexa', elementos: ['Retângulo grande', 'Duas diagonais', 'Linha vertical do meio', 'Triângulo à direita', 'Círculo com 3 pontos (alto, à esquerda)', 'Losango em cima', '4 linhas paralelas (baixo, à direita)', 'Cruz pequena (baixo, à esquerda)'] }
+  ];
+  function itemDc(r, nivel, ctx) {
+    var k = Math.min(2, (ctx && ctx.indice) || 0), f = FIGURAS[k];
+    return { tipo: 'avaliador', layout: 'desenho', modelo: k, fala: 'Copie este desenho no quadro de baixo, do jeito mais parecido que conseguir. Quando terminar, toque em Pronto.',
+      pontuacao: { modo: 'checklist', figura: f.nome, elementos: f.elementos, escala: ['Ausente', 'Torto ou fora do lugar', 'Certo e no lugar'] } };
+  }
+  var RELOGIO = ['Contorno do relógio fechado', 'Os 12 números estão lá', 'Números em ordem e bem espalhados', 'Dois ponteiros', 'Ponteiro das horas no 11', 'Ponteiro dos minutos no 2 (10 minutos)', 'Ponteiro das horas menor que o dos minutos'];
+  function itemRl() {
+    return { tipo: 'avaliador', layout: 'desenho', fala: 'Desenhe um relógio redondo, com todos os números. Depois desenhe os ponteiros marcando onze horas e dez minutos. Quando terminar, toque em Pronto.',
+      pontuacao: { modo: 'checklist', figura: 'relógio (11h10)', elementos: RELOGIO, escala: ['Não', 'Sim'] } };
+  }
+
+  // ---------------------------------------------------------------- Toque rápido (coordenação motora fina) e tempo de reação
+  function itemTp(r, nivel, ctx) {
+    var i = (ctx && ctx.indice) || 0, mao = i % 2 === 0 ? 'preferida' : 'outra';
+    return { tipo: 'tapping', layout: 'tapping', mao: mao, duracaoMs: 10000,
+      fala: mao === 'preferida' ? 'Use o dedo indicador da mão que você mais usa. Quando aparecer o círculo, toque nele o mais rápido que puder, sem parar, até o tempo acabar.'
+        : 'Agora use o dedo indicador da OUTRA mão. Toque o mais rápido que puder até o tempo acabar.' };
+  }
+  function itemTr(r, nivel, ctx) {
+    var i = (ctx && ctx.indice) || 0, atraso = int(r, 600, 2400);
+    if (i < 10) return { tipo: 'gonogo', layout: 'gonogo', reacao: 'simples', atrasoMs: atraso, fala: 'Toque na tela assim que aparecer a estrela. Seja rápido!', estimulo: [{ e: '⭐' }], certo: 'toque', limiteMs: 1500, lentoMs: 1500 };
+    var lado = r() < 0.5 ? 'esq' : 'dir';
+    return { tipo: 'escolha', layout: 'reacao2', reacao: 'escolha', atrasoMs: atraso, fala: 'Agora aparece uma seta. Toque no botão do mesmo lado da seta, bem rápido.', estimulo: [{ seta: lado }],
+      opcoes: [{ id: 'esq', fig: { seta: 'esq' } }, { id: 'dir', fig: { seta: 'dir' } }], certo: lado, limiteMs: 2000, lentoMs: 2000 };
+  }
+
+  // ---------------------------------------------------------------- Orientação (adultos e idosos; o avaliador marca certo ou errado)
+  var ORIENT = [['dia_semana', 'Que dia da semana é hoje?'], ['dia_mes', 'Que dia do mês é hoje?'], ['mes', 'Em que mês estamos?'], ['ano', 'Em que ano estamos?'],
+    ['hora', 'Que horas são, mais ou menos, sem olhar no relógio?'], ['cidade', 'Em que cidade estamos?'], ['lugar', 'Que lugar é este, onde estamos agora?']];
+  function itemOr(r, nivel, ctx) {
+    var q = ORIENT[Math.min(ORIENT.length - 1, (ctx && ctx.indice) || 0)];
+    return { tipo: 'avaliador', layout: 'falar', icone: '🗓️', rotulo: q[1], pergunta: q[0], fala: q[1], pontuacao: { modo: 'certoerrado', pergunta: q[0] } };
+  }
+
+  // ---------------------------------------------------------------- correção das tarefas novas
+  // pontuação dada pelo avaliador no celular (só números e marcas; nada de texto livre longo)
+  function corrigirAvaliador(it, p, entrega) {
+    p = p || {}; var n = function (v, max) { v = Math.round(Number(v) || 0); return Math.max(0, Math.min(max || 999, v)); };
+    var pc = it.pontuacao || {}, ex = { modo: pc.modo };
+    if (pc.modo === 'palavras') {
+      var marc = (Array.isArray(p.marcadas) ? p.marcadas : []).map(Number).filter(function (i, k, a) { return i >= 0 && i < pc.palavras.length && a.indexOf(i) === k; });
+      ex.lembradas = marc.length; ex.total = pc.palavras.length; ex.marcadas = marc; ex.intrusoes = n(p.intrusoes, 50); ex.repeticoes = n(p.repeticoes, 50); ex.ensaio = it.ensaio || 0;
+      return { correto: ex.lembradas >= Math.ceil(ex.total / 2), rapido: true, esgotado: false, extra: ex };
+    }
+    if (pc.modo === 'contador') { ex.validas = n(p.validas, 200); ex.repeticoes = n(p.repeticoes, 99); ex.intrusoes = n(p.intrusoes, 99); ex.categoria = it.categoria; ex.transcricao = entrega && entrega.transcricao ? String(entrega.transcricao).slice(0, 2000) : null; return { correto: ex.validas > 0, rapido: true, esgotado: false, extra: ex }; }
+    if (pc.modo === 'checklist') {
+      var max = pc.escala.length - 1, notas = (Array.isArray(p.notas) ? p.notas : []).slice(0, pc.elementos.length).map(function (v) { return n(v, max); });
+      while (notas.length < pc.elementos.length) notas.push(0);
+      ex.notas = notas; ex.pontos = notas.reduce(function (s, v) { return s + v; }, 0); ex.maximo = pc.elementos.length * max; ex.figura = pc.figura; ex.desenho = entrega && entrega.desenho ? true : false;
+      return { correto: ex.pontos >= ex.maximo * 0.7, rapido: true, esgotado: false, extra: ex };
+    }
+    if (pc.modo === 'certoerrado') { ex.certo = p.certo === true; ex.pergunta = pc.pergunta; return { correto: ex.certo, rapido: true, esgotado: false, extra: ex }; }
+    if (pc.modo === 'erros') {
+      var marcE = (Array.isArray(p.marcadas) ? p.marcadas : []).map(Number).filter(function (i, k, a) { return i >= 0 && i < pc.palavras.length && a.indexOf(i) === k; });
+      ex.palavras = it.palavras; ex.erros = marcE.length; ex.marcadas = marcE; ex.autocorrecoes = n(p.autocorrecoes, 99);
+      ex.tempoMs = entrega && entrega.tempoMs ? n(entrega.tempoMs, 3600000) : n(p.tempoMs, 3600000);
+      // tempo curto demais para ter lido (mais de 400 palavras por minuto): toque sem querer em Terminei; não gera número
+      ex.ppm = ex.tempoMs ? Math.round((ex.palavras - ex.erros) / (ex.tempoMs / 60000)) : null;
+      if (ex.ppm != null && ex.ppm > 400) { ex.ppm = null; ex.tempoInvalido = true; }
+      return { correto: ex.erros <= Math.ceil(ex.palavras * 0.1), rapido: true, esgotado: false, extra: ex };
+    }
+    return { correto: false, rapido: true, esgotado: false, extra: ex };
+  }
+  // entrega do paciente nas tarefas pontuadas pelo avaliador (desenho, tempo de leitura, fim do minuto, transcrição)
+  function limparEntrega(e) {
+    e = e || {}; var x = {};
+    if (typeof e.desenho === 'string' && e.desenho.length <= 400000 && /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(e.desenho)) x.desenho = e.desenho;
+    if (e.tempoMs != null) x.tempoMs = Math.max(0, Math.min(3600000, Math.round(Number(e.tempoMs) || 0)));
+    if (e.transcricao) x.transcricao = String(e.transcricao).slice(0, 2000);
+    return x;
+  }
+
+  // ---------------------------------------------------------------- referências aproximadas (literatura; NÃO são normas do NeuroTrilha)
+  function refFluencia(cat, idade) {
+    if (cat === 'animais') return idade < 7 ? 8 : idade < 9 ? 11 : idade < 11 ? 13 : idade < 15 ? 15 : idade < 60 ? 17 : 13;
+    return idade < 11 ? 6 : idade < 15 ? 9 : idade < 60 ? 12 : 10;
+  }
+  function refLeituraPpm(idade) { return idade < 8 ? 50 : idade < 9 ? 70 : idade < 10 ? 85 : idade < 11 ? 100 : idade < 12 ? 110 : idade < 15 ? 120 : 140; }
+
+  // ---------------------------------------------------------------- medidas das tarefas novas (para o relatório)
+  function metricasNovas(e, sessao) {
+    var it = e.itens, idade = sessao.idadeAnos || 10, med = function (v) { return mediana(v.filter(function (x) { return x != null; })); };
+    if (e.dominio === 'mp') {
+      var curva = it.map(function (i) { return i.lembradas || 0; }), total = curva.reduce(function (s, v) { return s + v; }, 0);
+      var tard = sessao.mpTardia || {}, ult = curva.length ? curva[curva.length - 1] : 0;
+      return { curva: curva, total: total, maximo: it.length && it[0].total ? it[0].total * it.length : null, palavras: it.length ? it[0].total : null, intrusoes: it.reduce(function (s, i) { return s + (i.intrusoes || 0); }, 0),
+        evocacaoTardia: tard.evoc ? tard.evoc.lembradas : null, retencao: tard.evoc && ult ? Math.round(100 * tard.evoc.lembradas / ult) : null,
+        reconhecimento: tard.rec ? { acertos: tard.rec.acertos, falsos: tard.rec.falsos, total: tard.rec.total } : null };
+    }
+    if (e.dominio === 'fv') return { categorias: it.map(function (i) { return { categoria: i.categoria, validas: i.validas, repeticoes: i.repeticoes, intrusoes: i.intrusoes, referencia: refFluencia(i.categoria, idade) }; }) };
+    if (e.dominio === 'lx') {
+      var l = it.filter(function (i) { return i.modo === 'erros'; })[0], comp = it.filter(function (i) { return i.modo !== 'erros'; });
+      return { ppm: l ? l.ppm : null, tempoInvalido: !!(l && l.tempoInvalido), erros: l ? l.erros : null, palavras: l ? l.palavras : null, autocorrecoes: l ? l.autocorrecoes : null, tempoMs: l ? l.tempoMs : null, referenciaPpm: refLeituraPpm(idade),
+        compreensao: comp.length ? { acertos: comp.filter(function (i) { return i.correto; }).length, total: comp.length } : null };
+    }
+    if (e.dominio === 'dc' || e.dominio === 'rl') return { figuras: it.map(function (i) { return { figura: i.figura, pontos: i.pontos, maximo: i.maximo, notas: i.notas }; }) };
+    if (e.dominio === 'tp') {
+      var pref = it.filter(function (i) { return i.mao === 'preferida'; }).map(function (i) { return i.toques; }), out = it.filter(function (i) { return i.mao === 'outra'; }).map(function (i) { return i.toques; });
+      var mp = pref.length ? Math.round(pref.reduce(function (s, v) { return s + v; }, 0) / pref.length) : null, mo = out.length ? Math.round(out.reduce(function (s, v) { return s + v; }, 0) / out.length) : null;
+      return { preferida: mp, outra: mo, diferenca: mp && mo ? Math.round(100 * (mp - mo) / mp) : null };
+    }
+    if (e.dominio === 'tr') {
+      var simp = it.filter(function (i) { return i.reacao === 'simples'; }), esc = it.filter(function (i) { return i.reacao === 'escolha'; });
+      return { simplesMs: med(simp.filter(function (i) { return i.correto && i.tempoMs >= 150; }).map(function (i) { return i.tempoMs; })), escolhaMs: med(esc.filter(function (i) { return i.correto && i.tempoMs >= 150; }).map(function (i) { return i.tempoMs; })),
+        antecipacoes: it.filter(function (i) { return i.tempoMs < 150; }).length, omissoes: simp.filter(function (i) { return !i.correto; }).length, errosEscolha: esc.filter(function (i) { return !i.correto; }).length };
+    }
+    if (e.dominio === 'or') return { acertos: it.filter(function (i) { return i.correto; }).length, total: it.length, erradas: it.filter(function (i) { return !i.correto; }).map(function (i) { return i.pergunta; }) };
+    return null;
+  }
+  function alertasNovos(sessao, areas) {
+    var a = [];
+    areas.forEach(function (x) {
+      var m = x.metricas; if (!m) return;
+      if (x.id === 'mp') {
+        if (m.curva && m.curva.length >= 3 && m.curva[m.curva.length - 1] - m.curva[0] <= 1) a.push({ tipo: 'aprendizagem', texto: 'Memória de palavras: quase não aumentou o número de palavras com a repetição (curva de aprendizagem plana). Investigar memória verbal, atenção e estratégia.' });
+        if (m.retencao != null && m.retencao < 60) a.push({ tipo: 'esquecimento', texto: 'Memória de palavras: no fim da sessão lembrou só ' + m.retencao + '% do que lembrava na última rodada (esquecimento rápido). Se o reconhecimento foi bom, a dificuldade é mais de busca/acesso do que de armazenamento.' });
+      }
+      if (x.id === 'fv') m.categorias.forEach(function (c) { if (c.validas != null && c.validas < c.referencia - 4) a.push({ tipo: 'fluencia', texto: 'Fluência verbal (' + c.categoria + '): ' + c.validas + ' palavras, abaixo da referência aproximada (cerca de ' + c.referencia + ' para a idade). Investigar linguagem e funções executivas.' }); });
+      if (x.id === 'lx' && m.ppm != null && m.ppm < m.referenciaPpm * 0.7) a.push({ tipo: 'leitura', texto: 'Leitura em voz alta: ' + m.ppm + ' palavras corretas por minuto, bem abaixo da referência aproximada para a idade (' + m.referenciaPpm + '). Investigar fluência de leitura (hipótese de dislexia), junto com a consciência fonológica.' });
+      if (x.id === 'rl' && m.figuras[0] && m.figuras[0].pontos != null && m.figuras[0].pontos <= 4 && sessao.idadeAnos >= 9) a.push({ tipo: 'relogio', texto: 'Desenho do relógio com ' + m.figuras[0].pontos + ' de 7 pontos: avaliar planejamento, visuoconstrução e, em idosos, rastreio de declínio cognitivo.' });
+      if (x.id === 'or' && m.total >= 5 && m.total - m.acertos >= 2) a.push({ tipo: 'orientacao', texto: 'Orientação: errou ' + (m.total - m.acertos) + ' de ' + m.total + ' perguntas (' + m.erradas.join(', ') + '). Em adultos e idosos, sinal de alerta para avaliação de memória e cognição.' });
+      if (x.id === 'tp' && m.diferenca != null && Math.abs(m.diferenca) >= 35) a.push({ tipo: 'motor', texto: 'Toque rápido: diferença grande entre as mãos (' + m.diferenca + '%). Considerar avaliação neurológica/motora.' });
+      if (x.id === 'tr' && m.antecipacoes >= 3) a.push({ tipo: 'impulsos', texto: 'Tempo de reação: ' + m.antecipacoes + ' respostas antes da hora (antecipação), sinal de impulsividade.' });
+    });
+    return a;
+  }
+
+  // ---------------------------------------------------------------- sugestões de intervenção (para o profissional revisar)
+  var SUGESTOES = {
+    gf: ['Usar materiais concretos e exemplos antes de regras abstratas.', 'Ensinar estratégias de resolução de problemas passo a passo (o que eu sei, o que falta, como testar).'],
+    gwm: ['Dar instruções curtas, uma etapa de cada vez, e conferir o entendimento.', 'Apoios visuais: listas, roteiros e quadros com os passos da tarefa.'],
+    dg: ['Repetir e escrever as informações ditadas; evitar cópia do quadro com pressa.'], di: ['Reduzir a carga de memória: permitir rascunho e etapas escritas nas contas.'],
+    gs: ['Dar mais tempo nas provas e tarefas (tempo estendido).', 'Diminuir a quantidade de cópia; priorizar a qualidade.'],
+    gc: ['Ampliar vocabulário com leitura compartilhada diária e conversa sobre palavras novas.'], rv: ['Trabalhar categorias, semelhanças e analogias em jogos e conversas.'],
+    ml: ['Revisões espaçadas (rever o conteúdo no dia seguinte e na semana seguinte).'], mp: ['Ensinar estratégias de memória: agrupar por categoria, criar histórias e revisar.', 'Avaliar se lembra melhor com pistas: oferecer escolhas/recordação guiada nas provas.'],
+    gn: ['Combinar regras claras e curtas, com combinados visuais e reforço positivo imediato.', 'Pausas curtas de movimento entre as atividades.'], ac: ['Atividades em blocos curtos, sentar perto do professor, ambiente com menos distrações.'],
+    at: ['Organizar o material e a mesa para reduzir distrações visuais.'], fx: ['Avisar antes das mudanças de rotina e de regra; treinar flexibilidade com jogos de troca de regra.'],
+    to: ['Ensinar a planejar antes de começar (pensar alto, desenhar o plano).'], tl: ['Treinar alternância com jogos e checklists de etapas.'], cm: ['Atividades de rastreio visual (labirintos, caça-palavras).'],
+    fo: ['Estimulação da consciência fonológica: rimas, sílabas e sons iniciais em brincadeiras diárias.', 'Encaminhar para fonoaudiologia se persistir.'],
+    le: ['Intervenção em decodificação (método fônico) e leitura em voz alta diária.'], lx: ['Leitura repetida de textos curtos para ganhar fluência; perguntas sobre o texto para trabalhar compreensão.', 'Considerar avaliação fonoaudiológica e psicopedagógica.'],
+    dt: ['Trabalhar regras ortográficas explicitamente, com listas de palavras por regra; correção sem punição.'], mt: ['Retomar o sentido das operações com material concreto; tabuada com jogos.', 'Permitir tabela de apoio nas provas enquanto consolida.'],
+    em: ['Treino de reconhecimento de emoções com fotos e situações do dia a dia.'], cs: ['Histórias sociais e conversas sobre o que o outro pensa e sente; treino de habilidades sociais em grupo.'],
+    fv: ['Jogos de evocação (diga palavras de uma categoria, de uma letra); ampliação de vocabulário.'], dc: ['Atividades de cópia, quebra-cabeça e construção; terapia ocupacional se houver dificuldade motora.'],
+    rl: ['Avaliar planejamento e visuoconstrução; em idosos, acompanhamento médico da memória.'], tp: ['Avaliação de coordenação motora fina (terapia ocupacional) se houver lentidão ou assimetria.'],
+    tr: ['Investigar se a lentidão é geral (velocidade) ou só quando precisa escolher (tomada de decisão).'], or: ['Encaminhar para avaliação médica/neurológica da memória; organizar rotina com calendário e lembretes.']
+  };
+  function sugestoes(res) {
+    var lista = [];
+    (res.areas || []).forEach(function (a) {
+      var fraco = (a.indice != null && a.indice < 85) || (res.alertas || []).some(function (al) { return al.texto.indexOf((dominio(a.id) || {}).nome || '###') === 0; });
+      if (a.id === 'mp' && a.metricas && a.metricas.retencao != null && a.metricas.retencao < 60) fraco = true;
+      if (a.id === 'lx' && a.metricas && a.metricas.ppm != null && a.metricas.ppm < a.metricas.referenciaPpm * 0.8) fraco = true;
+      if (a.id === 'or' && a.metricas && a.metricas.total - a.metricas.acertos >= 2) fraco = true;
+      if (a.id === 'fv' && a.metricas && a.metricas.categorias.some(function (c) { return c.validas != null && c.validas < c.referencia - 4; })) fraco = true;
+      if (fraco && SUGESTOES[a.id]) lista.push({ area: a.nome, itens: SUGESTOES[a.id] });
+    });
+    return lista;
+  }
+
   var GERADORES = { gf: itemGf, gwm: itemGwm, gv: itemGv, gs: itemGs, gc: itemGc, gq: itemGq, at: itemAt, fx: itemFx,
-    gn: itemGn, ac: itemAc, fo: itemFo, em: itemEm, cm: itemCm, dg: itemDg, di: itemDi, le: itemLe, to: itemTo, tl: itemTl, rv: itemRv, ml: itemMl };
-  function gerarItem(dom, nivel, semente) {
+    gn: itemGn, ac: itemAc, fo: itemFo, em: itemEm, cm: itemCm, dg: itemDg, di: itemDi, le: itemLe, to: itemTo, tl: itemTl, rv: itemRv, ml: itemMl,
+    mp: itemMp, fv: itemFv, lx: itemLx, dt: itemDt, mt: itemMt, cs: itemCs, dc: itemDc, rl: itemRl, tp: itemTp, tr: itemTr, or: itemOr };
+  // ctx (opcional): { indice: posição no bloco fixo, idade, curta, bloco: o que precisa continuar igual no bloco (lista de palavras, texto) }
+  function gerarItem(dom, nivel, semente, ctx) {
     nivel = Math.max(1, Math.min(NIVEIS, Math.round(nivel)));
-    var it = GERADORES[dom](rng(semente + '|' + dom + '|' + nivel), nivel);
+    var it = GERADORES[dom](rng(semente + '|' + dom + '|' + nivel), nivel, ctx || {});
     it.dominio = dom; it.nivel = nivel; it.id = 'it-' + hash(semente + dom + nivel).toString(36);
     var st = subtipoDe(dom, nivel); if (st) it.subtipo = st;
     return it;
@@ -633,15 +983,25 @@
   // o que vai para a tela do paciente (sem a resposta certa)
   function itemPublico(it) {
     if (!it) return null;
-    var x = Object.assign({}, it); delete x.certo; delete x.lentoMs; delete x.palavra; delete x.regra; delete x.condicao; delete x.margem; delete x.alvosFig; delete x.minimo; delete x.subtipo;
+    var x = Object.assign({}, it); delete x.certo; delete x.lentoMs; delete x.palavra; delete x.regra; delete x.condicao; delete x.margem; delete x.alvosFig; delete x.minimo; delete x.subtipo; delete x.bloco; delete x.pontuacao; delete x.entrega;
+    if (it.entrega) x.entregue = true;
     return x;
   }
   function corrigir(it, resposta, tempoMs) {
     var certo, extra = {};
     if (it.tipo === 'gonogo') {  // não tocar no tubarão (ou fora da estrela) é acerto; tocar no peixe a tempo é acerto
-      var tocou = resposta === 'toque'; extra = { alvo: it.certo !== null, toque: tocou };
+      var tocou = resposta === 'toque'; extra = { alvo: it.certo !== null, toque: tocou }; if (it.reacao) extra.reacao = it.reacao;
       certo = it.certo === null ? !tocou : tocou && tempoMs <= it.limiteMs;
       return { correto: certo, rapido: certo, esgotado: false, extra: extra };
+    }
+    if (it.tipo === 'tapping') {
+      var tq = Math.max(0, Math.min(250, Math.round(Number(resposta && resposta.toques) || 0)));
+      return { correto: tq > 0, rapido: true, esgotado: false, extra: { toques: tq, mao: it.mao } };
+    }
+    if (it.tipo === 'ditado') {
+      var escrito = String(resposta == null ? '' : resposta).trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 60);
+      extra = { escrito: escrito, palavra: it.certo }; certo = escrito === it.certo;
+      return { correto: certo, rapido: certo && tempoMs <= it.lentoMs, esgotado: false, extra: extra };
     }
     if (it.tipo === 'corsi' || it.tipo === 'digitos') certo = Array.isArray(resposta) && igual(resposta.map(Number), it.certo);
     else if (it.tipo === 'torre') { extra = torreConferir(it, resposta && resposta.jogadas); extra.minimo = it.minimo; certo = extra.resolveu && extra.movimentos <= it.minimo; }
@@ -650,6 +1010,7 @@
     else certo = resposta === it.certo;
     var esgotado = !!(it.limiteMs && tempoMs > it.limiteMs);
     if (esgotado) certo = false;
+    if (it.reacao) extra.reacao = it.reacao;  // tempo de reação: simples ou de escolha
     return { correto: certo, rapido: certo && (!it.lentoMs || tempoMs <= it.lentoMs), esgotado: esgotado, extra: extra };
   }
 
@@ -657,8 +1018,9 @@
   function novaEscada(dom, opcoes) {
     opcoes = opcoes || {};
     var d = dominio(dom) || {};
-    return { dominio: dom, nivel: Math.max(1, Math.min(NIVEIS, opcoes.inicio || 1)), maxItens: d.fixo ? d.fixoItens : (opcoes.maxItens || 10), fixo: !!d.fixo, itens: [], reversoes: [],
-      direcao: 0, teveErro: false, errosSeguidos: 0, terminado: false, motivoFim: '', treinoFeito: !!opcoes.semTreino };
+    var fixos = typeof d.fixoItens === 'function' ? d.fixoItens(opcoes.idade == null ? 10 : opcoes.idade, !!opcoes.curta) : d.fixoItens;
+    return { dominio: dom, nivel: Math.max(1, Math.min(NIVEIS, opcoes.inicio || 1)), maxItens: d.fixo ? fixos : (opcoes.maxItens || 10), fixo: !!d.fixo, itens: [], reversoes: [],
+      direcao: 0, teveErro: false, errosSeguidos: 0, terminado: false, motivoFim: '', treinoFeito: !!(opcoes.semTreino || d.semTreino) };
   }
   function registrar(escada, item, resultado, tempoMs) {
     var antes = escada.nivel;
@@ -785,7 +1147,8 @@
     if (e.dominio === 'tl') return { erros: soma(it, function (i) { return i.erros; }) };
     if (e.dominio === 'to') return { jogadasAMais: soma(it, function (i) { return i.resolveu ? Math.max(0, i.movimentos - i.minimo) : 0; }), naoResolvidas: it.filter(function (i) { return i.resolveu === false; }).length };
     if (e.dominio === 'ml') return { falsosReconhecimentos: soma(it, function (i) { return i.falsos; }), tardia: sessao.tardia || null };
-    return null;
+    if (e.dominio === 'dt') return { errosSom: it.filter(function (i) { return !i.correto && i.escrito != null && somDe(i.escrito) !== somDe(i.palavra); }).length, errosRegra: it.filter(function (i) { return !i.correto && i.escrito != null && somDe(i.escrito) === somDe(i.palavra); }).length };
+    return metricasNovas(e, sessao);
   }
 
   function alertas(sessao, areas) {
@@ -826,6 +1189,7 @@
       var ret = sessao.tardia.acertos / sessao.tardia.total;
       if (ret < 0.5) a.push({ tipo: 'tardia', texto: 'Recordação no fim da sessão: lembrou ' + sessao.tardia.acertos + ' de ' + sessao.tardia.total + ' figuras. Verificar memória de longo prazo (consolidação).' });
     }
+    a = a.concat(alertasNovos(sessao, areas));
     var obs = sessao.observacoes || [];
     if (obs.length) a.push({ tipo: 'observacoes', texto: obs.length + ' observação(ões) do avaliador registrada(s) durante a sessão.' });
     return a;
@@ -848,12 +1212,19 @@
   // "impressão digital" da tarefa: serve para não repetir tarefas na reavaliação (formas paralelas)
   function chaveItem(it) {
     var figs = (it.opcoes || []).map(function (o) { return JSON.stringify(o.fig); }).sort();
-    return it.dominio + '|' + it.nivel + '|' + hash(it.fala + '|' + JSON.stringify(it.estimulo || it.sequencia || it.pontos || it.inicio || '') + '|' + figs.join(',')).toString(36);
+    return it.dominio + '|' + it.nivel + '|' + hash(it.fala + '|' + JSON.stringify(it.estimulo || it.sequencia || it.pontos || it.inicio || it.lista || it.enunciado || it.texto || '') + '|' + figs.join(',')).toString(36);
   }
 
   // ---------------------------------------------------------------- tipo de cada erro (análise qualitativa)
   function figDaOpcao(it, id) { var o = (it.opcoes || []).filter(function (x) { return x.id === id; })[0]; return o ? o.fig : null; }
   function classificarErro(it, resposta, res) {
+    if (it.tipo === 'ditado') {
+      var esc = String(resposta == null ? '' : resposta).trim().toLowerCase(), sem = function (t) { return t.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
+      if (!esc) return 'não escreveu';
+      if (sem(esc) === sem(it.certo)) return 'acento';
+      return somDe(esc) === somDe(it.certo) ? 'erro de regra ortográfica (escreveu como se fala)' : 'erro de som (troca, falta ou sobra de letras)';
+    }
+    if (it.tipo === 'avaliador' || it.tipo === 'tapping') return null;
     if (res && res.esgotado) return 'tempo esgotado';
     if (it.tipo === 'gonogo') return it.certo === null ? 'tocou sem dever (impulsividade)' : 'deixou passar (omissão)';
     if (it.tipo === 'corsi' || it.tipo === 'digitos') {
@@ -897,7 +1268,9 @@
     'tocou sem dever (impulsividade)': 'Toques indevidos frequentes indicam impulsividade (controle inibitório).',
     'deixou passar (omissão)': 'Omissões frequentes indicam desatenção.',
     'marcou figuras que não viu': 'Falsos reconhecimentos sugerem impulsividade ou memória pouco precisa.',
-    'erro ao alternar número e letra': 'Errar só ao alternar indica dificuldade de flexibilidade/atenção alternada.'
+    'erro ao alternar número e letra': 'Errar só ao alternar indica dificuldade de flexibilidade/atenção alternada.',
+    'erro de som (troca, falta ou sobra de letras)': 'Erros de som na escrita (trocar f/v, p/b, omitir letras) indicam dificuldade fonológica, comum na dislexia/disortografia.',
+    'erro de regra ortográfica (escreveu como se fala)': 'Escrever como se fala (cassa, exeção) indica regras ortográficas ainda não consolidadas; esperado nos primeiros anos, sinal de alerta depois.'
   };
   // agrupa os erros da sessão por área e por tipo
   function analiseErros(sessao) {
@@ -1001,6 +1374,17 @@
   function svg(fig, classe) {
     var ab = '<svg viewBox="0 0 100 100" class="' + (classe || 'fig') + '" aria-hidden="true">', fe = '</svg>';
     if (!fig) return ab + '<rect x="6" y="6" width="88" height="88" rx="14" fill="none" stroke="#9aa8b8" stroke-width="4" stroke-dasharray="8 7"/><text x="50" y="66" font-size="44" text-anchor="middle" fill="#9aa8b8" font-family="Arial" font-weight="700">?</text>' + fe;
+    if (fig.e && fig.rotulo) return ab + '<text x="50" y="58" font-size="48" text-anchor="middle">' + fig.e + '</text><text x="50" y="92" font-size="14" text-anchor="middle" font-family="Arial" font-weight="800" fill="#172438">' + String(fig.rotulo).replace(/[&<>]/g, '') + '</text>' + fe;
+    if (fig.modelo != null) {
+      var L = 'fill="none" stroke="#172438" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"';
+      var M0 = '<circle cx="50" cy="50" r="34" ' + L + '/><line x1="50" y1="22" x2="50" y2="78" ' + L + '/><line x1="22" y1="50" x2="78" y2="50" ' + L + '/>';
+      var M1 = '<rect x="22" y="46" width="56" height="42" ' + L + '/><polygon points="16,46 50,16 84,46" ' + L + '/><rect x="44" y="64" width="13" height="24" ' + L + '/><rect x="28" y="54" width="11" height="11" ' + L + '/><polyline points="66,30 66,18 73,18 73,36" ' + L + '/>';
+      var M2 = '<rect x="12" y="28" width="62" height="50" ' + L + '/><line x1="12" y1="28" x2="74" y2="78" ' + L + '/><line x1="74" y1="28" x2="12" y2="78" ' + L + '/><line x1="43" y1="28" x2="43" y2="78" ' + L + '/>' +
+        '<polygon points="74,28 94,53 74,78" ' + L + '/><circle cx="24" cy="38" r="6" ' + L + '/><circle cx="22" cy="36" r="0.9" fill="#172438"/><circle cx="26" cy="36" r="0.9" fill="#172438"/><circle cx="24" cy="40.5" r="0.9" fill="#172438"/>' +
+        '<polygon points="43,10 50,19 43,28 36,19" ' + L + '/><line x1="56" y1="60" x2="70" y2="60" ' + L + '/><line x1="56" y1="65" x2="70" y2="65" ' + L + '/><line x1="56" y1="70" x2="70" y2="70" ' + L + '/><line x1="56" y1="75" x2="70" y2="75" ' + L + '/>' +
+        '<line x1="22" y1="66" x2="30" y2="66" ' + L + '/><line x1="26" y1="62" x2="26" y2="70" ' + L + '/>';
+      return ab + [M0, M1, M2][fig.modelo] + fe;
+    }
     if (fig.e) {
       var n = fig.n || 1, h = '';
       if (n === 1) h = '<text x="50" y="70" font-size="62" text-anchor="middle">' + fig.e + '</text>';
@@ -1059,5 +1443,7 @@
   return { chaveItem: chaveItem, classificarErro: classificarErro, analiseErros: analiseErros, indicesCompostos: indicesCompostos, validade: validade, mudancaConfiavel: mudancaConfiavel, INDICES: INDICES,
     idFala: idFala, GRUPOS: GRUPOS, recomendadas: recomendadas, itemTardio: itemTardio, NIVEIS: NIVEIS, DOMINIOS: DOMINIOS, IDADE_REF: IDADE_REF, DP_NIVEIS: DP_NIVEIS, dominio: dominio, gerarItem: gerarItem, itemPublico: itemPublico, corrigir: corrigir,
     novaEscada: novaEscada, registrar: registrar, nivelEstimado: nivelEstimado, idadeDoNivel: idadeDoNivel, nivelEsperado: nivelEsperado, indice: indice, faixa: faixa,
-    resultado: resultado, svg: svg, rng: rng };
+    resultado: resultado, svg: svg, rng: rng,
+    PROTOCOLOS: PROTOCOLOS, protocolo: protocolo, itemFim: itemFim, corrigirAvaliador: corrigirAvaliador, limparEntrega: limparEntrega, sugestoes: sugestoes, somDe: somDe,
+    refFluencia: refFluencia, refLeituraPpm: refLeituraPpm, FIGURAS: FIGURAS, ORIENT: ORIENT };
 });

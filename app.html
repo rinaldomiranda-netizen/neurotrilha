@@ -124,6 +124,7 @@ html,body{max-width:100%;overflow-x:hidden}
    <div class="nt-titulo"><h1>Pacientes</h1><p>Fichas dos seus pacientes. Toque em “Avaliar” para começar.</p></div>
    <div class="panel" style="margin-bottom:14px"><input id="nt-busca" placeholder="Buscar pelo nome ou código" style="width:100%;padding:11px;border:1px solid #cbd6e3;border-radius:10px;font-size:15px"></div>
    <div class="nt-cartoes" id="nt-lista"></div>
+   <div class="panel hidden" id="nt-quest" style="margin-top:14px"></div>
    <div class="panel" style="margin-top:16px">
     <h3 id="nt-ficha-titulo">Nova ficha</h3>
     <form class="nt-form" id="nt-ficha">
@@ -267,7 +268,7 @@ async function iniciar() {
     estado2fa();
     $id("nt-conta-sub").textContent = "Usuário: " + eu.usuario + (eu.papel === "admin" ? " · RMD (administrador)" : " · profissional");
     await carregarPacientes();
-    if (eu.papel === "admin" && /[?&]tela=contas/.test(location.search)) { switchView("conta"); setTimeout(() => $id("nt-admin").scrollIntoView({ behavior: "smooth" }), 200); }
+    if (eu.papel === "admin" && /[?&]tela=contas/.test(location.search)) { switchView("conta"); $id("nt-admin").scrollIntoView(); }
     else switchView("adaptive");
   } catch (e) { if (e.precisa2fa && await pedirSegundaEtapa().catch(() => false)) return; mostrarEntrar(); if (e.status !== 401) $id("nt-erro-entrar").textContent = e.message; }
 }
@@ -315,7 +316,7 @@ function desenharPacientes() {
   const termo = $id("nt-busca").value.trim().toLowerCase();
   const lista = db.participants.filter((p) => !termo || (p.name + " " + p.code).toLowerCase().includes(termo));
   $id("nt-lista").innerHTML = lista.length ? lista.map((p) => { const a = ageForParticipant(p);
-    return '<div class="nt-cartao"><span class="nt-av">' + esc((p.name || "?").trim()[0].toUpperCase()) + '</span><div><b>' + esc(p.name) + '</b><small>' + esc(p.code || "") + (a ? " · " + a.years + " anos" : "") + '</small></div><button class="quiet" data-editar="' + esc(p.id) + '">Editar</button><button class="quiet" data-exportar="' + esc(p.id) + '" title="Cópia de todos os dados (LGPD)">Dados</button><button class="quiet" data-apagar="' + esc(p.id) + '" title="Apagar todos os dados" style="color:#b42318">Apagar</button><button class="primary" data-avaliar="' + esc(p.id) + '">Avaliar</button></div>'; }).join("")
+    return '<div class="nt-cartao"><span class="nt-av">' + esc((p.name || "?").trim()[0].toUpperCase()) + '</span><div><b>' + esc(p.name) + '</b><small>' + esc(p.code || "") + (a ? " · " + a.years + " anos" : "") + '</small></div><button class="quiet" data-editar="' + esc(p.id) + '">Editar</button><button class="quiet" data-exportar="' + esc(p.id) + '" title="Cópia de todos os dados (LGPD)">Dados</button><button class="quiet" data-quest="' + esc(p.id) + '" title="Questionários para pais, professor ou o próprio paciente">Questionários</button><button class="quiet" data-apagar="' + esc(p.id) + '" title="Apagar todos os dados" style="color:#b42318">Apagar</button><button class="primary" data-avaliar="' + esc(p.id) + '">Avaliar</button></div>'; }).join("")
     : '<div class="empty"><b>' + (db.participants.length ? "Nenhuma ficha encontrada" : "Nenhuma ficha ainda") + '</b>Cadastre o primeiro paciente abaixo.</div>';
 }
 $id("nt-busca").addEventListener("input", desenharPacientes);
@@ -336,7 +337,8 @@ $id("nt-ficha-cancelar").addEventListener("click", () => preencherFicha(null));
 $id("nt-lista").addEventListener("click", (ev) => { const e = ev.target.closest("[data-editar]"); if (e) { preencherFicha(db.participants.find((x) => x.id === e.dataset.editar)); $id("nt-ficha").scrollIntoView({ behavior: "smooth" }); } });
 $id("nt-lista").addEventListener("click", (ev) => { const b = ev.target.closest("[data-avaliar]"); if (!b) return; switchView("adaptive"); setTimeout(() => { const sel = $id("ad-participante"); sel.value = b.dataset.avaliar; sel.dispatchEvent(new Event("change")); }, 50); });
 $id("nt-lista").addEventListener("click", async (ev) => {
-  const x = ev.target.closest("[data-exportar]"), a = ev.target.closest("[data-apagar]");
+  const x = ev.target.closest("[data-exportar]"), a = ev.target.closest("[data-apagar]"), qb = ev.target.closest("[data-quest]");
+  if (qb) { const p = db.participants.find((y) => y.id === qb.dataset.quest); if (p && window.NeuroTrilhaQuestionarios) { $id("nt-quest").classList.remove("hidden"); window.NeuroTrilhaQuestionarios($id("nt-quest"), p); $id("nt-quest").scrollIntoView({ behavior: "smooth" }); } return; }
   if (x) { try { const d = await api("/api/participantes/" + x.dataset.exportar + "/exportar"), blob = new Blob([JSON.stringify(d, null, 2)], { type: "application/json" }), url = URL.createObjectURL(blob), l = document.createElement("a"); l.href = url; l.download = "NeuroTrilha-dados-" + (d.participante.code || "ficha") + ".json"; document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); toast("Arquivo com todos os dados gerado."); } catch (e) { toast(e.message); } }
   if (a) {
     const p = db.participants.find((y) => y.id === a.dataset.apagar); if (!p) return;

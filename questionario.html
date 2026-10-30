@@ -45,10 +45,10 @@ async function carregar() {
     const proprio = d.respondente === "proprio";
     $("principal").innerHTML =
       '<div class="cartao"><h2 style="margin-top:0">' + (proprio ? "Olá, " + esc(d.nome) + "!" : "Sobre " + esc(d.nome)) + "</h2><p>Este questionário foi pedido pelo(a) profissional <b>" + esc(d.profissional) + "</b>. " +
-      (proprio ? esc(I.intro) : "Pense no comportamento de " + esc(d.nome) + " <b>nos últimos 6 meses</b> e marque o quanto cada frase descreve " + (d.respondente === "professor" ? "o que você observa na escola" : "o que você observa em casa") + ".") + " Não há resposta certa ou errada.</p>" +
+      (proprio || I !== Q.INSTRUMENTOS.snap ? esc(I.intro) : "Pense no comportamento de " + esc(d.nome) + " <b>nos últimos 6 meses</b> e marque o quanto cada frase descreve " + (d.respondente === "professor" ? "o que você observa na escola" : "o que você observa em casa") + ".") + " Não há resposta certa ou errada.</p>" +
       '' + (proprio ? '<input id="q-nome" type="hidden" value="">' : '<label class="campo">Seu nome (opcional)<input id="q-nome" maxlength="80"></label>') + '<p style="font-size:13px;color:#6b7b90">As respostas vão só para o profissional que pediu e ficam guardadas com segurança (LGPD).</p></div>' +
       '<div class="barra"><div><span id="q-prog"></span></div></div>' +
-      I.itens.map((txt, i) => '<div class="cartao item"><small>' + (i + 1) + " de " + I.itens.length + "</small><p>" + esc(txt) + '</p><div class="escala" style="grid-template-columns:repeat(' + I.opcoes.length + ',1fr)">' + I.opcoes.map((o, k) => '<button type="button" data-i="' + i + '" data-v="' + k + '">' + o + "</button>").join("") + "</div></div>").join("") +
+      I.itens.map((txt, i) => '<div class="cartao item"><small>' + (i + 1) + " de " + I.itens.length + "</small><p>" + esc(txt) + '</p><div class="escala" style="grid-template-columns:repeat(' + Q.opcoesDoItem(I, i).length + ',1fr)">' + Q.opcoesDoItem(I, i).map((o, k) => '<button type="button" data-i="' + i + '" data-v="' + k + '">' + o + "</button>").join("") + "</div></div>").join("") +
       '<p class="erro" id="q-erro"></p><button class="enviar" id="q-enviar" disabled>Enviar respostas</button>';
     document.querySelectorAll("[data-i]").forEach((b) => b.addEventListener("click", () => {
       const i = Number(b.dataset.i); resp[i] = Number(b.dataset.v);

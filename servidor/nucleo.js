@@ -274,7 +274,7 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
       if (caminho === '/api/adaptativa' && req.method === 'GET') {
         const lista = await armazem.sessoes(conta.papel === 'admin' ? null : userId, url.searchParams.get('participante') || null);
         return json(200, { sessoes: lista.map((r) => ({ id: r.id, participantId: r.participante, status: r.status, criadoEm: r.dados.criadoEm, atualizadoEm: r.dados.atualizadoEm, dominios: r.dados.dominios,
-          qiEstimado: r.dados.resultadoFinal ? r.dados.resultadoFinal.qiEstimado : null, areas: r.dados.resultadoFinal ? r.dados.resultadoFinal.areas.map((a) => ({ id: a.id, indice: a.indice })) : null, parecer: r.dados.parecer || null })) });
+          modo: r.dados.modo || 'avaliacao', qiEstimado: r.dados.resultadoFinal ? r.dados.resultadoFinal.qiEstimado : null, areas: r.dados.resultadoFinal ? r.dados.resultadoFinal.areas.map((a) => ({ id: a.id, indice: a.indice, nivel: a.nivel })) : null, parecer: r.dados.parecer || null })) });
       }
       if (caminho === '/api/adaptativa' && req.method === 'POST') {
         const b = await corpo(req) || {}, part = await armazem.participante(String(b.participantId || ''));
@@ -285,9 +285,11 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
         if (idade == null || idade < 4) return erro(400, 'A aplicação adaptativa está preparada a partir de 4 anos.');
         const maxItens = Math.max(6, Math.min(16, Number(b.maxItens) || 10));
         // formas paralelas: tarefas que o paciente já viu em avaliações anteriores não se repetem
-        const evitar = []; (await armazem.sessoes(null, part.id)).forEach((r) => (r.dados.historico || []).forEach((h) => { if (h.chave) evitar.push(h.chave); }));
+        const evitar = [], anteriores = await armazem.sessoes(null, part.id); anteriores.forEach((r) => (r.dados.historico || []).forEach((h) => { if (h.chave) evitar.push(h.chave); }));
+        // estimulação em casa (jogos com retorno, sem QI) e avaliação rápida (menos tarefas por área)
+        const modo = b.modo === 'estimulacao' ? 'estimulacao' : 'avaliacao', inicios = modo === 'estimulacao' ? G.iniciosEstimulacao(anteriores.map((r) => r.dados)) : {};
         const s = G.criar({ evitar, id: uuid(), token: base64url(rnd(24)), participantId: part.id, owner: part.dono, avaliador: conta.nome, idadeAnos: idade,
-          nomeChamado: String(p.preferredName || p.name || '').split(' ')[0], leitor: b.leitor === undefined ? idade >= 8 : !!b.leitor, dominios: doms, maxItens });
+          nomeChamado: String(p.preferredName || p.name || '').split(' ')[0], leitor: b.leitor === undefined ? idade >= 8 : !!b.leitor, dominios: doms, maxItens, curta: !!b.curta, modo, inicios });
         await armazem.criarSessao({ id: s.id, participante: part.id, dono: part.dono, token: s.token, status: s.status, dados: s });
         return json(201, paraAvaliador(s));
       }

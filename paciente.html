@@ -78,6 +78,27 @@ button{font:inherit;cursor:pointer;border:0}
 .pronto{background:linear-gradient(135deg,#18b7a4,#2f6fe4);color:#fff;font-weight:800;font-size:22px;padding:14px 40px;border-radius:999px;box-shadow:0 10px 24px #2f6fe455}
 .hidden{display:none!important}
 .codigo{font-size:clamp(54px,11vw,96px);font-weight:900;letter-spacing:.12em;color:#0f2742;background:#fff;border-radius:24px;padding:10px 30px;box-shadow:var(--sombra);display:inline-block;margin:6px 0 18px;font-variant-numeric:tabular-nums}
+/* ampliação (30/10/2026): falar, ler, desenhar, escrever, toque rápido, reação */
+.falar{background:#fff;border-radius:30px;box-shadow:var(--sombra);padding:24px 36px;text-align:center;max-width:min(94vw,900px)}
+.falar .icone{font-size:clamp(80px,14vw,140px);line-height:1}.falar .rotulo{font-size:clamp(24px,4vw,40px);font-weight:900;color:#0f2742;margin-top:8px}
+.relogio-barra{width:min(80vw,600px);height:16px;border-radius:99px;background:#e3ebf5;overflow:hidden}.relogio-barra span{display:block;height:100%;background:linear-gradient(90deg,#18b7a4,#2f6fe4);width:100%;transition:width 1s linear}
+.espera{text-align:center}.espera .aviso{margin-top:10px}
+.textoler{background:#fff;border-radius:22px;box-shadow:var(--sombra);padding:22px 30px;font-size:clamp(20px,2.7vw,30px);line-height:1.6;max-width:min(94vw,980px);max-height:62vh;overflow:auto;user-select:text}
+.apoio{background:#fff;border-radius:16px;padding:12px 18px;font-size:clamp(14px,1.7vw,18px);line-height:1.5;max-width:min(94vw,980px);max-height:26vh;overflow:auto;color:#334}
+.enunciado{font-size:clamp(22px,3.2vw,36px);font-weight:800;text-align:center;max-width:min(94vw,980px);color:#0f2742}
+.opcoes.textos{flex-direction:column;align-items:stretch;width:min(94vw,760px)}
+.opcao-texto{background:#fff;border-radius:18px;box-shadow:var(--sombra);padding:16px 22px;font-size:clamp(18px,2.4vw,26px);font-weight:700;color:#0f2742;text-align:left}
+.opcao-texto.marcada{box-shadow:0 0 0 5px var(--azul),var(--sombra)}.opcao-texto.certa{box-shadow:0 0 0 6px var(--verde),var(--sombra)}
+.desenho-area{display:flex;gap:16px;align-items:center;justify-content:center;flex-wrap:wrap}
+.desenho-modelo{width:clamp(150px,22vw,260px);aspect-ratio:1;background:#fff;border-radius:18px;box-shadow:0 0 0 3px #1f9d6b,var(--sombra);padding:10px}.desenho-modelo svg{width:100%;height:100%}
+.quadro{background:#fff;border-radius:18px;box-shadow:var(--sombra);touch-action:none;display:block;width:min(92vw,620px);height:min(52vh,460px)}
+.acoes{display:flex;gap:14px;justify-content:center}.limpar{background:#fff;color:#5d6f86;font-weight:800;font-size:18px;padding:12px 26px;border-radius:999px;box-shadow:var(--sombra)}
+.escrito{min-height:64px;min-width:min(80vw,420px);background:#fff;border-radius:16px;box-shadow:var(--sombra);font-size:clamp(30px,5vw,46px);font-weight:800;letter-spacing:.08em;text-align:center;padding:8px 18px;color:#0f2742}
+.letras{display:grid;grid-template-columns:repeat(10,clamp(32px,8vw,64px));gap:6px;justify-content:center}
+.letras button{height:clamp(44px,7vh,62px);border-radius:12px;background:#fff;box-shadow:0 3px 8px #1d3b6a1a;font-size:clamp(18px,3vw,26px);font-weight:800;color:#0f2742}
+.letras button.larga{grid-column:span 2;font-size:16px}.letras button.ok{background:linear-gradient(135deg,#18b7a4,#2f6fe4);color:#fff}
+.alvo-toque{width:min(60vw,360px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 30%,#7fd3ff,#2f6fe4);box-shadow:0 18px 40px #2f6fe466;color:#fff;font-size:44px;font-weight:900}
+.alvo-toque.parado{background:#d6e1ee;box-shadow:none;color:#5d6f86}
 @media (prefers-reduced-motion:reduce){.opcao,.corsi button{transition:none}}
 </style>
 </head>
@@ -103,7 +124,7 @@ let TOKEN = (new URLSearchParams(location.search).get("t") || "").replace(/[^A-Z
 const API = (window.NT_CONFIG && window.NT_CONFIG.FUNCOES) || "";
 // Modo tablet: na nuvem e sem endereço de sessão, o tablet mostra um código e espera o avaliador mandar o teste.
 const ESTACAO = !TOKEN && !!API;
-const ICONE = { gf: "🧩", gwm: "💡", gv: "🔷", gs: "⚡", gc: "🗣️", gq: "🔢", at: "🐟", fx: "🃏" };
+const ICONE = { gf: "🧩", gwm: "💡", gv: "🔷", gs: "⚡", gc: "🗣️", gq: "🔢", at: "🐟", fx: "🃏", mp: "👂", fv: "🗣️", lx: "📖", dt: "✏️", mt: "➗", cs: "💭", dc: "✍️", rl: "🕙", tp: "👆", tr: "⏱️", or: "🗓️" };
 const $ = (id) => document.getElementById(id);
 let ultimaFala = "", estado = null, versaoMostrada = 0, itemAtual = null, inicio = 0, enviando = false, falarVisto = 0, comecou = false, areaMostrada = 0, timerLimite = null, voz = null, segurar = false, terminou = false, vigia = null;
 
@@ -190,10 +211,15 @@ function botoes(item, classe) {
   return '<div class="opcoes ' + (classe || "") + '"' + (item.layout === "busca" ? ' style="--col:' + Math.ceil(Math.sqrt(item.opcoes.length)) + '"' : "") + ">" +
     item.opcoes.map((o) => '<button type="button" class="opcao" data-op="' + o.id + '" aria-label="Opção ' + o.id + '">' + M.svg(o.fig) + "</button>").join("") + "</div>";
 }
+const ESPERA = '<div class="espera"><div class="grande">⭐</div><div class="aviso">Muito bem! Espere um pouquinho…</div></div>';
 function desenhar(item) {
-  itemAtual = item; enviando = false; clearTimeout(timerLimite);
+  itemAtual = item; enviando = false; clearTimeout(timerLimite); clearInterval(timerContagem);
+  // tarefa pontuada pelo avaliador e já entregue (desenho, leitura, minuto): só espera
+  if (item.entregue) { $("palco").innerHTML = ESPERA; return; }
+  if (NOVOS[item.layout]) { NOVOS[item.layout](item); return; }
   const texto = estado.leitor && item.dominio !== "gc" ? item.fala : "";
   let h = '<div class="instrucao">' + (texto ? escapar(texto) : "") + "</div>";
+  if (item.enunciado && item.layout === "figuras" && estado.leitor) h = '<div class="enunciado">' + escapar(item.enunciado) + "</div>";
   if (item.layout === "fileira") h += '<div class="estimulo">' + item.estimulo.map((f) => casa(f)).join("") + "</div>" + botoes(item);
   else if (item.layout === "matriz2" || item.layout === "matriz3") h += '<div class="matriz ' + (item.layout === "matriz2" ? "m2" : "m3") + '">' + item.estimulo.map((f) => casa(f)).join("") + "</div>" + botoes(item);
   else if (item.layout === "modelo" || item.layout === "busca") h += '<div class="modelo">' + M.svg(item.estimulo[0]) + "</div>" + botoes(item, item.layout === "busca" ? "busca" : "");
@@ -249,7 +275,7 @@ function mostrarGonogo(item) {
     inicio = performance.now();
     b.addEventListener("pointerdown", () => { if (!enviando) responder("toque"); }, { once: true });
     timerLimite = setTimeout(() => responder(null), item.limiteMs);
-  }, item.treino ? 2200 : 450);
+  }, (item.treino ? 2200 : 0) + (item.atrasoMs || 450));
 }
 const NOMES_NUM = ["zero", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove"];
 function tocarDigitos(item) {
@@ -322,6 +348,104 @@ function mostrarReconhecer(item) {
     caixa.innerHTML = ""; falar("Agora toque nas figuras que você viu."); grade();
   }, 2600);
 }
+// ------------------------------------------------------------ tarefas da ampliação (30/10/2026)
+let timerContagem = null;
+function entregar(entrega) {
+  // tarefas que o avaliador pontua: avisa que terminou (desenho, tempo de leitura, fim do minuto)
+  if (enviando || !itemAtual) return; enviando = true;
+  const item = itemAtual;
+  fetch(API + "/api/p/" + TOKEN + "/resposta", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ itemId: item.id, entrega }) })
+    .then((r) => r.json().catch(() => ({}))).then(() => { if (itemAtual === item) $("palco").innerHTML = ESPERA; })
+    .catch(() => { enviando = false; mostrarRetorno("Sem conexão… tentando de novo", false); setTimeout(() => entregar(entrega), 1500); });
+}
+function contagem(ms, fim) {
+  const barra = document.querySelector(".relogio-barra span"), t0 = Date.now();
+  timerContagem = setInterval(() => { const f = Math.max(0, 1 - (Date.now() - t0) / ms); if (barra) barra.style.width = (f * 100) + "%"; if (f <= 0) { clearInterval(timerContagem); fim(); } }, 250);
+}
+const NOVOS = {
+  // ouvir a lista de palavras (o tablet fala uma por uma) e depois dizer as que lembra
+  lista(item) {
+    $("palco").innerHTML = '<div class="falar"><div class="icone">👂</div><div class="rotulo" id="lista-aviso">Escute com atenção</div></div>';
+    falar(item.fala); ultimaFala = item.fala;
+    let i = 0;
+    setTimeout(function prox() {
+      if (itemAtual !== item) return;
+      if (i < item.lista.length) { falar(item.lista[i]); $("lista-aviso").textContent = "🔊 " + "•".repeat(i + 1); i++; setTimeout(prox, 1700); return; }
+      $("palco").innerHTML = '<div class="falar"><div class="icone">🗣️</div><div class="rotulo">Agora diga as palavras que você lembra!</div></div>';
+      falar("Agora diga as palavras que você lembra!");
+    }, item.ensaio === 1 ? 9500 : 6000);
+  },
+  // falar em voz alta (fluência em 1 minuto, orientação, lembrar no fim): o avaliador anota
+  falar(item) {
+    $("palco").innerHTML = '<div class="falar"><div class="icone">' + escapar(item.icone || "🗣️") + '</div><div class="rotulo">' + escapar(item.rotulo || "") + "</div></div>" + (item.duracaoMs ? '<div class="relogio-barra"><span></span></div>' : "");
+    falar(item.fala); ultimaFala = item.fala;
+    if (item.duracaoMs) {
+      // transcrição automática (só onde o navegador oferece); o avaliador continua sendo quem conta
+      let ouvido = "", rec = null;
+      try { const R = window.SpeechRecognition || window.webkitSpeechRecognition; if (R) { rec = new R(); rec.lang = "pt-BR"; rec.continuous = true; rec.interimResults = false; rec.onresult = (ev) => { for (let k = ev.resultIndex; k < ev.results.length; k++) if (ev.results[k].isFinal) ouvido += " " + ev.results[k][0].transcript; }; } } catch (e) { rec = null; }
+      setTimeout(() => { if (itemAtual !== item) return; try { rec && rec.start(); } catch (e) { /* sem microfone */ }
+        contagem(item.duracaoMs, () => { try { rec && rec.stop(); } catch (e) { /* nada */ } falar("Tempo! Muito bem."); setTimeout(() => entregar({ transcricao: ouvido.trim() }), 900); }); }, 9000);
+    }
+  },
+  // ler o texto em voz alta e tocar em Terminei (o tempo vale para palavras por minuto)
+  texto(item) {
+    $("palco").innerHTML = '<div class="instrucao">' + (estado.leitor ? escapar(item.fala) : "") + '</div><div class="textoler">' + escapar(item.texto) + '</div><button type="button" class="pronto" id="ler-fim">Terminei ✔</button>';
+    falar(item.fala); ultimaFala = item.fala;
+    const t0 = performance.now(); $("ler-fim").addEventListener("click", () => entregar({ tempoMs: Math.round(performance.now() - t0) }));
+  },
+  // perguntas e contas com respostas escritas
+  textos(item) {
+    let h = "";
+    if (item.textoApoio) h += '<div class="apoio">' + escapar(item.textoApoio) + "</div>";
+    h += '<div class="enunciado">' + (item.numerico || estado.leitor ? escapar(item.enunciado || "") : '<button class="ouvir grande" type="button" data-ouvir>🔊 Escute a história</button>') + "</div>";
+    h += '<div class="opcoes textos">' + item.opcoes.map((o) => '<button type="button" class="opcao-texto" data-op="' + o.id + '">' + escapar(o.fig.texto) + "</button>").join("") + "</div>";
+    $("palco").innerHTML = h; falar(item.fala); ultimaFala = item.fala; inicio = performance.now();
+  },
+  // desenhar no tablet (cópia de figura ou relógio)
+  desenho(item) {
+    $("palco").innerHTML = '<div class="instrucao">' + (estado.leitor ? escapar(item.fala) : "") + '</div><div class="desenho-area">' + (item.modelo != null ? '<div class="desenho-modelo">' + M.svg({ modelo: item.modelo }) + "</div>" : "") +
+      '<canvas class="quadro" id="quadro"></canvas></div><div class="acoes"><button type="button" class="limpar" id="q-limpar">Apagar tudo</button><button type="button" class="pronto" id="q-pronto">Pronto ✔</button></div>';
+    falar(item.fala); ultimaFala = item.fala;
+    const cv = $("quadro"), ctx = cv.getContext("2d"); let riscando = false, ult = null, riscos = 0;
+    function ajustar() { const r = cv.getBoundingClientRect(); cv.width = Math.round(r.width); cv.height = Math.round(r.height); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height); ctx.lineWidth = 3.5; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#172438"; riscos = 0; }
+    setTimeout(ajustar, 30);
+    const pt = (ev) => { const r = cv.getBoundingClientRect(); return { x: (ev.clientX - r.left) * cv.width / r.width, y: (ev.clientY - r.top) * cv.height / r.height }; };
+    cv.addEventListener("pointerdown", (ev) => { riscando = true; ult = pt(ev); try { cv.setPointerCapture(ev.pointerId); } catch (e) { /* nada */ } ev.preventDefault(); });
+    cv.addEventListener("pointermove", (ev) => { if (!riscando) return; const p = pt(ev); ctx.beginPath(); ctx.moveTo(ult.x, ult.y); ctx.lineTo(p.x, p.y); ctx.stroke(); ult = p; riscos++; });
+    ["pointerup", "pointercancel"].forEach((n) => cv.addEventListener(n, () => { riscando = false; }));
+    $("q-limpar").addEventListener("click", ajustar);
+    $("q-pronto").addEventListener("click", () => { if (riscos < 5 && !confirm("O quadro está quase vazio. Terminar mesmo assim?")) return; entregar({ desenho: cv.toDataURL("image/jpeg", 0.7) }); });
+  },
+  // ditado: ouvir e escrever no teclado da tela (sem corretor automático)
+  teclado(item) {
+    const L = "qwertyuiopasdfghjklçzxcvbnm".split(""), A = ["á", "à", "â", "ã", "é", "ê", "í", "ó", "ô", "õ", "ú", "-"];
+    $("palco").innerHTML = '<button class="ouvir grande" type="button" data-ouvir>🔊 Escute de novo</button><div class="escrito" id="escrito"></div><div class="letras" id="letras">' +
+      L.concat(A).map((c) => '<button type="button" data-l="' + c + '">' + c + "</button>").join("") + '<button type="button" class="larga" data-l="⌫">⌫ Apagar</button><button type="button" class="larga ok" data-l="ok">Pronto ✔</button></div>';
+    falar(item.fala); ultimaFala = item.fala; inicio = performance.now();
+    let txt = "";
+    $("letras").addEventListener("click", (ev) => { const b = ev.target.closest("[data-l]"); if (!b || enviando) return; const c = b.dataset.l;
+      if (c === "⌫") txt = txt.slice(0, -1); else if (c === "ok") { if (txt) responder(txt); return; } else if (txt.length < 30) txt += c;
+      $("escrito").textContent = txt; });
+  },
+  // toque rápido por 10 segundos
+  tapping(item) {
+    $("palco").innerHTML = '<div class="instrucao">' + (estado.leitor ? escapar(item.fala) : "") + '</div><button type="button" class="alvo-toque parado" id="alvo">Prepare…</button><div class="relogio-barra"><span></span></div>';
+    falar(item.fala); ultimaFala = item.fala;
+    let toques = 0, valendo = false; const alvo = $("alvo");
+    alvo.addEventListener("pointerdown", (ev) => { ev.preventDefault(); if (valendo) { toques++; alvo.textContent = toques; } });
+    setTimeout(() => { if (itemAtual !== item) return; let n = 3; alvo.textContent = n;
+      const t = setInterval(() => { n--; if (n > 0) { alvo.textContent = n; return; } clearInterval(t); alvo.classList.remove("parado"); alvo.textContent = "Já!"; valendo = true; inicio = performance.now();
+        contagem(item.duracaoMs, () => { valendo = false; alvo.classList.add("parado"); alvo.textContent = "Pronto!"; responder({ toques }); }); }, 800); }, 6500);
+  },
+  // tempo de reação de escolha: aparece a seta e toca do mesmo lado
+  reacao2(item) {
+    $("palco").innerHTML = '<div class="instrucao"></div><div class="mostrar" id="seta"></div>' + botoes(item, "duas");
+    if (item.fala !== ultimaFala || item.treino) falar(item.fala); ultimaFala = item.fala;
+    document.querySelectorAll(".opcoes [data-op]").forEach((b) => { b.style.visibility = "hidden"; });
+    setTimeout(() => { if (itemAtual !== item) return; $("seta").innerHTML = M.svg(item.estimulo[0]); document.querySelectorAll(".opcoes [data-op]").forEach((b) => { b.style.visibility = "visible"; });
+      inicio = performance.now(); timerLimite = setTimeout(() => responder(null), item.limiteMs); }, (item.treino ? 2500 : 0) + (item.atrasoMs || 800));
+  }
+};
 function escapar(t) { return String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
 async function responder(resposta) {
@@ -331,8 +455,9 @@ async function responder(resposta) {
     const r = await fetch(API + "/api/p/" + TOKEN + "/resposta", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ itemId: item.id, resposta, tempoMs }) });
     const s = await r.json();
     if (!r.ok) { enviando = false; buscar(); return; }
-    if (item.treino && s.retorno) {
+    if (s.retorno && (item.treino || estado.modo === "estimulacao")) {
       const certa = document.querySelector('[data-op="' + s.retorno.certo + '"]'); if (certa) certa.classList.add("certa");
+      if (!item.treino) { mostrarRetorno(s.retorno.correto ? "✔ Isso!" : "Era esta 👆", s.retorno.correto); segurar = true; setTimeout(() => { segurar = false; aplicar(s); }, 1100); return; }
       mostrarRetorno(s.retorno.correto ? "✔ Isso mesmo!" : "Olha: era esta 👆", s.retorno.correto);
       falar(s.retorno.correto ? "Isso mesmo! Agora vamos de verdade." : "Quase! Agora vamos de verdade.");
       segurar = true; setTimeout(() => { segurar = false; aplicar(s); }, 1800);
