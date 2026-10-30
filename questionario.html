@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f2742">
+<title>NeuroTrilha — Questionário</title>
+<link rel="icon" href="data:,">
+<style>
+*{box-sizing:border-box}body{margin:0;font:17px/1.45 "Segoe UI",Roboto,Arial,sans-serif;color:#172438;background:linear-gradient(160deg,#eaf4ff,#fdf3ff);min-height:100vh}
+.topo{background:linear-gradient(90deg,#0f2742,#163a60);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px}
+.topo i{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,#18b7a4,#3179ed);display:grid;place-items:center;font-style:normal;font-weight:900}
+main{max-width:760px;margin:auto;padding:16px}
+.cartao{background:#fff;border-radius:18px;box-shadow:0 8px 24px #1d3b6a14;padding:16px;margin-bottom:12px}
+.item p{margin:0 0 10px;font-weight:650}.item small{color:#6b7b90;font-weight:700}
+.escala{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.escala button{border:1px solid #d6e1ee;background:#f7faff;border-radius:12px;padding:10px 4px;font:inherit;font-size:13px;font-weight:700;color:#24558e;cursor:pointer}
+.escala button.on{background:#2f6fe4;color:#fff;border-color:#2f6fe4}
+.barra{position:sticky;top:0;background:#fffffff0;padding:10px 0;z-index:3}.barra div{height:8px;border-radius:99px;background:#e3ebf5;overflow:hidden}.barra span{display:block;height:100%;background:linear-gradient(90deg,#18b7a4,#2f6fe4);width:0}
+.enviar{width:100%;border:0;border-radius:999px;padding:16px;font:inherit;font-weight:800;font-size:19px;color:#fff;background:linear-gradient(135deg,#18b7a4,#2f6fe4)}
+.enviar:disabled{opacity:.5}.erro{color:#b42318;font-weight:700}.ok{text-align:center;padding:40px 16px}.ok div{font-size:64px}
+label.campo{display:block;margin:10px 0}label.campo input{width:100%;padding:11px;border:1px solid #cbd6e3;border-radius:10px;font:inherit}
+@media(max-width:480px){.escala{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="topo"><i>N</i><div><b>NeuroTrilha</b><br><small>Questionário de comportamento</small></div></div>
+<main id="principal"><div class="cartao">Carregando…</div></main>
+<script src="config.js"></script>
+<script src="questionario.js"></script>
+<script>
+"use strict";
+const Q = window.NeuroTrilhaQuestionario;
+const API = (window.NT_CONFIG && window.NT_CONFIG.FUNCOES) || "";
+const TOKEN = (new URLSearchParams(location.search).get("q") || "").replace(/[^A-Za-z0-9_-]/g, "");
+const $ = (id) => document.getElementById(id);
+const resp = new Array(Q.ITENS.length).fill(null);
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+async function carregar() {
+  try {
+    const r = await fetch(API + "/api/q/" + TOKEN, { cache: "no-store" }), d = await r.json();
+    if (!r.ok) throw new Error(d.error || "Link inválido.");
+    if (d.respondido) { $("principal").innerHTML = '<div class="cartao ok"><div>✅</div><h2>Questionário já respondido</h2><p>Obrigado! As respostas já foram enviadas ao profissional.</p></div>'; return; }
+    $("principal").innerHTML =
+      '<div class="cartao"><h2 style="margin-top:0">Sobre ' + esc(d.nome) + "</h2><p>Este questionário foi pedido pelo(a) profissional <b>" + esc(d.profissional) + "</b>. " +
+      "Pense no comportamento de " + esc(d.nome) + " <b>nos últimos 6 meses</b> e marque o quanto cada frase descreve " + (d.respondente === "professor" ? "o que você observa na escola" : "o que você observa em casa") + ". Não há resposta certa ou errada.</p>" +
+      '<label class="campo">Seu nome (opcional)<input id="q-nome" maxlength="80"></label><p style="font-size:13px;color:#6b7b90">As respostas vão só para o profissional que pediu e ficam guardadas com segurança (LGPD).</p></div>' +
+      '<div class="barra"><div><span id="q-prog"></span></div></div>' +
+      Q.ITENS.map((txt, i) => '<div class="cartao item"><small>' + (i + 1) + " de " + Q.ITENS.length + "</small><p>" + esc(txt) + '</p><div class="escala">' + Q.OPCOES.map((o, k) => '<button type="button" data-i="' + i + '" data-v="' + k + '">' + o + "</button>").join("") + "</div></div>").join("") +
+      '<p class="erro" id="q-erro"></p><button class="enviar" id="q-enviar" disabled>Enviar respostas</button>';
+    document.querySelectorAll("[data-i]").forEach((b) => b.addEventListener("click", () => {
+      const i = Number(b.dataset.i); resp[i] = Number(b.dataset.v);
+      document.querySelectorAll('[data-i="' + i + '"]').forEach((x) => x.classList.toggle("on", x === b));
+      const feitos = resp.filter((x) => x !== null).length; $("q-prog").style.width = (100 * feitos / resp.length) + "%"; $("q-enviar").disabled = feitos < resp.length;
+    }));
+    $("q-enviar").addEventListener("click", enviar);
+  } catch (e) { $("principal").innerHTML = '<div class="cartao"><h2>Não foi possível abrir</h2><p class="erro">' + esc(e.message) + "</p><p>Peça um link novo ao profissional.</p></div>"; }
+}
+async function enviar() {
+  $("q-enviar").disabled = true; $("q-erro").textContent = "";
+  try {
+    const r = await fetch(API + "/api/q/" + TOKEN, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ respostas: resp, nome: $("q-nome").value.trim() }) });
+    const d = await r.json(); if (!r.ok) throw new Error(d.error || "Falha ao enviar.");
+    $("principal").innerHTML = '<div class="cartao ok"><div>💙</div><h2>Obrigado!</h2><p>As respostas foram enviadas ao profissional. Pode fechar esta página.</p></div>'; window.scrollTo(0, 0);
+  } catch (e) { $("q-erro").textContent = e.message; $("q-enviar").disabled = false; }
+}
+if (TOKEN) carregar(); else $("principal").innerHTML = '<div class="cartao"><h2>Link incompleto</h2><p>Peça o link ao profissional.</p></div>';
+</script>
+</body>
+</html>

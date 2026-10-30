@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f2742">
+<meta name="robots" content="noindex, nofollow">
+<title>NeuroTrilha — Avaliador</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="estilo.css">
+<style>
+/* NeuroTrilha pela internet — tela do avaliador (feita para o celular, funciona também no computador) */
+body{background:radial-gradient(900px 400px at 100% -10%,#e5f1ff 0,transparent 60%),#f2f6fb}
+.nt-topo{position:sticky;top:0;z-index:20;background:linear-gradient(90deg,#0f2742,#163a60);color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.nt-marca{display:flex;align-items:center;gap:9px;font-weight:800;font-size:17px;margin-right:auto}.nt-marca small{display:block;font-size:10px;font-weight:600;color:#9fc2e6;letter-spacing:.6px}
+.nt-marca i{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,#18b7a4,#3179ed);display:grid;place-items:center;font-style:normal;font-weight:900}
+.nt-menu{display:flex;gap:6px;overflow-x:auto;width:100%;order:3;scrollbar-width:none}.nt-menu::-webkit-scrollbar{display:none}
+.nt-menu button{flex:none;background:#ffffff14;color:#d8e6f5;border:1px solid #ffffff22;border-radius:99px;padding:8px 14px;font-weight:700}
+.nt-menu button.active{background:#fff;color:#0f2742}
+.nt-quem{font-size:12px;color:#c4d6ea;text-align:right}.nt-quem button{margin-left:6px;background:#ffffff1a;color:#fff;padding:6px 10px;border-radius:9px}
+.nt-conteudo{max-width:1200px;margin:auto;padding:14px}
+.nt-titulo{margin:4px 0 14px}.nt-titulo h1{font-size:21px;margin:0}.nt-titulo p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.nt-aviso{background:#fff5dc;border-left:4px solid #e0ad45;border-radius:0 10px 10px 0;padding:10px 12px;font-size:13px;color:#76551c;margin-bottom:12px}
+.nt-cartoes{display:grid;gap:10px}.nt-cartao{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px}
+.nt-cartao .nt-av{width:44px;height:44px;border-radius:13px;background:#eaf2ff;display:grid;place-items:center;font-weight:800;color:#24558e;flex:none}
+.nt-cartao div{flex:1;min-width:0}.nt-cartao b{display:block}.nt-cartao small{color:var(--muted)}
+.nt-form{display:grid;gap:10px}.nt-form label{font-size:12px;font-weight:700;display:block;margin-bottom:4px}
+.nt-form input,.nt-form select,.nt-form textarea{width:100%;padding:11px;border:1px solid #cbd6e3;border-radius:10px;font-size:15px;background:#fff}
+.nt-dois{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.nt-check{display:flex;gap:10px;align-items:flex-start;font-size:13px}.nt-check input{width:auto;margin-top:3px}
+#ad-parear{background:#eef6ff;border:1px solid #cfe1fb;border-radius:14px;padding:12px;margin:0 0 12px}
+#ad-parear .ad-linkrow input{font-size:22px;letter-spacing:.15em;text-align:center;max-width:220px;font-weight:800}
+#ad-parear b{display:block;margin-bottom:6px}
+.view{display:none}.view.active{display:block}
+/* no celular nada pode passar da largura da tela: tabelas rolam dentro do próprio quadro */
+.ad-vivo>.panel,.ad-prep>.panel{min-width:0}#ad-areas,.tablewrap{overflow-x:auto;max-width:100%}
+html,body{max-width:100%;overflow-x:hidden}
+@media(max-width:600px){.nt-dois{grid-template-columns:1fr}.ad-controles button{flex:1 1 45%}.ad-qi b{font-size:38px}}
+</style>
+</head>
+<body>
+<section class="auth-gate" id="nt-entrar">
+ <form class="auth-card" id="nt-form-entrar" autocomplete="on">
+  <div class="auth-mark">N</div><h2>NeuroTrilha</h2>
+  <p>Área do avaliador. Entre com o usuário e a senha que a RMD criou para você.</p>
+  <label class="auth-field"><span>Usuário</span><input id="nt-usuario" autocomplete="username" required autocapitalize="none" spellcheck="false"></label>
+  <label class="auth-field"><span>Senha</span><input id="nt-senha" type="password" autocomplete="current-password" required></label>
+  <div class="auth-error" id="nt-erro-entrar" role="alert"></div>
+  <button class="primary" type="submit" id="nt-botao-entrar">Entrar</button>
+  <div class="auth-safe">Desenvolvido por RMD. Os dados dos pacientes ficam protegidos: cada profissional vê só os próprios.</div>
+ </form>
+</section>
+
+<div id="nt-app" class="hidden">
+ <header class="nt-topo">
+  <div class="nt-marca"><i>N</i><div>NeuroTrilha<small>AVALIADOR · por RMD</small></div></div>
+  <div class="nt-quem"><span id="nt-nome"></span><button type="button" id="nt-sair">Sair</button></div>
+  <nav class="nt-menu"><button data-view="adaptive">◈ Avaliar</button><button data-view="pacientes">♙ Pacientes</button><button data-view="conta">⚙ Conta</button></nav>
+ </header>
+ <main class="nt-conteudo">
+  <div class="nt-aviso hidden" id="nt-aviso-senha">Você está com a senha de teste. Antes de atender pacientes reais, troque a senha em <b>Conta</b>.</div>
+
+<section class="view" id="view-adaptive">
+ <div id="ad-setup">
+  <div class="heading"><div><h2>Aplicação adaptativa</h2><p>Todas as áreas começam no mais fácil, seja qual for a idade. A dificuldade sobe ou desce sozinha conforme a resposta e o tempo — e você acompanha e controla tudo ao vivo.</p></div></div>
+  <div class="grid ad-prep">
+   <div class="panel">
+    <h3>1. Quem vai fazer</h3>
+    <div class="field"><label for="ad-participante">Ficha do participante</label><select id="ad-participante"></select></div>
+    <p class="small muted" id="ad-dica"></p>
+    <div class="formgrid">
+     <div class="field"><label for="ad-leitor">Instruções escritas</label><select id="ad-leitor"><option value="auto">Automático pela idade (8 anos ou mais)</option><option value="nao">Não — só falar e mostrar figuras</option><option value="sim">Sim — escrever e falar</option></select></div>
+     <div class="field"><label for="ad-itens">Tarefas por área (no máximo)</label><select id="ad-itens"><option value="8">8 (mais curto)</option><option value="10" selected>10 (recomendado)</option><option value="12">12</option><option value="14">14 (mais preciso)</option></select></div>
+    </div>
+    <div class="ad-passos"><div><b>Treino</b>A 1ª tarefa de cada área é um treino com retorno.</div><div><b>Escada</b>Acertou rápido: sobe. Acertou devagar: fica. Errou: desce.</div><div><b>Ao vivo</b>Você vê a tela, a resposta certa e as estimativas.</div></div>
+   </div>
+   <div class="panel">
+    <h3>2. Áreas (modelo CHC)</h3>
+    <div id="ad-dominios" class="ad-doms"></div>
+   </div>
+  </div>
+  <div class="row" style="margin:14px 0 22px"><div id="ad-erro" class="small" style="color:#b42318"></div><button class="primary ad-grande" id="ad-iniciar">◈ Preparar sessão</button></div>
+ </div>
+ <div class="panel" id="ad-lista-painel"><h3>Aplicações adaptativas</h3><div id="ad-lista"><div class="small muted">Carregando…</div></div></div>
+
+ <div id="ad-aovivo" class="hidden">
+  <div class="heading"><div><h2 id="ad-av-nome">Participante</h2><p id="ad-av-sub"></p></div><div class="actions"><span id="ad-av-status" class="pill"></span><button class="quiet" id="ad-voltar">← Voltar</button><button class="primary hidden" id="ad-ver-relatorio">Ver relatório completo</button></div></div>
+  <div id="ad-parear" class="hidden"><b>📲 Enviar para o tablet</b><div class="ad-linkrow"><input id="ad-codigo" inputmode="numeric" maxlength="7" placeholder="000 000" aria-label="Código do tablet"><button class="primary" id="ad-enviar" type="button">Enviar para o tablet</button></div><p class="small" id="ad-parear-status" role="status"></p></div>
+  <div class="panel ad-paciente">
+   <div><b>Tela do paciente</b><p class="small muted" id="ad-rede"></p></div>
+   <div class="ad-linkrow"><input id="ad-link" readonly aria-label="Endereço da tela do paciente"><button class="secondary" id="ad-copiar">Copiar</button><button class="primary" id="ad-abrir-paciente">Abrir tela do paciente</button></div>
+  </div>
+  <div class="ad-controles">
+   <button class="quiet" id="ad-c-pausar">⏸ Pausar</button><button class="success hidden" id="ad-c-continuar">▶ Continuar</button>
+   <button class="quiet" id="ad-c-repetir">🔊 Repetir a fala</button>
+   <button class="quiet" id="ad-c-descer">▼ Nível mais fácil</button><button class="quiet" id="ad-c-subir">▲ Nível mais difícil</button>
+   <button class="quiet" id="ad-c-pular">⏭ Pular esta área</button><button class="danger" id="ad-c-encerrar">■ Encerrar sessão</button>
+  </div>
+  <div class="grid ad-vivo">
+   <div class="panel"><h3>O que o paciente está vendo</h3><div id="ad-tarefa"></div></div>
+   <div class="panel"><h3>Estimativa ao vivo</h3><div id="ad-parcial"></div><div id="ad-curva" style="margin-top:12px"></div><div id="ad-alertas"></div></div>
+  </div>
+  <div class="grid ad-vivo" style="margin-top:16px">
+   <div class="panel"><h3>Áreas</h3><div class="tablewrap" id="ad-areas"></div></div>
+   <div class="panel"><h3>Últimas respostas</h3><div id="ad-respostas"></div>
+    <h3 style="margin-top:16px">Anotar observação</h3><div id="ad-flags" class="ad-flags"></div>
+    <div class="ad-linkrow"><input id="ad-nota" maxlength="500" placeholder="Nota rápida (opcional)"><button class="secondary" id="ad-obs-salvar">Registrar</button></div>
+   </div>
+  </div>
+ </div>
+ <div id="ad-relatorio" class="hidden printable-ad"></div>
+</section>
+
+  <section class="view" id="view-pacientes">
+   <div class="nt-titulo"><h1>Pacientes</h1><p>Fichas dos seus pacientes. Toque em “Avaliar” para começar.</p></div>
+   <div class="panel" style="margin-bottom:14px"><input id="nt-busca" placeholder="Buscar pelo nome ou código" style="width:100%;padding:11px;border:1px solid #cbd6e3;border-radius:10px;font-size:15px"></div>
+   <div class="nt-cartoes" id="nt-lista"></div>
+   <div class="panel" style="margin-top:16px">
+    <h3 id="nt-ficha-titulo">Nova ficha</h3>
+    <form class="nt-form" id="nt-ficha">
+     <div><label for="f-nome">Nome completo *</label><input id="f-nome" required maxlength="120"></div>
+     <div class="nt-dois"><div><label for="f-social">Como gosta de ser chamado(a)</label><input id="f-social" maxlength="60"></div><div><label for="f-nasc">Data de nascimento *</label><input id="f-nasc" type="date" required></div></div>
+     <div class="nt-dois"><div><label for="f-sexo">Sexo</label><select id="f-sexo"><option value="">Não informado</option><option>Feminino</option><option>Masculino</option><option>Outro</option></select></div>
+      <div><label for="f-escola">Escolaridade / série</label><input id="f-escola" maxlength="80" placeholder="Ex.: 1º ano do fundamental"></div></div>
+     <div><label for="f-resp">Responsável (se menor)</label><input id="f-resp" maxlength="120"></div>
+     <div><label for="f-obs">Observações</label><textarea id="f-obs" rows="2" maxlength="2000" placeholder="Queixa, encaminhamento, uso de óculos/aparelho auditivo…"></textarea></div>
+     <details><summary style="font-weight:700;cursor:pointer">Anamnese (opcional)</summary><div style="margin-top:8px"><label for="fa-queixa">Queixa principal / motivo da avaliação</label><textarea id="fa-queixa" rows="2" maxlength="1500"></textarea></div><div style="margin-top:8px"><label for="fa-gestacao">Gestação e parto</label><textarea id="fa-gestacao" rows="2" maxlength="1500"></textarea></div><div style="margin-top:8px"><label for="fa-desenvolvimento">Desenvolvimento (sentar, andar, falar, controle dos esfíncteres)</label><textarea id="fa-desenvolvimento" rows="2" maxlength="1500"></textarea></div><div style="margin-top:8px"><label for="fa-escola">Escola e aprendizagem</label><textarea id="fa-escola" rows="2" maxlength="1500"></textarea></div><div style="margin-top:8px"><label for="fa-saude">Saúde, sono, alimentação e medicação</label><textarea id="fa-saude" rows="2" maxlength="1500"></textarea></div><div style="margin-top:8px"><label for="fa-familia">Família e rotina</label><textarea id="fa-familia" rows="2" maxlength="1500"></textarea></div><div style="margin-top:8px"><label for="fa-diagnosticos">Diagnósticos, terapias ou avaliações anteriores</label><textarea id="fa-diagnosticos" rows="2" maxlength="1500"></textarea></div></details>
+     <label class="nt-check"><input type="checkbox" id="f-consent" required> <span>O participante (ou responsável) autorizou o registro dos dados para esta avaliação (LGPD). *</span></label>
+     <label class="nt-check"><input type="checkbox" id="f-pesquisa"> <span>Autoriza o uso <b>anônimo</b> dos resultados (sem nome nem contato) para pesquisa e normas brasileiras do NeuroTrilha. Opcional.</span></label>
+     <div class="small" id="nt-ficha-msg" role="status"></div>
+     <button class="primary" type="submit" id="nt-ficha-salvar">Salvar ficha</button> <button class="quiet hidden" type="button" id="nt-ficha-cancelar">Cancelar edição</button>
+    </form>
+   </div>
+  </section>
+
+  <section class="view" id="view-conta">
+   <div class="nt-titulo"><h1>Conta</h1><p id="nt-conta-sub"></p></div>
+   <div class="panel">
+    <h3>Trocar minha senha</h3>
+    <form class="nt-form" id="nt-form-senha"><div class="nt-dois"><div><label for="s-nova">Senha nova (mínimo 6)</label><input id="s-nova" type="password" minlength="6" required autocomplete="new-password"></div>
+     <div><label for="s-conf">Repita a senha nova</label><input id="s-conf" type="password" minlength="6" required autocomplete="new-password"></div></div>
+     <div class="small" id="nt-senha-msg" role="status"></div><button class="primary" type="submit">Salvar senha</button></form>
+   </div>
+   <div class="panel hidden" id="nt-admin" style="margin-top:14px">
+    <h3>Profissionais (só a RMD vê)</h3>
+    <form class="nt-form" id="nt-form-conta"><div class="nt-dois"><div><label for="c-usuario">Usuário</label><input id="c-usuario" required pattern="[a-z0-9._\-]{3,40}" placeholder="ex.: dra.ana" autocapitalize="none"></div>
+     <div><label for="c-nome">Nome do profissional</label><input id="c-nome" required maxlength="100"></div></div>
+     <div class="small muted">A senha inicial é 123456 (teste). O profissional troca em Conta.</div>
+     <div class="small" id="nt-conta-msg" role="status"></div><button class="secondary" type="submit">Criar acesso</button></form>
+    <div id="nt-contas" style="margin-top:12px"></div>
+    <div style="margin-top:14px"><b>Pesquisa e normas</b><p class="small muted">Exporta, sem nome nem código, os resultados de quem autorizou o uso anônimo.</p><button class="secondary" type="button" id="nt-normas">Exportar dados anônimos (CSV)</button></div>
+   </div>
+  </section>
+ </main>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="config.js"></script>
+<script src="motor-cognitivo.js"></script>
+<script src="questionario.js"></script>
+<script>
+"use strict";
+// Funções que o painel da aplicação adaptativa (avaliador-adaptativo.js) usa — aqui falando com a NUVEM.
+const NT = window.NT_CONFIG;
+const DOMINIO_EMAIL = "neurotrilha.invalid";
+let db = { participants: [] };
+let eu = null;
+const TITLES = { pacientes: ["Pacientes", ""], conta: ["Conta", ""] };
+const $id = (x) => document.getElementById(x);
+
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function toast(msg) { const t = $id("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(window.__toast); window.__toast = setTimeout(() => t.classList.remove("show"), 3200); }
+function ageForParticipant(p) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec((p && p.birthDate) || ""); if (!m) return null;
+  const n = new Date(+m[1], +m[2] - 1, +m[3]), h = new Date();
+  let years = h.getFullYear() - n.getFullYear(), months = h.getMonth() - n.getMonth(), days = h.getDate() - n.getDate();
+  if (days < 0) { months--; days += new Date(h.getFullYear(), h.getMonth(), 0).getDate(); }
+  if (months < 0) { years--; months += 12; }
+  return years >= 0 ? { years, months, days } : null;
+}
+function ageText(a) { return a ? a.years + " anos, " + a.months + " meses e " + a.days + " dias" : "—"; }
+function downloadCSV(rows, name) {
+  const csv = "﻿" + rows.map((r) => r.map((v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"').join(";")).join("\r\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); a.download = name || "neurotrilha.csv"; document.body.appendChild(a); a.click(); a.remove();
+}
+
+// ---- login (usuário + senha; e-mail interno que não existe) e renovação automática do acesso
+function lerSessao() { try { return JSON.parse(localStorage.getItem("nt_sessao")); } catch (e) { return null; } }
+function gravarSessao(s) { try { if (s) localStorage.setItem("nt_sessao", JSON.stringify(s)); else localStorage.removeItem("nt_sessao"); } catch (e) { /* sem armazenamento */ } }
+async function pedirToken(tipo, corpo) {
+  const r = await fetch(NT.SUPABASE_URL + "/auth/v1/token?grant_type=" + tipo, { method: "POST", headers: { apikey: NT.CHAVE_PUBLICA, "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(/invalid/i.test(j.error_description || j.msg || "") ? "Usuário ou senha incorretos." : (j.error_description || j.msg || "Não foi possível entrar."));
+  return { access_token: j.access_token, refresh_token: j.refresh_token, expira: Date.now() + (j.expires_in || 3600) * 1000 };
+}
+async function renovar() { const s = lerSessao(); if (!s || !s.refresh_token) throw new Error("Entre de novo."); const n = await pedirToken("refresh_token", { refresh_token: s.refresh_token }); gravarSessao(n); return n; }
+async function api(path, opcoes = {}) {
+  let s = lerSessao();
+  if (s && s.expira - Date.now() < 60000) { try { s = await renovar(); } catch (e) { s = null; } }
+  const chamar = (tok) => fetch(NT.FUNCOES + path, { ...opcoes, headers: { "Content-Type": "application/json", ...(tok ? { Authorization: "Bearer " + tok } : {}), ...(opcoes.headers || {}) } });
+  let r = await chamar(s && s.access_token);
+  if (r.status === 401 && s) { try { s = await renovar(); r = await chamar(s.access_token); } catch (e) { /* cai no erro */ } }
+  const dados = await r.json().catch(() => ({}));
+  if (r.status === 401) { mostrarEntrar(); }
+  if (!r.ok) { const err = new Error(dados.error || "Falha de comunicação."); err.status = r.status; throw err; }
+  return dados;
+}
+function mostrarEntrar() { $id("nt-app").classList.add("hidden"); $id("nt-entrar").classList.remove("hidden"); }
+async function iniciar() {
+  try {
+    eu = await api("/api/eu");
+    $id("nt-entrar").classList.add("hidden"); $id("nt-app").classList.remove("hidden");
+    $id("nt-nome").textContent = eu.nome;
+    $id("nt-aviso-senha").classList.toggle("hidden", !eu.senhaProvisoria);
+    $id("nt-admin").classList.toggle("hidden", eu.papel !== "admin");
+    $id("nt-conta-sub").textContent = "Usuário: " + eu.usuario + (eu.papel === "admin" ? " · RMD (administrador)" : " · profissional");
+    await carregarPacientes();
+    switchView("adaptive");
+  } catch (e) { mostrarEntrar(); if (e.status !== 401) $id("nt-erro-entrar").textContent = e.message; }
+}
+$id("nt-form-entrar").addEventListener("submit", async (ev) => {
+  ev.preventDefault(); const bt = $id("nt-botao-entrar"); bt.disabled = true; $id("nt-erro-entrar").textContent = "";
+  try {
+    const usuario = $id("nt-usuario").value.trim().toLowerCase();
+    gravarSessao(await pedirToken("password", { email: usuario + "@" + DOMINIO_EMAIL, password: $id("nt-senha").value }));
+    $id("nt-senha").value = ""; await iniciar();
+  } catch (e) { $id("nt-erro-entrar").textContent = e.message; } finally { bt.disabled = false; }
+});
+$id("nt-sair").addEventListener("click", () => { if (!confirm("Sair do NeuroTrilha neste aparelho?")) return; gravarSessao(null); location.reload(); });
+
+// ---- telas
+function switchView(v) {
+  document.querySelectorAll(".view").forEach((el) => el.classList.toggle("active", el.id === "view-" + v));
+  document.querySelectorAll(".nt-menu [data-view]").forEach((b) => b.classList.toggle("active", b.dataset.view === v));
+  window.scrollTo(0, 0);
+  if (v === "pacientes") desenharPacientes();
+  if (v === "conta" && eu && eu.papel === "admin") desenharContas();
+}
+document.querySelectorAll(".nt-menu [data-view]").forEach((b) => b.addEventListener("click", () => switchView(b.dataset.view)));
+
+// ---- pacientes
+async function carregarPacientes() { db.participants = (await api("/api/participantes")).participants || []; }
+function desenharPacientes() {
+  const termo = $id("nt-busca").value.trim().toLowerCase();
+  const lista = db.participants.filter((p) => !termo || (p.name + " " + p.code).toLowerCase().includes(termo));
+  $id("nt-lista").innerHTML = lista.length ? lista.map((p) => { const a = ageForParticipant(p);
+    return '<div class="nt-cartao"><span class="nt-av">' + esc((p.name || "?").trim()[0].toUpperCase()) + '</span><div><b>' + esc(p.name) + '</b><small>' + esc(p.code || "") + (a ? " · " + a.years + " anos" : "") + '</small></div><button class="quiet" data-editar="' + esc(p.id) + '">Editar</button><button class="primary" data-avaliar="' + esc(p.id) + '">Avaliar</button></div>'; }).join("")
+    : '<div class="empty"><b>' + (db.participants.length ? "Nenhuma ficha encontrada" : "Nenhuma ficha ainda") + '</b>Cadastre o primeiro paciente abaixo.</div>';
+}
+$id("nt-busca").addEventListener("input", desenharPacientes);
+const ANAM = ["queixa", "gestacao", "desenvolvimento", "escola", "saude", "familia", "diagnosticos"];
+let editando = null;
+function preencherFicha(p) {
+  editando = p ? p.id : null;
+  $id("f-nome").value = p ? p.name || "" : ""; $id("f-social").value = p ? p.preferredName || "" : ""; $id("f-nasc").value = p ? p.birthDate || "" : "";
+  $id("f-sexo").value = p ? p.sex || "" : ""; $id("f-escola").value = p ? p.education || "" : ""; $id("f-resp").value = p ? p.guardian || "" : ""; $id("f-obs").value = p ? p.notes || "" : "";
+  $id("f-consent").checked = p ? !!p.consent : false; $id("f-pesquisa").checked = p ? !!p.pesquisa : false;
+  ANAM.forEach((k) => { $id("fa-" + k).value = p && p.anamnese ? p.anamnese[k] || "" : ""; });
+  $id("nt-ficha-titulo").textContent = p ? "Editar ficha · " + (p.code || "") : "Nova ficha"; $id("nt-ficha-salvar").textContent = p ? "Salvar alterações" : "Salvar ficha";
+  $id("nt-ficha-cancelar").classList.toggle("hidden", !p);
+}
+$id("nt-ficha-cancelar").addEventListener("click", () => preencherFicha(null));
+$id("nt-lista").addEventListener("click", (ev) => { const e = ev.target.closest("[data-editar]"); if (e) { preencherFicha(db.participants.find((x) => x.id === e.dataset.editar)); $id("nt-ficha").scrollIntoView({ behavior: "smooth" }); } });
+$id("nt-lista").addEventListener("click", (ev) => { const b = ev.target.closest("[data-avaliar]"); if (!b) return; switchView("adaptive"); setTimeout(() => { const sel = $id("ad-participante"); sel.value = b.dataset.avaliar; sel.dispatchEvent(new Event("change")); }, 50); });
+$id("nt-ficha").addEventListener("submit", async (ev) => {
+  ev.preventDefault(); const msg = $id("nt-ficha-msg"); msg.style.color = "#b42318"; msg.textContent = "";
+  const p = { name: $id("f-nome").value.trim(), preferredName: $id("f-social").value.trim(), birthDate: $id("f-nasc").value, sex: $id("f-sexo").value, education: $id("f-escola").value.trim(), guardian: $id("f-resp").value.trim(), notes: $id("f-obs").value.trim(), consent: $id("f-consent").checked, pesquisa: $id("f-pesquisa").checked, evaluator: eu ? eu.nome : "", anamnese: {} };
+  ANAM.forEach((k) => { const v = $id("fa-" + k).value.trim(); if (v) p.anamnese[k] = v; });
+  try {
+    const r = editando ? await api("/api/participantes/" + editando, { method: "PUT", body: JSON.stringify(p) }) : await api("/api/participantes", { method: "POST", body: JSON.stringify(p) });
+    msg.style.color = "#087764"; msg.textContent = (editando ? "Ficha atualizada: " : "Ficha salva: ") + r.participant.code + "."; preencherFicha(null); await carregarPacientes(); desenharPacientes();
+  }
+  catch (e) { msg.textContent = e.message; }
+});
+
+// ---- conta e profissionais
+$id("nt-form-senha").addEventListener("submit", async (ev) => {
+  ev.preventDefault(); const msg = $id("nt-senha-msg"); msg.style.color = "#b42318";
+  if ($id("s-nova").value !== $id("s-conf").value) { msg.textContent = "As duas senhas não são iguais."; return; }
+  try { await api("/api/eu/senha", { method: "POST", body: JSON.stringify({ nova: $id("s-nova").value }) }); ev.target.reset(); msg.style.color = "#087764"; msg.textContent = "Senha trocada."; eu = await api("/api/eu"); $id("nt-aviso-senha").classList.toggle("hidden", !eu.senhaProvisoria); }
+  catch (e) { msg.textContent = e.message; }
+});
+async function desenharContas() {
+  const host = $id("nt-contas");
+  try {
+    const { contas } = await api("/api/admin/contas");
+    host.innerHTML = contas.map((c) => '<div class="nt-cartao"><span class="nt-av">' + esc(c.usuario[0].toUpperCase()) + '</span><div><b>' + esc(c.nome) + '</b><small>' + esc(c.usuario) + " · " + (c.papel === "admin" ? "RMD" : "profissional") + (c.ativo ? "" : " · BLOQUEADO") + (c.senha_provisoria ? " · senha de teste" : "") + "</small></div>" +
+      (c.papel === "admin" ? "" : '<button class="quiet" data-ativo="' + c.user_id + '" data-v="' + (c.ativo ? 0 : 1) + '">' + (c.ativo ? "Bloquear" : "Liberar") + '</button><button class="quiet" data-senha="' + c.user_id + '">Senha 123456</button>') + "</div>").join("");
+  } catch (e) { host.innerHTML = '<div class="notice danger-note">' + esc(e.message) + "</div>"; }
+}
+$id("nt-contas").addEventListener("click", async (ev) => {
+  const a = ev.target.closest("[data-ativo]"), sb = ev.target.closest("[data-senha]");
+  try {
+    if (a) { await api("/api/admin/contas/" + a.dataset.ativo, { method: "PUT", body: JSON.stringify({ ativo: a.dataset.v === "1" }) }); toast("Acesso atualizado."); }
+    if (sb && confirm("Voltar a senha deste profissional para 123456?")) { await api("/api/admin/contas/" + sb.dataset.senha + "/senha", { method: "POST", body: "{}" }); toast("Senha voltou para 123456."); }
+    desenharContas();
+  } catch (e) { toast(e.message); }
+});
+$id("nt-normas").addEventListener("click", async () => {
+  try { const d = await api("/api/admin/normas"), l = d.linhas || []; if (!l.length) { toast("Nenhuma avaliação concluída com autorização de pesquisa."); return; }
+    const cols = [...new Set(l.flatMap((x) => Object.keys(x)))]; downloadCSV([cols].concat(l.map((x) => cols.map((c) => x[c] == null ? "" : x[c]))), "NeuroTrilha-pesquisa-anonima.csv"); toast(l.length + " avaliação(ões) exportada(s) sem identificação."); }
+  catch (e) { toast(e.message); }
+});
+$id("nt-form-conta").addEventListener("submit", async (ev) => {
+  ev.preventDefault(); const msg = $id("nt-conta-msg"); msg.style.color = "#b42318";
+  try { await api("/api/admin/contas", { method: "POST", body: JSON.stringify({ usuario: $id("c-usuario").value.trim().toLowerCase(), nome: $id("c-nome").value.trim() }) }); ev.target.reset(); msg.style.color = "#087764"; msg.textContent = "Acesso criado. Senha inicial: 123456."; desenharContas(); }
+  catch (e) { msg.textContent = e.message; }
+});
+</script>
+<script src="avaliador-adaptativo.js"></script>
+<script>
+if (lerSessao()) iniciar(); else mostrarEntrar();
+</script>
+</body>
+</html>

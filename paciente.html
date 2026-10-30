@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0f2742">
+<title>NeuroTrilha — Desafios</title>
+<link rel="icon" href="data:,">
+<style>
+:root{--fundo1:#eaf4ff;--fundo2:#fdf3ff;--tinta:#172438;--suave:#5d6f86;--azul:#2f6fe4;--verde:#1f9d6b;--vermelho:#e5484d;--cartao:#fff;--sombra:0 10px 30px #1d3b6a1a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{font:18px/1.4 "Segoe UI",Inter,Arial,sans-serif;color:var(--tinta);background:linear-gradient(160deg,var(--fundo1),var(--fundo2));overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+button{font:inherit;cursor:pointer;border:0}
+.topo{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;gap:12px;z-index:5}
+.marca{display:flex;align-items:center;gap:8px;font-weight:800;color:#0f2742;font-size:17px}
+.marca i{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#18b7a4,#3179ed);display:grid;place-items:center;color:#fff;font-style:normal;font-size:15px}
+.estrelas{display:flex;gap:6px}.estrelas span{width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 2px #d4def0;display:grid;place-items:center;font-size:14px}
+.estrelas span.feita{background:#ffd76a;box-shadow:none}.estrelas span.agora{box-shadow:inset 0 0 0 3px var(--azul)}
+.ouvir{background:#fff;border-radius:999px;padding:10px 16px;font-weight:700;box-shadow:var(--sombra);display:flex;align-items:center;gap:8px;color:var(--azul)}
+.ouvir.grande{font-size:22px;padding:14px 24px}
+.palco{position:absolute;inset:64px 0 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(14px,3vh,28px);padding:12px 16px 24px}
+.instrucao{font-size:clamp(18px,2.6vw,26px);font-weight:700;text-align:center;max-width:900px;min-height:1em}
+.estimulo{display:flex;align-items:center;justify-content:center;gap:clamp(6px,1.4vw,14px);flex-wrap:wrap;max-width:min(96vw,980px)}
+.casa{width:clamp(64px,10vw,112px);aspect-ratio:1;background:var(--cartao);border-radius:18px;box-shadow:var(--sombra);display:grid;place-items:center;padding:8px}
+.casa svg,.opcao svg{width:100%;height:100%}
+.matriz{display:grid;gap:clamp(6px,1vw,10px)}.matriz.m2{grid-template-columns:repeat(2,auto)}.matriz.m3{grid-template-columns:repeat(3,auto)}
+.matriz .casa{width:clamp(64px,12vh,120px)}
+.modelo{width:clamp(110px,18vh,170px);background:#fff;border-radius:22px;box-shadow:0 0 0 4px #2f6fe4,var(--sombra);padding:12px}
+.opcoes{display:flex;gap:clamp(10px,2vw,20px);flex-wrap:wrap;justify-content:center;max-width:min(96vw,1000px)}
+.opcao{width:clamp(92px,14vw,150px);aspect-ratio:1;background:#fff;border-radius:22px;box-shadow:var(--sombra);padding:12px;transition:transform .12s,box-shadow .12s}
+.opcao:active{transform:scale(.94)}
+.opcao.marcada{box-shadow:0 0 0 5px var(--azul),var(--sombra)}
+.opcao.certa{box-shadow:0 0 0 6px var(--verde),var(--sombra)}
+.opcoes.busca{display:grid;grid-template-columns:repeat(var(--col,4),auto);gap:clamp(6px,1.2vw,12px)}
+.opcoes.busca .opcao{width:clamp(56px,min(10vw,11vh),104px);border-radius:16px;padding:8px}
+.opcoes.duas .opcao{width:clamp(140px,22vw,220px)}
+.peixes{display:flex;gap:clamp(2px,1vw,10px);background:#d8eefe;border-radius:28px;padding:18px 26px;box-shadow:inset 0 -10px 0 #c5e4fb}
+.peixes .casa{background:transparent;box-shadow:none;width:clamp(64px,10vw,110px)}
+.carta{width:clamp(110px,16vh,160px)}
+.corsi{display:grid;gap:clamp(8px,1.6vw,14px);padding:14px;background:#14304f;border-radius:24px;box-shadow:var(--sombra)}
+.corsi button{width:clamp(66px,min(14vw,15vh),120px);aspect-ratio:1;border-radius:16px;background:#2d5684;transition:background .1s,transform .1s}
+.corsi button.aceso{background:#ffd23f;transform:scale(1.04)}
+.corsi button.tocado{background:#7fb3ff}
+.corsi.bloqueado button{pointer-events:none}
+.aviso{font-size:clamp(20px,3vw,30px);font-weight:800;color:#0f2742}
+.tela{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:24px;z-index:8;background:linear-gradient(160deg,var(--fundo1),var(--fundo2))}
+.tela h1{font-size:clamp(28px,5vw,48px);margin:.2em 0}.tela p{color:var(--suave);font-size:clamp(17px,2.2vw,22px);max-width:640px;margin:0 auto 22px}
+.grande{font-size:clamp(70px,12vw,120px);line-height:1}
+.botao{background:linear-gradient(135deg,#18b7a4,#2f6fe4);color:#fff;font-weight:800;font-size:clamp(20px,3vw,28px);padding:18px 44px;border-radius:999px;box-shadow:0 12px 30px #2f6fe455}
+.retorno{position:fixed;left:50%;top:76px;transform:translateX(-50%);background:#fff;border-radius:999px;padding:10px 22px;font-weight:800;font-size:22px;box-shadow:var(--sombra);z-index:9}
+.retorno.ok{color:var(--verde)}.retorno.nao{color:#b45309}
+
+/* tarefas novas (30/10/2026) */
+.gonogo{width:min(70vw,460px);aspect-ratio:1;border-radius:36px;background:#fff;box-shadow:var(--sombra);display:grid;place-items:center;padding:30px}
+.gonogo.vazio{background:#f4f8ff;box-shadow:none}.gonogo svg{width:100%;height:100%}
+.caminho{width:min(92vw,640px)}.caminho .tabuleiro{background:#fff;border-radius:22px;box-shadow:var(--sombra);padding:10px 0}
+.caminho svg{width:100%;height:min(46vh,420px);display:block}
+.caminho .opcoes{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:0;max-width:none;margin-top:10px}
+.caminho .opcao{width:auto;margin:0 6px;aspect-ratio:auto;height:clamp(70px,11vh,110px);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.caminho .opcao svg{height:100%;width:auto;max-width:100%;display:block}
+.teclado{display:grid;grid-template-columns:repeat(3,clamp(70px,13vw,104px));gap:12px}
+.teclado button{aspect-ratio:1;border-radius:20px;background:#fff;box-shadow:var(--sombra);font-size:clamp(28px,5vw,42px);font-weight:800;color:#0f2742}
+.teclado button.apagar{font-size:18px;color:#5d6f86}.digitado{font-size:32px;letter-spacing:.3em;min-height:44px;color:#2f6fe4;font-weight:900}
+.leitura{background:#fff;border-radius:22px;box-shadow:var(--sombra);padding:18px 30px;font-size:clamp(40px,8vw,76px);font-weight:900;letter-spacing:.06em;color:#0f2742;text-align:center;max-width:94vw}
+.leitura.frase{font-size:clamp(22px,3.4vw,34px);letter-spacing:0;font-weight:700;line-height:1.35;max-width:min(94vw,900px)}
+.analogia .seta{font-size:44px;color:#2f6fe4;font-weight:900}.analogia .sep{width:clamp(10px,4vw,40px)}
+.torre-area{display:flex;gap:clamp(14px,3vw,40px);align-items:flex-end;flex-wrap:wrap;justify-content:center}
+.torre-modelo{background:#fff;border-radius:18px;box-shadow:0 0 0 3px #1f9d6b,var(--sombra);padding:8px;width:clamp(120px,18vw,180px);text-align:center;font-size:13px;color:#1f9d6b;font-weight:800}
+.torre{position:relative;background:#fff;border-radius:22px;box-shadow:var(--sombra);width:clamp(260px,44vw,460px);aspect-ratio:1;padding:10px}
+.torre svg{width:100%;height:100%}.torre .pino{position:absolute;top:0;bottom:0;width:33.3%;background:transparent;border-radius:18px}
+.torre .pino.sel{background:#2f6fe41f;box-shadow:inset 0 0 0 3px #2f6fe4}
+.pontos{position:relative;width:min(94vw,860px);height:min(62vh,600px);background:#fff;border-radius:24px;box-shadow:var(--sombra)}
+.pontos svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pontos button{position:absolute;transform:translate(-50%,-50%);width:clamp(48px,7vw,66px);height:clamp(48px,7vw,66px);border-radius:50%;background:#eaf2ff;border:3px solid #2f6fe4;font-size:clamp(18px,3vw,26px);font-weight:900;color:#0f2742}
+.pontos button.ok{background:#1f9d6b;color:#fff;border-color:#1f9d6b}.pontos button.erro{background:#e5484d;color:#fff;border-color:#e5484d}
+.mostrar{width:min(52vw,320px);aspect-ratio:1;background:#fff;border-radius:30px;box-shadow:var(--sombra);display:grid;place-items:center;padding:30px}.mostrar svg{width:100%;height:100%}
+.pronto{background:linear-gradient(135deg,#18b7a4,#2f6fe4);color:#fff;font-weight:800;font-size:22px;padding:14px 40px;border-radius:999px;box-shadow:0 10px 24px #2f6fe455}
+.hidden{display:none!important}
+.codigo{font-size:clamp(54px,11vw,96px);font-weight:900;letter-spacing:.12em;color:#0f2742;background:#fff;border-radius:24px;padding:10px 30px;box-shadow:var(--sombra);display:inline-block;margin:6px 0 18px;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){.opcao,.corsi button{transition:none}}
+</style>
+</head>
+<body>
+<div class="topo"><div class="marca"><i>N</i>NeuroTrilha</div><div class="estrelas" id="estrelas" aria-label="Progresso"></div><button class="ouvir" id="ouvir" type="button" aria-label="Ouvir a instrução de novo">🔊 Ouvir</button></div>
+<main class="palco" id="palco" aria-live="polite"></main>
+<div class="retorno hidden" id="retorno" role="status"></div>
+<section class="tela" id="tela-inicio">
+  <div><div class="grande">🧩</div><h1 id="ola">Olá!</h1><p>Vamos fazer uns desafios divertidos. Escute com atenção e toque na resposta. Se não souber, tudo bem: faça o seu melhor!</p><button class="botao" id="comecar" type="button">Começar ▶</button></div>
+</section>
+<section class="tela hidden" id="tela-pausa"><div><div class="grande">⏸️</div><h1>Pausa</h1><p>Espere um pouquinho. Já vamos continuar.</p></div></section>
+<section class="tela hidden" id="tela-fim"><div><div class="grande">🎉</div><h1 id="fim-titulo">Terminamos!</h1><p>Muito obrigado. Você foi ótimo!</p></div></section>
+<section class="tela hidden" id="tela-area"><div><div class="grande" id="area-icone">⭐</div><h1 id="area-nome"></h1></div></section>
+<section class="tela hidden" id="tela-estacao"><div><div class="grande">📲</div><h1>Tablet pronto</h1><p>Código deste tablet:</p><div class="codigo" id="codigo-estacao">······</div><p>O avaliador digita este código no celular para enviar o teste. Deixe esta tela aberta.</p></div></section>
+<section class="tela hidden" id="tela-erro"><div><div class="grande">🔌</div><h1>Sem conexão</h1><p id="erro-texto">Esta tela não encontrou a sessão. Peça ao avaliador um novo endereço.</p></div></section>
+<script src="config.js"></script>
+<script src="motor-cognitivo.js"></script>
+<script>
+"use strict";
+const M = window.RmdMotor;
+let TOKEN = (new URLSearchParams(location.search).get("t") || "").replace(/[^A-Za-z0-9_-]/g, "");
+// Na internet (NeuroTrilha pela nuvem) os pedidos vão para a função da nuvem; no computador, para o próprio servidor.
+const API = (window.NT_CONFIG && window.NT_CONFIG.FUNCOES) || "";
+// Modo tablet: na nuvem e sem endereço de sessão, o tablet mostra um código e espera o avaliador mandar o teste.
+const ESTACAO = !TOKEN && !!API;
+const ICONE = { gf: "🧩", gwm: "💡", gv: "🔷", gs: "⚡", gc: "🗣️", gq: "🔢", at: "🐟", fx: "🃏" };
+const $ = (id) => document.getElementById(id);
+let ultimaFala = "", estado = null, versaoMostrada = 0, itemAtual = null, inicio = 0, enviando = false, falarVisto = 0, comecou = false, areaMostrada = 0, timerLimite = null, voz = null, segurar = false, terminou = false, vigia = null;
+
+// Voz: 1º a gravação com voz natural (pasta audio/, igual em qualquer aparelho);
+// 2º a melhor voz do aparelho (vozes "naturais"/neurais primeiro); 3º o avaliador lê em voz alta.
+let gravadas = new Set(), tocador = new Audio();
+tocador.preload = "auto";
+fetch("audio/indice.json", { cache: "no-store" }).then((r) => r.ok ? r.json() : []).then((l) => { gravadas = new Set(l); }).catch(() => {});
+function pontuarVoz(v) {
+  let p = 0;
+  if (/pt-BR/i.test(v.lang)) p += 100; else if (/^pt/i.test(v.lang)) p += 40; else return -1;
+  if (/natural|neural|online/i.test(v.name)) p += 50;           // vozes neurais do Edge (Francisca, Thalita...)
+  if (/google/i.test(v.name)) p += 35;                           // voz do Google no Android/Chrome
+  if (/francisca|thalita|luciana|vit[oó]ria|maria/i.test(v.name)) p += 10;
+  if (v.localService === false) p += 5;
+  return p;
+}
+function escolherVoz() {
+  try { voz = speechSynthesis.getVoices().map((v) => [pontuarVoz(v), v]).filter((x) => x[0] >= 0).sort((a, b) => b[0] - a[0]).map((x) => x[1])[0] || null; } catch (e) { voz = null; }
+}
+if ("speechSynthesis" in window) { escolherVoz(); speechSynthesis.onvoiceschanged = escolherVoz; }
+function falarSintetico(texto) {
+  if (!("speechSynthesis" in window)) return;
+  try {
+    speechSynthesis.cancel();
+    // frase por frase, com uma pausa curta: fica mais fácil de entender
+    texto.split(/(?<=[.!?])\s+/).forEach((parte) => { const u = new SpeechSynthesisUtterance(parte); u.lang = "pt-BR"; u.rate = 0.88; u.pitch = 1.05; if (voz) u.voice = voz; speechSynthesis.speak(u); });
+  } catch (e) { /* sem voz: o avaliador lê */ }
+}
+function falar(texto) {
+  if (!texto) return;
+  texto = String(texto).trim();
+  const id = M.idFala(texto);
+  try { if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch (e) { /* nada */ }
+  if (gravadas.has(id)) {
+    try { tocador.pause(); tocador.src = "audio/" + id + ".mp3"; tocador.currentTime = 0; const p = tocador.play(); if (p && p.catch) p.catch(() => falarSintetico(texto)); return; } catch (e) { /* cai na voz do aparelho */ }
+  }
+  falarSintetico(texto);
+}
+function mostrarTela(id) { ["tela-inicio", "tela-pausa", "tela-fim", "tela-area", "tela-estacao", "tela-erro"].forEach((t) => $(t).classList.toggle("hidden", t !== id)); }
+
+async function buscar() {
+  try {
+    const r = await fetch(API + "/api/p/" + TOKEN + "/estado", { cache: "no-store" });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "Sessão não encontrada.");
+    aplicar(await r.json());
+  } catch (e) { if (ESTACAO) { voltarParaCodigo(); return; } $("erro-texto").textContent = e.message; mostrarTela("tela-erro"); }
+}
+function aplicar(s) {
+  if (segurar) return;  // mostrando o retorno da resposta: espera terminar
+  estado = s;
+  $("ola").textContent = s.nome ? "Olá, " + s.nome + "!" : "Olá!";
+  desenharEstrelas(s);
+  if (s.falar !== falarVisto) { const mudou = falarVisto !== 0 || s.falar > 0; falarVisto = s.falar; if (mudou && itemAtual) falar(itemAtual.fala); }
+  if (s.status === "concluida" || s.status === "encerrada") {
+    // fim: fala uma vez só e para de consultar o servidor (antes repetia a fala a cada segundo e "travava")
+    if (!terminou) { terminou = true; clearInterval(vigia); if (ESTACAO) setTimeout(voltarParaCodigo, 15000); clearTimeout(timerLimite); itemAtual = null; $("fim-titulo").textContent = s.nome ? "Terminamos, " + s.nome + "!" : "Terminamos!"; mostrarTela("tela-fim"); falar("Terminamos! Muito obrigado."); }
+    return;
+  }
+  if (!comecou) { mostrarTela("tela-inicio"); return; }
+  if (s.status === "pausada") { mostrarTela("tela-pausa"); clearTimeout(timerLimite); versaoMostrada = 0; return; }
+  if (s.item && s.versao !== versaoMostrada) {
+    versaoMostrada = s.versao;
+    if (s.area && s.area.numero !== areaMostrada) {
+      areaMostrada = s.area.numero;
+      $("area-icone").textContent = ICONE[s.item.dominio] || "⭐"; $("area-nome").textContent = s.area.curto;
+      mostrarTela("tela-area"); setTimeout(() => { mostrarTela(null); desenhar(s.item); }, 1400);
+    } else { mostrarTela(null); desenhar(s.item); }
+  }
+}
+function desenharEstrelas(s) {
+  if (!s.area) return;
+  let h = ""; for (let i = 1; i <= s.area.total; i++) h += '<span class="' + (i < s.area.numero ? "feita" : i === s.area.numero ? "agora" : "") + '">' + (i < s.area.numero ? "★" : "") + "</span>";
+  $("estrelas").innerHTML = h;
+}
+
+// ------------------------------------------------------------ desenho da tarefa
+function casa(fig, extra) { return '<div class="casa ' + (extra || "") + '">' + M.svg(fig) + "</div>"; }
+function botoes(item, classe) {
+  return '<div class="opcoes ' + (classe || "") + '"' + (item.layout === "busca" ? ' style="--col:' + Math.ceil(Math.sqrt(item.opcoes.length)) + '"' : "") + ">" +
+    item.opcoes.map((o) => '<button type="button" class="opcao" data-op="' + o.id + '" aria-label="Opção ' + o.id + '">' + M.svg(o.fig) + "</button>").join("") + "</div>";
+}
+function desenhar(item) {
+  itemAtual = item; enviando = false; clearTimeout(timerLimite);
+  const texto = estado.leitor && item.dominio !== "gc" ? item.fala : "";
+  let h = '<div class="instrucao">' + (texto ? escapar(texto) : "") + "</div>";
+  if (item.layout === "fileira") h += '<div class="estimulo">' + item.estimulo.map((f) => casa(f)).join("") + "</div>" + botoes(item);
+  else if (item.layout === "matriz2" || item.layout === "matriz3") h += '<div class="matriz ' + (item.layout === "matriz2" ? "m2" : "m3") + '">' + item.estimulo.map((f) => casa(f)).join("") + "</div>" + botoes(item);
+  else if (item.layout === "modelo" || item.layout === "busca") h += '<div class="modelo">' + M.svg(item.estimulo[0]) + "</div>" + botoes(item, item.layout === "busca" ? "busca" : "");
+  else if (item.layout === "figuras") h += (item.dominio === "gc" ? '<button class="ouvir grande" type="button" data-ouvir>🔊 Escute</button>' : "") + botoes(item);
+  else if (item.layout === "conta" || item.layout === "numeros") h += '<div class="estimulo">' + item.estimulo.map((f) => casa(f)).join("") + (item.layout === "numeros" && item.estimulo.length > 1 ? casa(null) : "") + "</div>" + botoes(item);
+  else if (item.layout === "peixes") h += '<div class="peixes">' + item.estimulo.map((f) => casa(f)).join("") + "</div>" + botoes(item, "duas");
+  else if (item.layout === "cartas") h += botoes(item, "duas") + '<div class="modelo carta">' + M.svg(item.estimulo[0]) + "</div>";
+  else if (item.layout === "modelo2") h += '<div class="estimulo">' + item.estimulo.map((f) => casa(f)).join("") + "</div>" + botoes(item);
+  else if (item.layout === "analogia") h += '<div class="estimulo analogia">' + casa(item.estimulo[0]) + '<span class="seta">→</span>' + casa(item.estimulo[1]) + '<span class="sep"></span>' + casa(item.estimulo[2]) + '<span class="seta">→</span>' + casa(null) + "</div>" + botoes(item);
+  else if (item.layout === "leitura") h += '<div class="leitura' + (item.estimulo[0].frase ? " frase" : "") + '">' + escapar(item.estimulo[0].texto) + "</div>" + botoes(item);
+  else if (item.layout === "caminho") h += '<div class="caminho" style="--n:' + item.opcoes.length + '"><div class="tabuleiro">' + M.svg(item.estimulo[0]) + "</div>" + botoes(item) + "</div>";
+  else if (item.layout === "gonogo") h += '<button type="button" class="gonogo vazio" id="gonogo" aria-label="Tocar"></button>';
+  else if (item.layout === "digitos") h += '<div class="aviso" id="dig-aviso">👂 Ouça com atenção</div><div class="digitado" id="digitado"></div><div class="teclado hidden" id="teclado">' + [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => '<button type="button" data-dig="' + n + '">' + n + "</button>").join("") + '<span></span><button type="button" class="apagar" data-dig="x">⌫ Apagar</button></div>';
+  else if (item.layout === "torre") h += '<div class="torre-area"><div class="torre-modelo">Modelo' + M.svg({ torre: { pinos: item.meta, caps: item.capacidades } }) + '</div><div class="torre" id="torre"></div></div><div class="aviso" id="torre-mov">Jogadas: 0</div>';
+  else if (item.layout === "pontos") h += '<div class="pontos" id="pontos"><svg id="pontos-linhas" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>' + item.pontos.map((p) => '<button type="button" data-ponto="' + escapar(p.t) + '" style="left:' + (p.x * 100) + "%;top:" + (p.y * 100) + '%">' + escapar(p.t) + "</button>").join("") + "</div>";
+  else if (item.layout === "reconhecer") h += '<div id="rec-mostrar" class="mostrar hidden"></div><div id="rec-grade" class="hidden"><div class="opcoes">' + item.opcoes.map((o) => '<button type="button" class="opcao" data-sel="' + o.id + '">' + M.svg(o.fig) + "</button>").join("") + '</div><div style="text-align:center;margin-top:16px"><button type="button" class="pronto" id="rec-pronto">Pronto ✔</button></div></div>';
+  else if (item.layout === "corsi") h += '<div class="aviso" id="corsi-aviso">👀 Olhe!</div><div class="corsi bloqueado" id="corsi" style="grid-template-columns:repeat(' + item.grade + ',auto)">' +
+    Array.from({ length: item.grade * item.grade }, (_, i) => '<button type="button" data-cel="' + i + '" aria-label="Quadrado ' + (i + 1) + '"></button>').join("") + "</div>";
+  $("palco").innerHTML = h;
+  // toque ou não toque / atenção contínua: a instrução não se repete a cada figura
+  if (!(item.layout === "gonogo" && item.fala === ultimaFala && !item.treino)) falar(item.fala);
+  ultimaFala = item.fala;
+  if (item.layout === "corsi") return animarCorsi(item);
+  if (item.layout === "gonogo") return mostrarGonogo(item);
+  if (item.layout === "digitos") return tocarDigitos(item);
+  if (item.layout === "torre") return montarTorre(item);
+  if (item.layout === "pontos") return montarPontos(item);
+  if (item.layout === "reconhecer") return mostrarReconhecer(item);
+  inicio = performance.now();
+  if (item.limiteMs) timerLimite = setTimeout(() => responder(null), item.limiteMs + 600);
+}
+function animarCorsi(item) {
+  const cel = [...document.querySelectorAll("#corsi button")], seq = item.sequencia, passo = item.passoMs || 900;
+  let i = 0; const resposta = [];
+  setTimeout(function acende() {
+    if (itemAtual !== item) return;
+    if (i > 0) cel[seq[i - 1]].classList.remove("aceso");
+    if (i < seq.length) { cel[seq[i]].classList.add("aceso"); i++; setTimeout(acende, passo); return; }
+    $("corsi-aviso").textContent = "👆 Agora você!"; $("corsi").classList.remove("bloqueado"); falar("Agora você!"); inicio = performance.now();
+    cel.forEach((b) => b.addEventListener("click", () => {
+      if (enviando) return; const k = Number(b.dataset.cel); resposta.push(k); b.classList.add("tocado"); setTimeout(() => b.classList.remove("tocado"), 350);
+      if (resposta.length === seq.length) { $("corsi").classList.add("bloqueado"); responder(resposta.slice()); }
+    }));
+  }, 1600);
+}
+
+// ------------------------------------------------------------ tarefas novas
+function mostrarGonogo(item) {
+  // pequena pausa vazia antes de cada figura (não dá para tocar adiantado)
+  setTimeout(() => {
+    if (itemAtual !== item) return;
+    const b = $("gonogo"); b.classList.remove("vazio"); b.innerHTML = M.svg(item.estimulo[0]);
+    inicio = performance.now();
+    b.addEventListener("pointerdown", () => { if (!enviando) responder("toque"); }, { once: true });
+    timerLimite = setTimeout(() => responder(null), item.limiteMs);
+  }, item.treino ? 2200 : 450);
+}
+const NOMES_NUM = ["zero", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove"];
+function tocarDigitos(item) {
+  const seq = item.sequencia, digitado = [];
+  let i = 0;
+  setTimeout(function proximo() {
+    if (itemAtual !== item) return;
+    if (i < seq.length) { falar(NOMES_NUM[seq[i]]); $("digitado").textContent = "•".repeat(i + 1); i++; setTimeout(proximo, item.passoMs || 1000); return; }
+    $("digitado").textContent = ""; $("dig-aviso").textContent = item.inverso ? "👆 Agora de trás para frente!" : "👆 Agora você!";
+    falar(item.inverso ? "Agora de trás para frente!" : "Agora você!"); $("teclado").classList.remove("hidden"); inicio = performance.now();
+    document.querySelectorAll("#teclado [data-dig]").forEach((b) => b.addEventListener("click", () => {
+      if (enviando) return;
+      if (b.dataset.dig === "x") digitado.pop(); else digitado.push(Number(b.dataset.dig));
+      $("digitado").textContent = digitado.join(" ");
+      if (digitado.length === seq.length) responder(digitado.slice());
+    }));
+  }, 3600);
+}
+function montarTorre(item) {
+  let estado = item.inicio.map((p) => p.slice()), sel = null;
+  const jogadas = [], area = $("torre");
+  function desenharTorre() {
+    area.innerHTML = M.svg({ torre: { pinos: estado, caps: item.capacidades } }) + [0, 1, 2].map((k) => '<button type="button" class="pino' + (sel === k ? " sel" : "") + '" data-pino="' + k + '" style="left:' + (k * 33.3) + '%" aria-label="Pino ' + (k + 1) + '"></button>').join("");
+    $("torre-mov").textContent = "Jogadas: " + jogadas.length;
+  }
+  area.addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-pino]"); if (!b || enviando) return;
+    const k = Number(b.dataset.pino);
+    if (sel === null) { if (estado[k].length) sel = k; }
+    else if (sel === k) sel = null;
+    else if (estado[k].length < item.capacidades[k]) { estado[k].push(estado[sel].pop()); jogadas.push([sel, k]); sel = null; }
+    else sel = null;
+    desenharTorre();
+    if (JSON.stringify(estado) === JSON.stringify(item.meta) || jogadas.length >= item.maxMov) setTimeout(() => responder({ jogadas: jogadas.slice() }), 350);
+  });
+  desenharTorre(); inicio = performance.now();
+}
+function montarPontos(item) {
+  const ordem = item.pontos.map((p) => p.t), toques = [];
+  let proximo = 0;
+  // a ordem certa: 1,2,3... ou 1,A,2,B... (a tela sabe só a sequência de rótulos, como no papel)
+  const certa = ordem.slice().sort((a, b) => chave(a) - chave(b));
+  function chave(t) { return /^\d+$/.test(t) ? Number(t) * 2 - 1 : (t.charCodeAt(0) - 64) * 2; }
+  const linhas = $("pontos-linhas"); let anterior = null;
+  inicio = performance.now();
+  $("pontos").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-ponto]"); if (!b || enviando || b.classList.contains("ok")) return;
+    toques.push(b.dataset.ponto);
+    if (b.dataset.ponto === certa[proximo]) {
+      b.classList.add("ok"); proximo++;
+      const p = item.pontos.find((x) => x.t === b.dataset.ponto);
+      if (anterior) linhas.insertAdjacentHTML("beforeend", '<line x1="' + anterior.x * 100 + '" y1="' + anterior.y * 100 + '" x2="' + p.x * 100 + '" y2="' + p.y * 100 + '" stroke="#1f9d6b" stroke-width="0.8"/>');
+      anterior = p;
+      if (proximo === certa.length) responder(toques.slice());
+    } else { b.classList.add("erro"); setTimeout(() => b.classList.remove("erro"), 400); }
+  });
+}
+function mostrarReconhecer(item) {
+  const sel = new Set(), caixa = $("rec-mostrar");
+  function grade() {
+    caixa.classList.add("hidden"); $("rec-grade").classList.remove("hidden"); inicio = performance.now();
+    document.querySelectorAll("#rec-grade [data-sel]").forEach((b) => b.addEventListener("click", () => { const id = b.dataset.sel; if (sel.has(id)) { sel.delete(id); b.classList.remove("marcada"); } else { sel.add(id); b.classList.add("marcada"); } }));
+    $("rec-pronto").addEventListener("click", () => { if (!enviando) responder([...sel]); });
+  }
+  if (!item.mostrar || !item.mostrar.length) return grade();
+  let i = 0; caixa.classList.remove("hidden");
+  setTimeout(function proxima() {
+    if (itemAtual !== item) return;
+    if (i < item.mostrar.length) { caixa.innerHTML = M.svg(item.mostrar[i]); i++; setTimeout(proxima, item.mostrarMs || 1400); return; }
+    caixa.innerHTML = ""; falar("Agora toque nas figuras que você viu."); grade();
+  }, 2600);
+}
+function escapar(t) { return String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+async function responder(resposta) {
+  if (enviando || !itemAtual) return; enviando = true; clearTimeout(timerLimite);
+  const item = itemAtual, tempoMs = Math.round(performance.now() - inicio);
+  try {
+    const r = await fetch(API + "/api/p/" + TOKEN + "/resposta", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ itemId: item.id, resposta, tempoMs }) });
+    const s = await r.json();
+    if (!r.ok) { enviando = false; buscar(); return; }
+    if (item.treino && s.retorno) {
+      const certa = document.querySelector('[data-op="' + s.retorno.certo + '"]'); if (certa) certa.classList.add("certa");
+      mostrarRetorno(s.retorno.correto ? "✔ Isso mesmo!" : "Olha: era esta 👆", s.retorno.correto);
+      falar(s.retorno.correto ? "Isso mesmo! Agora vamos de verdade." : "Quase! Agora vamos de verdade.");
+      segurar = true; setTimeout(() => { segurar = false; aplicar(s); }, 1800);
+    } else { mostrarRetorno("👍", true); segurar = true; setTimeout(() => { segurar = false; aplicar(s); }, 450); }
+  } catch (e) { enviando = false; mostrarRetorno("Sem conexão… tentando de novo", false); setTimeout(() => { enviando = false; responder(resposta); }, 1500); }
+}
+function mostrarRetorno(texto, ok) { const el = $("retorno"); el.textContent = texto; el.className = "retorno " + (ok ? "ok" : "nao"); setTimeout(() => el.classList.add("hidden"), 1300); }
+
+document.addEventListener("click", (ev) => {
+  const op = ev.target.closest("[data-op]");
+  if (op && !enviando) { op.classList.add("marcada"); responder(op.dataset.op); return; }
+  if (ev.target.closest("[data-ouvir]") && itemAtual) falar(itemAtual.fala);
+});
+$("ouvir").addEventListener("click", () => { if (itemAtual) falar(itemAtual.fala); });
+$("comecar").addEventListener("click", () => { comecou = true; falar("Vamos começar!"); versaoMostrada = 0; mostrarTela(null); if (estado) aplicar(estado); });
+// ------------------------------------------------------------ modo tablet (pareado por código)
+let chaveEstacao = null, ultimoToken = "";
+function iniciarSessao(tok) {
+  TOKEN = tok; ultimoToken = tok;
+  estado = null; versaoMostrada = 0; itemAtual = null; comecou = false; areaMostrada = 0; terminou = false; falarVisto = 0; enviando = false; segurar = false;
+  clearInterval(vigia); buscar(); vigia = setInterval(buscar, 1200);
+}
+function voltarParaCodigo() { clearInterval(vigia); TOKEN = ""; itemAtual = null; $("palco").innerHTML = ""; mostrarTela("tela-estacao"); }
+async function vigiarEstacao() {
+  try {
+    if (!chaveEstacao) chaveEstacao = (() => { try { return localStorage.getItem("nt_estacao_chave"); } catch (e) { return null; } })();
+    if (!chaveEstacao) {
+      const r = await fetch(API + "/api/estacao", { method: "POST" }); const j = await r.json();
+      chaveEstacao = j.chave; try { localStorage.setItem("nt_estacao_chave", j.chave); } catch (e) { /* sem armazenamento: código novo a cada abertura */ }
+    }
+    const r = await fetch(API + "/api/estacao/" + chaveEstacao, { cache: "no-store" });
+    if (r.status === 404) { chaveEstacao = null; try { localStorage.removeItem("nt_estacao_chave"); } catch (e) { /* nada */ } return; }
+    const j = await r.json();
+    $("codigo-estacao").textContent = j.codigo.slice(0, 3) + " " + j.codigo.slice(3);
+    // teste novo mandado pelo avaliador: abre (se não houver outro em andamento)
+    if (j.token && j.token !== ultimoToken && (!TOKEN || terminou)) iniciarSessao(j.token);
+  } catch (e) { $("codigo-estacao").textContent = "sem internet"; }
+}
+if (ESTACAO) { mostrarTela("tela-estacao"); vigiarEstacao(); setInterval(vigiarEstacao, 3000); }
+else if (!TOKEN) { mostrarTela("tela-erro"); } else { buscar(); vigia = setInterval(buscar, API ? 1200 : 900); }
+</script>
+</body>
+</html>
