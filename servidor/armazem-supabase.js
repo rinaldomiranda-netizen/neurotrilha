@@ -58,6 +58,17 @@ export function criarArmazem(sb) {
       ok(await sb.from('nt_sessoes').delete().eq('participante', id));
       ok(await sb.from('nt_participantes').delete().eq('id', id));
     },
+    async sessaoPorDevolutiva(token) { const r = ok(await sb.from('nt_sessoes').select('dados').eq('dados->>devolutivaLink', token).maybeSingle()); return r ? r.dados : null; },
+    async participantePorPlano(token) { const r = ok(await sb.from('nt_participantes').select('id,dono,dados').contains('dados', { planos: [{ token }] }).limit(1)); return r[0] || null; },
+    async backupCompleto() {
+      // lê cada tabela inteira, de mil em mil linhas
+      const tudo = async (tabela, campos, ordem) => { const l = []; for (let de = 0; ; de += 1000) { const p = ok(await sb.from(tabela).select(campos).order(ordem, { ascending: true }).range(de, de + 999)); l.push(...p); if (p.length < 1000) return l; } };
+      return { contas: await tudo('nt_contas', 'user_id,usuario,nome,papel,ativo,mfa,primeiro_acesso,criado_em', 'criado_em'),
+        participantes: await tudo('nt_participantes', 'id,dono,codigo,dados,criado_em,atualizado_em', 'criado_em'),
+        sessoes: await tudo('nt_sessoes', 'id,participante,dono,token,status,dados,criado_em,atualizado_em', 'criado_em'),
+        questionarios: await tudo('nt_questionarios', 'id,participante,dono,token,dados,criado_em,respondido_em', 'criado_em'),
+        auditoria: await tudo('nt_auditoria', 'id,em,usuario,acao,alvo,detalhe,ip', 'id') };
+    },
     async excluirConta(id, para) {
       const movidas = ok(await sb.from('nt_participantes').select('id').eq('dono', id)).length;
       for (const t of ['nt_participantes', 'nt_sessoes', 'nt_questionarios']) ok(await sb.from(t).update({ dono: para }).eq('dono', id));

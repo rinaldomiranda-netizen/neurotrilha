@@ -32,7 +32,8 @@ function idadeEmAnos(nasc, agora) {
 }
 
 export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, autenticar, agora = () => Date.now(), aleatorio }) {
-  const G = Sessao.criarGestor(Motor, agora);  // regras da sessão: as mesmas do programa do computador (sessao-adaptativa.js)
+  const rnd0 = aleatorio || ((n) => { const b = new Uint8Array(n); crypto.getRandomValues(b); return b; });
+  const G = Sessao.criarGestor(Motor, agora, () => btoa(String.fromCharCode(...rnd0(24))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''));  // regras da sessão: as mesmas do programa do computador (sessao-adaptativa.js)
   const rnd = aleatorio || ((n) => { const b = new Uint8Array(n); crypto.getRandomValues(b); return b; });
   const base64url = (b) => btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   const uuid = () => crypto.randomUUID();
@@ -104,6 +105,23 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
           await salvar(s); return json(200, paraPaciente(s));
         }
         return erro(405, 'Método não permitido.');
+      }
+      // ---- devolutiva para a família (link do WhatsApp, sem login): só o texto em linguagem simples
+      m = caminho.match(/^\/api\/familia\/([A-Za-z0-9_-]{20,64})$/);
+      if (m && req.method === 'GET') { const d = G.paraFamilia(await armazem.sessaoPorDevolutiva(m[1])); return d ? json(200, d) : erro(404, 'Link inválido ou desativado pelo profissional.'); }
+      // ---- exercícios em casa: um link fixo; cada vez que a família abre, monta os exercícios do dia (sem login)
+      m = caminho.match(/^\/api\/plano\/([A-Za-z0-9_-]{20,64})$/);
+      if (m && req.method === 'GET') {
+        const part = await armazem.participantePorPlano(m[1]), pd = part ? part.dados : null, plano = pd && (pd.planos || []).find((x) => x.token === m[1] && x.ativo);
+        if (!plano) return erro(404, 'Link de exercícios inválido ou encerrado pelo profissional.');
+        const regs = await armazem.sessoes(null, part.id), anteriores = regs.map((r) => r.dados);
+        const aberta = anteriores.filter((x) => x.plano === m[1] && !['concluida', 'encerrada'].includes(x.status) && agora() - Date.parse(x.criadoEm) < 12 * 3600 * 1000)[0];
+        if (aberta) return json(200, { token: aberta.token, nome: aberta.nomeChamado });
+        const idade = idadeEmAnos(pd.birthDate, agora()), evitar = []; anteriores.forEach((x) => (x.historico || []).forEach((h) => { if (h.chave) evitar.push(h.chave); }));
+        const s = G.criar({ evitar, id: uuid(), token: base64url(rnd(24)), participantId: part.id, owner: part.dono, avaliador: plano.criadoPor || '', idadeAnos: idade,
+          nomeChamado: String(pd.preferredName || pd.name || '').split(' ')[0], leitor: idade >= 8, dominios: plano.dominios, maxItens: plano.maxItens || 12, modo: 'estimulacao', inicios: G.iniciosEstimulacao(anteriores), plano: m[1] });
+        await armazem.criarSessao({ id: s.id, participante: part.id, dono: part.dono, token: s.token, status: s.status, dados: s });
+        return json(200, { token: s.token, nome: s.nomeChamado });
       }
       // ---- tablet pareado: pede um código e fica esperando a sessão que o avaliador mandar
       if (caminho === '/api/estacao' && req.method === 'POST') {
@@ -216,6 +234,17 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
           questionarios: (await armazem.questionarios(m[1])).reverse().map((q) => q.dados) });
       }
 
+      // plano de exercícios em casa (estimulação): o profissional cria e manda o link pelo WhatsApp
+      if (caminho === '/api/planos' && req.method === 'POST') {
+        const b = await corpo(req) || {}, part = await armazem.participante(String(b.participantId || ''));
+        if (!part || !podeVer(conta, part.dono)) return erro(404, 'Ficha não encontrada.');
+        const doms = (Array.isArray(b.dominios) ? b.dominios : []).filter((d) => { const x = Motor.dominio(d); return x && !x.fixo; });
+        if (!doms.length) return erro(400, 'Escolha pelo menos uma área que possa virar exercício.');
+        const pd = { ...part.dados }, plano = { token: base64url(rnd(24)), dominios: doms.slice(0, 6), maxItens: Math.max(6, Math.min(16, Number(b.maxItens) || 12)), criadoEm: iso(), criadoPor: conta.nome, ativo: true };
+        pd.planos = (pd.planos || []).map((x) => ({ ...x, ativo: false })).concat([plano]);
+        await armazem.atualizarParticipante(part.id, { dados: pd }); await registrar('criar_plano_exercicios', pd.code);
+        return json(201, { token: plano.token, dominios: plano.dominios });
+      }
       // questionários dos pais/professores
       if (caminho === '/api/questionarios' && req.method === 'POST') {
         const b = await corpo(req) || {}, part = await armazem.participante(String(b.participantId || ''));
@@ -239,6 +268,8 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
       if (caminho.startsWith('/api/admin/')) {
         if (conta.papel !== 'admin') return erro(403, 'Só a RMD gerencia as contas.');
         if (caminho === '/api/admin/contas' && req.method === 'GET') return json(200, { contas: await armazem.contas() });
+        // cópia completa de tudo (para guardar no computador da RMD; o programa do computador é o backup)
+        if (caminho === '/api/admin/backup' && req.method === 'GET') { await registrar('backup_completo'); return json(200, { geradoEm: iso(), sistema: 'NeuroTrilha (RMD)', ...(await armazem.backupCompleto()) }); }
         if (caminho === '/api/admin/auditoria' && req.method === 'GET') { await registrar('ver_registro_acessos'); return json(200, { registros: await armazem.auditoria(1000) }); }
         if (caminho === '/api/admin/contas' && req.method === 'POST') {
           const b = await corpo(req) || {}, usuario = String(b.usuario || '').trim().toLowerCase(), nome = String(b.nome || '').trim().slice(0, 100);

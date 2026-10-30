@@ -202,6 +202,12 @@
     var host = $("ad-lista");
     try {
       var d = await api("/api/adaptativa"); st.lista = d.sessoes || [];
+      // retorno automático: exercícios que as famílias fizeram em casa (os mais recentes primeiro)
+      var casa = st.lista.filter(function (x) { return x.modo === "estimulacao" && x.historico !== 0; }).slice(0, 8);
+      var hostCasa = $("ad-casa"); if (!hostCasa) { host.insertAdjacentHTML("beforebegin", '<div id="ad-casa"></div>'); hostCasa = $("ad-casa"); hostCasa.addEventListener("click", function (ev) { var b = ev.target.closest("[data-ad-abrir]"); if (b) abrirPorId(b.dataset.adAbrir, b.dataset.fim === "1"); }); }
+      hostCasa.innerHTML = casa.length ? '<h3 style="margin-top:0">Exercícios feitos em casa</h3><div class="tablewrap"><table class="table"><thead><tr><th>Paciente</th><th>Quando</th><th>Situação</th><th>Nível alcançado</th><th></th></tr></thead><tbody>' + casa.map(function (x) {
+        var p = pessoa(x.participantId), fim = ["concluida", "encerrada"].indexOf(x.status) >= 0, niv = (x.areas || []).filter(function (a) { return a.nivel != null; }).map(function (a) { return esc(M.dominio(a.id).curto) + " " + numero(a.nivel, 1); }).join(" · ");
+        return "<tr><td><b>" + esc(p ? p.name : "—") + "</b></td><td>" + dataHora(x.atualizadoEm || x.criadoEm) + "</td><td>" + (fim ? '<span class="pill">feito ✔</span>' : '<span class="small muted">começou, não terminou</span>') + "</td><td class=\"small\">" + (niv || "—") + '</td><td><button class="secondary" data-ad-abrir="' + esc(x.id) + '" data-fim="' + (fim ? 1 : 0) + '">Ver</button></td></tr>'; }).join("") + "</tbody></table></div>" : "";
       host.innerHTML = st.lista.length ? '<table class="table"><thead><tr><th>Participante</th><th>Data</th><th>Situação</th><th>Áreas</th><th>QI estimado</th><th>Parecer</th><th></th></tr></thead><tbody>' + st.lista.map(function (x) {
         var p = pessoa(x.participantId), fim = ["concluida", "encerrada"].indexOf(x.status) >= 0;
         return "<tr><td><b>" + esc(p ? p.name : "—") + '</b><br><span class="small muted">' + esc(p ? p.code : "") + "</span></td><td>" + dataHora(x.criadoEm) + "</td><td>" + esc(NOME_STATUS[x.status] || x.status) + (x.modo === "estimulacao" ? ' <span class="pill">estimulação</span>' : "") + "</td><td>" + (x.dominios || []).length +
@@ -341,7 +347,7 @@
   function mostrarDevolutiva(s) {
     var p = pessoa(s.participantId), r = s.resultado || {}, base = rascunhoDevolutiva(s, p, r), salvo = s.devolutiva || {}, txt = Object.assign({}, base, salvo.secoes || {});
     var prof = salvo.profissional || (s.laudo && s.laudo.profissional) || (s.parecer && s.parecer.profissional) || "", reg = salvo.registro || (s.laudo && s.laudo.registro) || (s.parecer && s.parecer.registro) || "";
-    $("ad-relatorio").innerHTML = '<div class="ad-rel-cab no-print"><button class="quiet" id="ad-dev-voltar">← Voltar ao relatório</button><div class="actions"><button class="secondary" id="ad-dev-salvar">Salvar</button><button class="primary" id="ad-dev-imprimir">Imprimir / salvar PDF</button></div></div>' +
+    $("ad-relatorio").innerHTML = '<div class="ad-rel-cab no-print"><button class="quiet" id="ad-dev-voltar">← Voltar ao relatório</button><div class="actions"><button class="secondary" id="ad-dev-salvar">Salvar</button><button class="secondary" id="ad-dev-whats">Enviar à família (WhatsApp)</button><button class="primary" id="ad-dev-imprimir">Imprimir / salvar PDF</button></div></div><div id="ad-dev-link" class="no-print"></div>' +
       '<div class="notice no-print">Relatório em <b>linguagem simples</b> para a família e a escola. O texto foi sugerido pelo sistema: revise, complete e tire o que não couber. Sem números de QI.</div>' +
       '<div class="panel no-print ad-laudo-editor"><div class="formgrid"><div class="field"><label>Profissional</label><input id="ad-dev-prof" maxlength="120" value="' + esc(prof) + '"></div><div class="field"><label>Registro</label><input id="ad-dev-reg" maxlength="40" value="' + esc(reg) + '"></div></div>' +
       DEV_SECOES.map(function (k) { return '<div class="field"><label>' + esc(k[1]) + '</label><textarea data-dev="' + k[0] + '" rows="' + (["casa", "escola"].indexOf(k[0]) >= 0 ? 6 : 3) + '">' + esc(txt[k[0]] || "") + "</textarea></div>"; }).join("") + '<span id="ad-dev-msg" class="small"></span></div>' +
@@ -357,6 +363,18 @@
     $("ad-relatorio").querySelectorAll("textarea,input").forEach(function (x) { x.addEventListener("input", desenhar); });
     $("ad-dev-voltar").onclick = function () { mostrarRelatorio(st.sessao); };
     $("ad-dev-imprimir").onclick = function () { window.print(); };
+    function mostrarLinkFamilia(sx) {
+      if (!sx.devolutivaLink) { $("ad-dev-link").innerHTML = ""; return; }
+      var link = location.href.replace(/[?#].*$/, "").replace(/[^/]*$/, "") + "familia.html?d=" + encodeURIComponent(sx.devolutivaLink);
+      var texto = "Olá! Segue a devolutiva da avaliação" + (p ? " de " + (p.preferredName || p.name || "").split(" ")[0] : "") + ", em linguagem simples. Qualquer dúvida, estou à disposição: " + link;
+      $("ad-dev-link").innerHTML = '<div class="notice"><b>Link para a família</b> (só leitura, sem QI): <input class="ad-qlink" readonly value="' + esc(link) + '"> <a class="secondary" style="display:inline-block;margin-top:6px;padding:9px 12px;border-radius:10px;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(texto) + '">Abrir o WhatsApp com a mensagem</a> <button type="button" class="quiet" id="ad-dev-revogar">Desativar este link</button></div>';
+      $("ad-dev-revogar").onclick = async function () { if (!confirm("Desativar o link? Quem tiver recebido não conseguirá mais abrir.")) return; try { st.sessao = await api("/api/adaptativa/" + encodeURIComponent(s.id) + "/controle", { method: "POST", body: JSON.stringify({ acao: "revogarDevolutiva" }) }); mostrarLinkFamilia(st.sessao); toast("Link desativado."); } catch (e) { toast(e.message); } };
+    }
+    mostrarLinkFamilia(s);
+    $("ad-dev-whats").onclick = async function () {
+      try { await $("ad-dev-salvar").onclick(); st.sessao = await api("/api/adaptativa/" + encodeURIComponent(s.id) + "/controle", { method: "POST", body: JSON.stringify({ acao: "compartilharDevolutiva" }) }); mostrarLinkFamilia(st.sessao); }
+      catch (e) { toast(e.message); }
+    };
     $("ad-dev-salvar").onclick = async function () {
       var d = { profissional: $("ad-dev-prof").value, registro: $("ad-dev-reg").value };
       DEV_SECOES.forEach(function (k) { d[k[0]] = document.querySelector('[data-dev="' + k[0] + '"]').value; });
@@ -372,12 +390,12 @@
     var doms = cands.filter(function (a) { return a.indice < 95; }).slice(0, 4).map(function (a) { return a.id; });
     if (!doms.length) doms = cands.slice(0, 3).map(function (a) { return a.id; });
     if (!doms.length) { toast("Esta avaliação não tem áreas que possam virar jogo de estimulação."); return; }
-    if (!confirm("Criar uma estimulação em casa com: " + doms.map(function (d) { return M.dominio(d).curto; }).join(", ") + "?\n\nA pessoa joga pelo link (celular, tablet ou computador), vê se acertou em cada tarefa, e você acompanha a evolução no relatório.")) return;
+    if (!confirm("Criar exercícios em casa com: " + doms.map(function (d) { return M.dominio(d).curto; }).join(", ") + "?\n\nA pessoa joga pelo link (celular, tablet ou computador), vê se acertou em cada tarefa, e você acompanha a evolução no relatório.")) return;
     try {
-      var e = await api("/api/adaptativa", { method: "POST", body: JSON.stringify({ participantId: s.participantId, dominios: doms, maxItens: 12, modo: "estimulacao" }) });
-      var link = linkPaciente(e), p = pessoa(s.participantId), nome = p ? (p.preferredName || p.name || "").split(" ")[0] : "";
-      var texto = "Olá! Aqui estão os jogos de estimulação do NeuroTrilha" + (nome ? " para " + nome : "") + ". Abra no celular, tablet ou computador, com calma, em um lugar tranquilo: " + link;
-      $("ad-estim-link").innerHTML = '<div class="notice"><b>Estimulação criada.</b> Envie este link para a família:<br><input class="ad-qlink" readonly value="' + esc(link) + '"> <a class="secondary" style="display:inline-block;margin-top:6px;padding:9px 12px;border-radius:10px;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(texto) + '">Enviar pelo WhatsApp</a></div>';
+      var e = await api("/api/planos", { method: "POST", body: JSON.stringify({ participantId: s.participantId, dominios: doms, maxItens: 12 }) });
+      var link = location.href.replace(/[?#].*$/, "").replace(/[^/]*$/, "") + "paciente.html?plano=" + encodeURIComponent(e.token), p = pessoa(s.participantId), nome = p ? (p.preferredName || p.name || "").split(" ")[0] : "";
+      var texto = "Olá! Aqui estão os exercícios do NeuroTrilha" + (nome ? " para " + nome : "") + ". Faça com calma, em um lugar tranquilo, de preferência um pouquinho todos os dias (o mesmo link serve sempre): " + link;
+      $("ad-estim-link").innerHTML = '<div class="notice"><b>Exercícios em casa criados.</b> É um link fixo: cada vez que a família abre, o sistema monta os exercícios do dia e o resultado chega para você automaticamente. Envie para a família:<br><input class="ad-qlink" readonly value="' + esc(link) + '"> <a class="secondary" style="display:inline-block;margin-top:6px;padding:9px 12px;border-radius:10px;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(texto) + '">Enviar pelo WhatsApp</a></div>';
       toast("Estimulação criada.");
     } catch (e2) { toast(e2.message); }
   }

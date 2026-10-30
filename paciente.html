@@ -123,7 +123,9 @@ let TOKEN = (new URLSearchParams(location.search).get("t") || "").replace(/[^A-Z
 // Na internet (NeuroTrilha pela nuvem) os pedidos vão para a função da nuvem; no computador, para o próprio servidor.
 const API = (window.NT_CONFIG && window.NT_CONFIG.FUNCOES) || "";
 // Modo tablet: na nuvem e sem endereço de sessão, o tablet mostra um código e espera o avaliador mandar o teste.
-const ESTACAO = !TOKEN && !!API;
+// Exercícios em casa: um link fixo (?plano=...) que monta os exercícios do dia a cada abertura.
+const PLANO = (new URLSearchParams(location.search).get("plano") || "").replace(/[^A-Za-z0-9_-]/g, "");
+const ESTACAO = !TOKEN && !!API && !PLANO;
 const ICONE = { gf: "🧩", gwm: "💡", gv: "🔷", gs: "⚡", gc: "🗣️", gq: "🔢", at: "🐟", fx: "🃏", mp: "👂", fv: "🗣️", lx: "📖", dt: "✏️", mt: "➗", cs: "💭", dc: "✍️", rl: "🕙", tp: "👆", tr: "⏱️", or: "🗓️" };
 const $ = (id) => document.getElementById(id);
 let ultimaFala = "", estado = null, versaoMostrada = 0, itemAtual = null, inicio = 0, enviando = false, falarVisto = 0, comecou = false, areaMostrada = 0, timerLimite = null, voz = null, segurar = false, terminou = false, vigia = null;
@@ -496,7 +498,11 @@ async function vigiarEstacao() {
     if (j.token && j.token !== ultimoToken && (!TOKEN || terminou)) iniciarSessao(j.token);
   } catch (e) { $("codigo-estacao").textContent = "sem internet"; }
 }
-if (ESTACAO) { mostrarTela("tela-estacao"); vigiarEstacao(); setInterval(vigiarEstacao, 3000); }
+if (PLANO) {
+  fetch(API + "/api/plano/" + PLANO, { cache: "no-store" }).then((r) => r.json().then((j) => ({ r, j })))
+    .then(({ r, j }) => { if (!r.ok) throw new Error(j.error || "Link inválido."); iniciarSessao(j.token); })
+    .catch((e) => { $("erro-texto").textContent = e.message; mostrarTela("tela-erro"); });
+} else if (ESTACAO) { mostrarTela("tela-estacao"); vigiarEstacao(); setInterval(vigiarEstacao, 3000); }
 else if (!TOKEN) { mostrarTela("tela-erro"); } else { buscar(); vigia = setInterval(buscar, API ? 1200 : 900); }
 </script>
 </body>

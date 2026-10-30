@@ -1445,5 +1445,5 @@
     novaEscada: novaEscada, registrar: registrar, nivelEstimado: nivelEstimado, idadeDoNivel: idadeDoNivel, nivelEsperado: nivelEsperado, indice: indice, faixa: faixa,
     resultado: resultado, svg: svg, rng: rng,
     PROTOCOLOS: PROTOCOLOS, protocolo: protocolo, itemFim: itemFim, corrigirAvaliador: corrigirAvaliador, limparEntrega: limparEntrega, sugestoes: sugestoes, somDe: somDe,
-    refFluencia: refFluencia, refLeituraPpm: refLeituraPpm, FIGURAS: FIGURAS, ORIENT: ORIENT };
+    refFluencia: refFluencia, refLeituraPpm: refLeituraPpm, FIGURAS: FIGURAS, ORIENT: ORIENT, TEXTOS: TEXTOS, MP_PALAVRAS: MP_POOL.map(function (p) { return p[0]; }) };
 });

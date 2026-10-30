@@ -8,7 +8,8 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  function criarGestor(Motor, agora) {
+  // gerarChave: cria um código secreto aleatório (link da devolutiva para a família); vem do servidor
+  function criarGestor(Motor, agora, gerarChave) {
     agora = agora || function () { return Date.now(); };
     var iso = function () { return new Date(agora()).toISOString(); };
     function escada(s) { return s.escadas[s.atual] || null; }
@@ -19,7 +20,7 @@
         idadeAnos: d.idadeAnos, nomeChamado: d.nomeChamado, leitor: d.leitor, dominios: d.dominios, maxItens: d.maxItens,
         escadas: d.dominios.map(function (id) { return Motor.novaEscada(id, { maxItens: d.maxItens, idade: d.idadeAnos, curta: !!d.curta, inicio: (d.inicios || {})[id] }); }), atual: 0, item: null, versao: 1, falar: 0, historico: [], observacoes: [], parecer: null,
         evitar: (d.evitar || []).slice(-3000), encontros: [{ inicio: iso() }], comportamento: null,
-        modo: d.modo === 'estimulacao' ? 'estimulacao' : 'avaliacao', curta: !!d.curta, blocos: {}, desenhos: {} };
+        modo: d.modo === 'estimulacao' ? 'estimulacao' : 'avaliacao', curta: !!d.curta, blocos: {}, desenhos: {}, plano: d.plano || null };
       novoItem(s);
       return s;
     }
@@ -63,7 +64,7 @@
       return { id: s.id, token: s.token, status: s.status, participantId: s.participantId, avaliador: s.avaliador, criadoEm: s.criadoEm, atualizadoEm: s.atualizadoEm,
         idadeAnos: s.idadeAnos, leitor: s.leitor, dominios: s.dominios, maxItens: s.maxItens, atual: s.atual, nivelAtual: e ? e.nivel : null, item: s.item, versao: s.versao,
         historico: s.historico.slice(-400), observacoes: s.observacoes, parecer: s.parecer, escadas: s.escadas, tardia: s.tardia || null,
-        comportamento: s.comportamento || null, laudo: s.laudo || null, devolutiva: s.devolutiva || null, modo: s.modo || 'avaliacao', curta: !!s.curta, mpTardia: s.mpTardia || null,
+        comportamento: s.comportamento || null, laudo: s.laudo || null, devolutiva: s.devolutiva || null, devolutivaLink: s.devolutivaLink || null, plano: s.plano || null, modo: s.modo || 'avaliacao', curta: !!s.curta, mpTardia: s.mpTardia || null,
         desenhos: ['concluida', 'encerrada'].indexOf(s.status) >= 0 ? (s.desenhos || {}) : {}, encontros: s.encontros || [], pausaEncontro: !!s.pausaEncontro,
         resultado: Motor.resultado(s, s.idadeAnos), estacao: s.estacao || null };
     }
@@ -112,7 +113,10 @@
     // controles do avaliador: pausar, continuar, subir/descer nível, pular área, encerrar, repetir a fala, anotar
     function controle(s, b) {
       var e = escada(s), acao = String(b.acao || '');
-      if (['concluida', 'encerrada'].indexOf(s.status) >= 0 && ['observacao', 'comportamento', 'laudo', 'devolutiva'].indexOf(acao) < 0) return { erro: 'A sessão já terminou.' };
+      if (['concluida', 'encerrada'].indexOf(s.status) >= 0 && ['observacao', 'comportamento', 'laudo', 'devolutiva', 'compartilharDevolutiva', 'revogarDevolutiva'].indexOf(acao) < 0) return { erro: 'A sessão já terminou.' };
+      // devolutiva para a família por link (WhatsApp): só depois de salva; o profissional pode desativar o link
+      if (acao === 'compartilharDevolutiva') { if (!s.devolutiva) return { erro: 'Salve a devolutiva antes de enviar.' }; if (!s.devolutivaLink) { if (!gerarChave) return { erro: 'Link indisponível.' }; s.devolutivaLink = gerarChave(); } return { ok: true }; }
+      if (acao === 'revogarDevolutiva') { s.devolutivaLink = null; return { ok: true }; }
       if (acao === 'pontuar') return pontuar(s, b);
       if (acao === 'pausar') { s.status = 'pausada'; s.versao++; }
       else if (acao === 'encontro') {  // termina o encontro de hoje; continua outro dia do ponto onde parou
@@ -165,7 +169,10 @@
       return ini;
     }
 
-    return { iniciosEstimulacao: iniciosEstimulacao, criar: criar, novoItem: novoItem, paraPaciente: paraPaciente, paraAvaliador: paraAvaliador, responder: responder, controle: controle };
+    // o que a família vê pelo link (só a devolutiva em linguagem simples; nada de QI nem respostas)
+    function paraFamilia(s) { return s && s.devolutiva ? { nome: s.nomeChamado, data: s.criadoEm, secoes: s.devolutiva.secoes, profissional: s.devolutiva.profissional, registro: s.devolutiva.registro } : null; }
+
+    return { paraFamilia: paraFamilia, iniciosEstimulacao: iniciosEstimulacao, criar: criar, novoItem: novoItem, paraPaciente: paraPaciente, paraAvaliador: paraAvaliador, responder: responder, controle: controle };
   }
 
   return { criarGestor: criarGestor };
