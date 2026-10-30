@@ -12,11 +12,12 @@
 //   tablet:       POST /api/estacao · GET /api/estacao/:chave              (código de 6 números para parear)
 //   questionário: POST/GET /api/questionarios · GET/POST /api/q/:token      (pais e professores respondem sem login)
 //   pesquisa:     GET /api/admin/normas (só RMD; dados anônimos de quem autorizou)
+//   LGPD:         GET /api/participantes/:id/exportar · DELETE /api/participantes/:id · GET /api/admin/auditoria · POST /api/eu/2fa
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 };
 const SENHA_TESTE = '123456';  // senha de teste na nuvem (mínimo 6); a definitiva é pedida quando o uso for real
 const ESTACAO_VALIDADE_MS = 12 * 60 * 60 * 1000;
@@ -30,12 +31,13 @@ function idadeEmAnos(nasc, agora) {
   return anos > 0 ? Math.round(anos * 100) / 100 : null;
 }
 
-export function criarNucleo({ Motor, Sessao, Questionario, armazem, autenticar, agora = () => Date.now(), aleatorio }) {
+export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, autenticar, agora = () => Date.now(), aleatorio }) {
   const G = Sessao.criarGestor(Motor, agora);  // regras da sessão: as mesmas do programa do computador (sessao-adaptativa.js)
   const rnd = aleatorio || ((n) => { const b = new Uint8Array(n); crypto.getRandomValues(b); return b; });
   const base64url = (b) => btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   const uuid = () => crypto.randomUUID();
   const iso = () => new Date(agora()).toISOString();
+  const leituras = new Map();  // leituras repetidas (a tela ao vivo consulta a cada 2 s) entram no registro uma vez a cada 30 min
 
   // ---------------------------------------------------------------- sessão adaptativa (regras em sessao-adaptativa.js)
   const paraPaciente = (s) => G.paraPaciente(s);
@@ -58,6 +60,9 @@ export function criarNucleo({ Motor, Sessao, Questionario, armazem, autenticar, 
       .forEach((k) => { if (p[k] != null) p[k] = String(p[k]).trim().slice(0, k === 'notes' ? 2000 : 200); });
     p.consent = !!p.consent;
     p.pesquisa = !!p.pesquisa;  // autorizou uso ANÔNIMO para pesquisa e normas
+    // termo de consentimento assinado na tela (LGPD); assinatura inválida não substitui a já guardada
+    const termo = Assinatura ? Assinatura.limpar(entrada && entrada.termo) : null;
+    if (termo) p.termo = termo; else if (existente && existente.termo) p.termo = existente.termo; else delete p.termo;
     if (p.anamnese && typeof p.anamnese === 'object') {
       const a = {}; ['queixa', 'gestacao', 'desenvolvimento', 'escola', 'saude', 'familia', 'diagnosticos'].forEach((k) => { if (p.anamnese[k]) a[k] = String(p.anamnese[k]).trim().slice(0, 1500); });
       p.anamnese = a;
@@ -121,23 +126,34 @@ export function criarNucleo({ Motor, Sessao, Questionario, armazem, autenticar, 
       if (m) {
         const q = await armazem.questionarioPorToken(m[1]);
         if (!q) return erro(404, 'Link de questionário inválido ou vencido.');
-        if (req.method === 'GET') return json(200, { nome: q.dados.nomeChamado, profissional: q.dados.profissional, respondente: q.dados.respondente, respondido: !!q.dados.respondidoEm });
+        if (req.method === 'GET') return json(200, { nome: q.dados.nomeChamado, profissional: q.dados.profissional, respondente: q.dados.respondente, instrumento: q.dados.instrumento || 'snap', respondido: !!q.dados.respondidoEm });
         if (req.method === 'POST') {
           if (q.dados.respondidoEm) return erro(409, 'Este questionário já foi respondido.');
           const b = await corpo(req) || {}, respostas = Array.isArray(b.respostas) ? b.respostas.map(Number) : [];
-          const pontuacao = Questionario.pontuar(respostas); if (!pontuacao) return erro(400, 'Responda todas as frases.');
-          await armazem.salvarQuestionario(q.id, { ...q.dados, respostas, pontuacao, nomeRespondente: String(b.nome || '').slice(0, 80), respondidoEm: iso() });
+          const inst = q.dados.instrumento || 'snap', resultado = Questionario.pontuarInstrumento(inst, respostas); if (!resultado) return erro(400, 'Responda todas as frases.');
+          await armazem.salvarQuestionario(q.id, { ...q.dados, respostas, resultado, pontuacao: inst === 'snap' ? resultado.escalas : null, nomeRespondente: String(b.nome || '').slice(0, 80), respondidoEm: iso() });
           return json(200, { ok: true });
         }
       }
 
       // ---- daqui para baixo: só com login de profissional liberado
-      const userId = await autenticar(req);
+      const au = await autenticar(req), userId = au && typeof au === 'object' ? au.id : au, aal = au && typeof au === 'object' ? au.aal || 'aal1' : 'aal1';
       if (!userId) return erro(401, 'Entre com seu usuário e senha.');
       const conta = await armazem.conta(userId);
       if (!conta || !conta.ativo) return erro(403, 'Acesso não liberado. Fale com a RMD.');
+      // verificação em duas etapas: quem ligou só entra com o código do aplicativo (login de nível aal2)
+      if (conta.mfa && aal !== 'aal2') return json(401, { error: 'Digite o código de 6 números do aplicativo autenticador.', precisa2fa: true });
+      const ip = String(req.headers.get('x-forwarded-for') || '').split(',')[0].trim().slice(0, 60);
+      const registrar = (acao, alvo = '', detalhe = '') => armazem.registrar({ user_id: userId, usuario: conta.usuario, acao, alvo: String(alvo).slice(0, 120), detalhe: String(detalhe).slice(0, 300), ip });
+      const registrarLeitura = (acao, alvo = '') => { const k = userId + '|' + acao + '|' + alvo, t = agora(); if (t - (leituras.get(k) || 0) < 30 * 60 * 1000) return; leituras.set(k, t); if (leituras.size > 5000) leituras.clear(); return registrar(acao, alvo); };
 
-      if (caminho === '/api/eu' && req.method === 'GET') return json(200, { usuario: conta.usuario, nome: conta.nome, papel: conta.papel, senhaProvisoria: conta.senha_provisoria });
+      if (caminho === '/api/eu' && req.method === 'GET') { await registrarLeitura('entrou'); return json(200, { usuario: conta.usuario, nome: conta.nome, papel: conta.papel, senhaProvisoria: conta.senha_provisoria, mfa: !!conta.mfa, aal }); }
+      if (caminho === '/api/eu/2fa' && req.method === 'POST') {
+        const b = await corpo(req) || {};
+        if (aal !== 'aal2') return erro(400, 'Confirme primeiro o código do aplicativo autenticador.');
+        await armazem.atualizarConta(userId, { mfa: !!b.ativo }); await registrar(b.ativo ? '2fa_ligada' : '2fa_desligada');
+        return json(200, { ok: true, mfa: !!b.ativo });
+      }
       if (caminho === '/api/eu/senha' && req.method === 'POST') {
         const b = await corpo(req), nova = String((b && b.nova) || '');
         if (nova.length < 6 || nova.length > 128) return erro(400, 'A senha precisa ter pelo menos 6 caracteres.');
@@ -146,7 +162,7 @@ export function criarNucleo({ Motor, Sessao, Questionario, armazem, autenticar, 
       }
 
       // fichas
-      if (caminho === '/api/participantes' && req.method === 'GET') return json(200, { participants: await armazem.participantes(conta.papel === 'admin' ? null : userId) });
+      if (caminho === '/api/participantes' && req.method === 'GET') { await registrarLeitura('listar_fichas'); return json(200, { participants: await armazem.participantes(conta.papel === 'admin' ? null : userId) }); }
       if (caminho === '/api/participantes' && req.method === 'POST') {
         const b = await corpo(req); if (!b) return erro(400, 'Dados inválidos.');
         const p = limparFicha(b), msg = fichaValida(p); if (msg) return erro(400, msg);
@@ -154,7 +170,7 @@ export function criarNucleo({ Motor, Sessao, Questionario, armazem, autenticar, 
         if (iguais.length) return erro(409, 'Já existe uma ficha com este nome e nascimento (' + iguais[0].code + ').');
         p.id = uuid(); p.createdAt = iso(); p.updatedAt = p.createdAt;
         const criada = await armazem.criarParticipante({ id: p.id, dono: userId, nome_busca: normalizar(p.name), nascimento: p.birthDate, dados: p });
-        return json(201, { participant: criada });
+        await registrar('criar_ficha', criada.code); return json(201, { participant: criada });
       }
       m = caminho.match(/^\/api\/participantes\/([0-9a-f-]{36})$/);
       if (m && req.method === 'PUT') {
@@ -163,21 +179,42 @@ export function criarNucleo({ Motor, Sessao, Questionario, armazem, autenticar, 
         const b = await corpo(req); if (!b) return erro(400, 'Dados inválidos.');
         const p = limparFicha({ ...b, id: atual.dados.id, code: atual.dados.code }, atual.dados), msg = fichaValida(p); if (msg) return erro(400, msg);
         p.updatedAt = iso();
+        await registrar('editar_ficha', p.code);
         return json(200, { participant: await armazem.atualizarParticipante(m[1], { nome_busca: normalizar(p.name), nascimento: p.birthDate, dados: p }) });
+      }
+      // LGPD: apagar todos os dados de uma pessoa (confirmação: o código da ficha)
+      if (m && req.method === 'DELETE') {
+        const atual = await armazem.participante(m[1]);
+        if (!atual || !podeVer(conta, atual.dono)) return erro(404, 'Ficha não encontrada.');
+        const b = await corpo(req) || {};
+        if (String(b.confirmar || '').trim().toUpperCase() !== String(atual.dados.code).toUpperCase()) return erro(400, 'Para apagar, digite o código da ficha (' + atual.dados.code + ').');
+        await armazem.apagarParticipante(m[1]); await registrar('apagar_ficha', atual.dados.code, 'todos os dados do participante');
+        return json(200, { ok: true });
+      }
+      // LGPD: cópia de todos os dados de uma pessoa (direito de acesso e portabilidade)
+      m = caminho.match(/^\/api\/participantes\/([0-9a-f-]{36})\/exportar$/);
+      if (m && req.method === 'GET') {
+        const atual = await armazem.participante(m[1]);
+        if (!atual || !podeVer(conta, atual.dono)) return erro(404, 'Ficha não encontrada.');
+        await registrar('exportar_dados', atual.dados.code);
+        return json(200, { geradoEm: iso(), sistema: 'NeuroTrilha (RMD)', participante: atual.dados,
+          avaliacoesAdaptativas: (await armazem.sessoes(null, m[1])).reverse().map((r) => { const d = { ...r.dados }; delete d.token; return d; }),
+          questionarios: (await armazem.questionarios(m[1])).reverse().map((q) => q.dados) });
       }
 
       // questionários dos pais/professores
       if (caminho === '/api/questionarios' && req.method === 'POST') {
         const b = await corpo(req) || {}, part = await armazem.participante(String(b.participantId || ''));
         if (!part || !podeVer(conta, part.dono)) return erro(404, 'Ficha não encontrada.');
-        const respondente = b.respondente === 'professor' ? 'professor' : 'pais', token = base64url(rnd(24));
-        await armazem.criarQuestionario({ id: uuid(), participante: part.id, dono: part.dono, token, dados: { respondente, nomeChamado: String(part.dados.preferredName || part.dados.name || '').split(' ')[0], profissional: conta.nome, criadoEm: iso() } });
-        return json(201, { token, respondente });
+        const instrumento = Object.prototype.hasOwnProperty.call(Questionario.INSTRUMENTOS, b.instrumento) ? b.instrumento : 'snap', quem = Questionario.INSTRUMENTOS[instrumento].respondentes;
+        const respondente = quem.indexOf(b.respondente) >= 0 ? b.respondente : quem[0], token = base64url(rnd(24));
+        await armazem.criarQuestionario({ id: uuid(), participante: part.id, dono: part.dono, token, dados: { respondente, instrumento, nomeChamado: String(part.dados.preferredName || part.dados.name || '').split(' ')[0], profissional: conta.nome, criadoEm: iso() } });
+        return json(201, { token, respondente, instrumento });
       }
       if (caminho === '/api/questionarios' && req.method === 'GET') {
         const part = await armazem.participante(url.searchParams.get('participante') || '');
         if (!part || !podeVer(conta, part.dono)) return erro(404, 'Ficha não encontrada.');
-        return json(200, { questionarios: (await armazem.questionarios(part.id)).map((q) => ({ respondente: q.dados.respondente, criadoEm: q.dados.criadoEm, respondidoEm: q.dados.respondidoEm || null, nomeRespondente: q.dados.nomeRespondente || '', respostas: q.dados.respostas || null, pontuacao: q.dados.pontuacao || null })) });
+        return json(200, { questionarios: (await armazem.questionarios(part.id)).map((q) => ({ respondente: q.dados.respondente, instrumento: q.dados.instrumento || 'snap', resultado: q.dados.resultado || null, criadoEm: q.dados.criadoEm, respondidoEm: q.dados.respondidoEm || null, nomeRespondente: q.dados.nomeRespondente || '', respostas: q.dados.respostas || null, pontuacao: q.dados.pontuacao || null })) });
       }
       if (caminho === '/api/admin/normas' && req.method === 'GET') {
         if (conta.papel !== 'admin') return erro(403, 'Só a RMD exporta os dados de pesquisa.');
@@ -188,6 +225,7 @@ export function criarNucleo({ Motor, Sessao, Questionario, armazem, autenticar, 
       if (caminho.startsWith('/api/admin/')) {
         if (conta.papel !== 'admin') return erro(403, 'Só a RMD gerencia as contas.');
         if (caminho === '/api/admin/contas' && req.method === 'GET') return json(200, { contas: await armazem.contas() });
+        if (caminho === '/api/admin/auditoria' && req.method === 'GET') { await registrar('ver_registro_acessos'); return json(200, { registros: await armazem.auditoria(1000) }); }
         if (caminho === '/api/admin/contas' && req.method === 'POST') {
           const b = await corpo(req) || {}, usuario = String(b.usuario || '').trim().toLowerCase(), nome = String(b.nome || '').trim().slice(0, 100);
           if (!/^[a-z0-9._-]{3,40}$/.test(usuario)) return erro(400, 'Usuário: 3 a 40 letras minúsculas, números, ponto, hífen ou sublinhado.');
@@ -200,7 +238,10 @@ export function criarNucleo({ Motor, Sessao, Questionario, armazem, autenticar, 
           const alvo = await armazem.conta(m[1]);
           if (!alvo || alvo.papel === 'admin') return erro(404, 'Conta de profissional não encontrada.');
           if (!m[2] && req.method === 'PUT') { const b = await corpo(req) || {}; await armazem.atualizarConta(m[1], { ativo: !!b.ativo }); return json(200, { ok: true }); }
-          if (m[2] && req.method === 'POST') { await armazem.trocarSenha(m[1], SENHA_TESTE); await armazem.atualizarConta(m[1], { senha_provisoria: true }); return json(200, { ok: true }); }
+          if (m[2] && req.method === 'POST') {  // volta a senha de teste e desliga as duas etapas (ex.: celular perdido)
+            await armazem.trocarSenha(m[1], SENHA_TESTE); await armazem.limparMfa(m[1]); await armazem.atualizarConta(m[1], { senha_provisoria: true, mfa: false });
+            await registrar('senha_voltou_padrao', alvo.usuario, 'senha de teste e duas etapas desligada'); return json(200, { ok: true });
+          }
         }
         return erro(404, 'Rota não encontrada.');
       }
@@ -219,7 +260,9 @@ export function criarNucleo({ Motor, Sessao, Questionario, armazem, autenticar, 
         const p = part.dados, idade = idadeEmAnos(p.birthDate, agora());
         if (idade == null || idade < 4) return erro(400, 'A aplicação adaptativa está preparada a partir de 4 anos.');
         const maxItens = Math.max(6, Math.min(16, Number(b.maxItens) || 10));
-        const s = G.criar({ id: uuid(), token: base64url(rnd(24)), participantId: part.id, owner: part.dono, avaliador: conta.nome, idadeAnos: idade,
+        // formas paralelas: tarefas que o paciente já viu em avaliações anteriores não se repetem
+        const evitar = []; (await armazem.sessoes(null, part.id)).forEach((r) => (r.dados.historico || []).forEach((h) => { if (h.chave) evitar.push(h.chave); }));
+        const s = G.criar({ evitar, id: uuid(), token: base64url(rnd(24)), participantId: part.id, owner: part.dono, avaliador: conta.nome, idadeAnos: idade,
           nomeChamado: String(p.preferredName || p.name || '').split(' ')[0], leitor: b.leitor === undefined ? idade >= 8 : !!b.leitor, dominios: doms, maxItens });
         await armazem.criarSessao({ id: s.id, participante: part.id, dono: part.dono, token: s.token, status: s.status, dados: s });
         return json(201, paraAvaliador(s));
@@ -229,7 +272,7 @@ export function criarNucleo({ Motor, Sessao, Questionario, armazem, autenticar, 
         const reg = await armazem.sessao(m[1]);
         if (!reg || !podeVer(conta, reg.dono)) return erro(404, 'Sessão não encontrada.');
         const s = reg.dados;
-        if (!m[2] && req.method === 'GET') return json(200, paraAvaliador(s));
+        if (!m[2] && req.method === 'GET') { await registrarLeitura('ver_avaliacao', s.id); return json(200, paraAvaliador(s)); }
         if (m[2] === 'controle' && req.method === 'POST') { const r = controle(s, await corpo(req) || {}); if (r.erro) return erro(409, r.erro); await salvar(s); return json(200, paraAvaliador(s)); }
         if (m[2] === 'parecer' && req.method === 'PUT') {
           const b = await corpo(req) || {}, decisao = String(b.decisao || '');

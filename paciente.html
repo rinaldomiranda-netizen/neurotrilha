@@ -164,7 +164,11 @@ function aplicar(s) {
     return;
   }
   if (!comecou) { mostrarTela("tela-inicio"); return; }
-  if (s.status === "pausada") { mostrarTela("tela-pausa"); clearTimeout(timerLimite); versaoMostrada = 0; return; }
+  if (s.status === "pausada") {
+    // fim do encontro de hoje: a avaliação continua em outro dia, do ponto onde parou
+    $("tela-pausa").querySelector("h1").textContent = s.pausaEncontro ? "Por hoje é só!" : "Pausa";
+    $("tela-pausa").querySelector("p").textContent = s.pausaEncontro ? "Muito bem! Continuamos no próximo encontro." : "Espere um pouquinho. Já vamos continuar.";
+    mostrarTela("tela-pausa"); clearTimeout(timerLimite); versaoMostrada = 0; return; }
   if (s.item && s.versao !== versaoMostrada) {
     versaoMostrada = s.versao;
     if (s.area && s.area.numero !== areaMostrada) {

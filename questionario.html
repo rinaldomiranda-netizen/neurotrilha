@@ -19,11 +19,11 @@ main{max-width:760px;margin:auto;padding:16px}
 .enviar{width:100%;border:0;border-radius:999px;padding:16px;font:inherit;font-weight:800;font-size:19px;color:#fff;background:linear-gradient(135deg,#18b7a4,#2f6fe4)}
 .enviar:disabled{opacity:.5}.erro{color:#b42318;font-weight:700}.ok{text-align:center;padding:40px 16px}.ok div{font-size:64px}
 label.campo{display:block;margin:10px 0}label.campo input{width:100%;padding:11px;border:1px solid #cbd6e3;border-radius:10px;font:inherit}
-@media(max-width:480px){.escala{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.escala{grid-template-columns:1fr 1fr!important}}
 </style>
 </head>
 <body>
-<div class="topo"><i>N</i><div><b>NeuroTrilha</b><br><small>Questionário de comportamento</small></div></div>
+<div class="topo"><i>N</i><div><b>NeuroTrilha</b><br><small>Questionário</small></div></div>
 <main id="principal"><div class="cartao">Carregando…</div></main>
 <script src="config.js"></script>
 <script src="questionario.js"></script>
@@ -33,19 +33,22 @@ const Q = window.NeuroTrilhaQuestionario;
 const API = (window.NT_CONFIG && window.NT_CONFIG.FUNCOES) || "";
 const TOKEN = (new URLSearchParams(location.search).get("q") || "").replace(/[^A-Za-z0-9_-]/g, "");
 const $ = (id) => document.getElementById(id);
-const resp = new Array(Q.ITENS.length).fill(null);
+let resp = [], I = null;
 function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 async function carregar() {
   try {
     const r = await fetch(API + "/api/q/" + TOKEN, { cache: "no-store" }), d = await r.json();
     if (!r.ok) throw new Error(d.error || "Link inválido.");
     if (d.respondido) { $("principal").innerHTML = '<div class="cartao ok"><div>✅</div><h2>Questionário já respondido</h2><p>Obrigado! As respostas já foram enviadas ao profissional.</p></div>'; return; }
+    I = Q.INSTRUMENTOS[d.instrumento] || Q.INSTRUMENTOS.snap; resp = new Array(I.itens.length).fill(null);
+    document.querySelector(".topo small").textContent = I.titulo;
+    const proprio = d.respondente === "proprio";
     $("principal").innerHTML =
-      '<div class="cartao"><h2 style="margin-top:0">Sobre ' + esc(d.nome) + "</h2><p>Este questionário foi pedido pelo(a) profissional <b>" + esc(d.profissional) + "</b>. " +
-      "Pense no comportamento de " + esc(d.nome) + " <b>nos últimos 6 meses</b> e marque o quanto cada frase descreve " + (d.respondente === "professor" ? "o que você observa na escola" : "o que você observa em casa") + ". Não há resposta certa ou errada.</p>" +
-      '<label class="campo">Seu nome (opcional)<input id="q-nome" maxlength="80"></label><p style="font-size:13px;color:#6b7b90">As respostas vão só para o profissional que pediu e ficam guardadas com segurança (LGPD).</p></div>' +
+      '<div class="cartao"><h2 style="margin-top:0">' + (proprio ? "Olá, " + esc(d.nome) + "!" : "Sobre " + esc(d.nome)) + "</h2><p>Este questionário foi pedido pelo(a) profissional <b>" + esc(d.profissional) + "</b>. " +
+      (proprio ? esc(I.intro) : "Pense no comportamento de " + esc(d.nome) + " <b>nos últimos 6 meses</b> e marque o quanto cada frase descreve " + (d.respondente === "professor" ? "o que você observa na escola" : "o que você observa em casa") + ".") + " Não há resposta certa ou errada.</p>" +
+      '' + (proprio ? '<input id="q-nome" type="hidden" value="">' : '<label class="campo">Seu nome (opcional)<input id="q-nome" maxlength="80"></label>') + '<p style="font-size:13px;color:#6b7b90">As respostas vão só para o profissional que pediu e ficam guardadas com segurança (LGPD).</p></div>' +
       '<div class="barra"><div><span id="q-prog"></span></div></div>' +
-      Q.ITENS.map((txt, i) => '<div class="cartao item"><small>' + (i + 1) + " de " + Q.ITENS.length + "</small><p>" + esc(txt) + '</p><div class="escala">' + Q.OPCOES.map((o, k) => '<button type="button" data-i="' + i + '" data-v="' + k + '">' + o + "</button>").join("") + "</div></div>").join("") +
+      I.itens.map((txt, i) => '<div class="cartao item"><small>' + (i + 1) + " de " + I.itens.length + "</small><p>" + esc(txt) + '</p><div class="escala" style="grid-template-columns:repeat(' + I.opcoes.length + ',1fr)">' + I.opcoes.map((o, k) => '<button type="button" data-i="' + i + '" data-v="' + k + '">' + o + "</button>").join("") + "</div></div>").join("") +
       '<p class="erro" id="q-erro"></p><button class="enviar" id="q-enviar" disabled>Enviar respostas</button>';
     document.querySelectorAll("[data-i]").forEach((b) => b.addEventListener("click", () => {
       const i = Number(b.dataset.i); resp[i] = Number(b.dataset.v);
@@ -60,7 +63,8 @@ async function enviar() {
   try {
     const r = await fetch(API + "/api/q/" + TOKEN, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ respostas: resp, nome: $("q-nome").value.trim() }) });
     const d = await r.json(); if (!r.ok) throw new Error(d.error || "Falha ao enviar.");
-    $("principal").innerHTML = '<div class="cartao ok"><div>💙</div><h2>Obrigado!</h2><p>As respostas foram enviadas ao profissional. Pode fechar esta página.</p></div>'; window.scrollTo(0, 0);
+    $("principal").innerHTML = '<div class="cartao ok"><div>💙</div><h2>Obrigado!</h2><p>As respostas foram enviadas ao profissional. Pode fechar esta página.</p>' +
+      (I === Q.INSTRUMENTOS.phq9 && resp[8] > 0 ? '<p style="background:#fff4e5;border-radius:12px;padding:12px;text-align:left"><b>Se você está passando por um momento difícil, não fique sozinho(a).</b> Converse com alguém de confiança e com o profissional. O <b>CVV</b> atende 24 horas, de graça, pelo telefone <b>188</b> ou em cvv.org.br. Em emergência, ligue <b>192</b> (SAMU).</p>' : "") + "</div>"; window.scrollTo(0, 0);
   } catch (e) { $("q-erro").textContent = e.message; $("q-enviar").disabled = false; }
 }
 if (TOKEN) carregar(); else $("principal").innerHTML = '<div class="cartao"><h2>Link incompleto</h2><p>Peça o link ao profissional.</p></div>';

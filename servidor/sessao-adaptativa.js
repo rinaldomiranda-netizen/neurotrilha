@@ -17,7 +17,8 @@
     function criar(d) {
       var s = { id: d.id, token: d.token, participantId: d.participantId, owner: d.owner, avaliador: d.avaliador, status: 'aguardando', criadoEm: iso(), atualizadoEm: iso(),
         idadeAnos: d.idadeAnos, nomeChamado: d.nomeChamado, leitor: d.leitor, dominios: d.dominios, maxItens: d.maxItens,
-        escadas: d.dominios.map(function (id) { return Motor.novaEscada(id, { maxItens: d.maxItens }); }), atual: 0, item: null, versao: 1, falar: 0, historico: [], observacoes: [], parecer: null };
+        escadas: d.dominios.map(function (id) { return Motor.novaEscada(id, { maxItens: d.maxItens }); }), atual: 0, item: null, versao: 1, falar: 0, historico: [], observacoes: [], parecer: null,
+        evitar: (d.evitar || []).slice(-3000), encontros: [{ inicio: iso() }], comportamento: null };
       novoItem(s);
       return s;
     }
@@ -33,7 +34,12 @@
         s.item = null; if (s.status !== 'encerrada') s.status = 'concluida'; s.resultadoFinal = Motor.resultado(s, s.idadeAnos); s.versao++; return;
       }
       var treino = !e.treinoFeito;  // a 1ª tarefa de cada área é treino (com retorno, não conta)
-      s.item = Motor.gerarItem(e.dominio, treino ? 1 : e.nivel, s.id + '|' + s.historico.length + '|' + s.versao);
+      // formas paralelas: não repete tarefa já vista nesta sessão nem nas avaliações anteriores do paciente
+      var vistas = (s.evitar || []).concat(s.historico.map(function (h) { return h.chave; }));
+      for (var tent = 0; tent < 8; tent++) {
+        s.item = Motor.gerarItem(e.dominio, treino ? 1 : e.nivel, s.id + '|' + s.historico.length + '|' + s.versao + (tent ? '|p' + tent : ''));
+        if (vistas.indexOf(Motor.chaveItem(s.item)) < 0) break;
+      }
       s.item.treino = treino; s.item.mostradoEm = agora(); s.versao++;
       if (e.dominio === 'ml' && !treino && !s.mlAlvos && s.item.alvosFig) s.mlAlvos = s.item.alvosFig;  // guarda as figuras do 1º item valendo
     }
@@ -41,7 +47,7 @@
     function paraPaciente(s) {
       var e = escada(s), d = e ? Motor.dominio(e.dominio) : null, ult = s.historico[s.historico.length - 1];
       return { status: s.status, versao: s.versao, falar: s.falar, leitor: s.leitor, nome: s.nomeChamado,
-        area: d ? { curto: d.curto, numero: s.atual + 1, total: s.escadas.length } : (s.item && s.item.tardia ? { curto: 'Lembra?', numero: s.escadas.length, total: s.escadas.length } : null),
+        pausaEncontro: !!s.pausaEncontro, area: d ? { curto: d.curto, numero: s.atual + 1, total: s.escadas.length } : (s.item && s.item.tardia ? { curto: 'Lembra?', numero: s.escadas.length, total: s.escadas.length } : null),
         item: ['aguardando', 'em_andamento'].indexOf(s.status) >= 0 ? Motor.itemPublico(s.item) : null,
         retorno: ult && ult.treino ? { correto: ult.correto, certo: ult.certo } : null };
     }
@@ -51,6 +57,7 @@
       return { id: s.id, token: s.token, status: s.status, participantId: s.participantId, avaliador: s.avaliador, criadoEm: s.criadoEm, atualizadoEm: s.atualizadoEm,
         idadeAnos: s.idadeAnos, leitor: s.leitor, dominios: s.dominios, maxItens: s.maxItens, atual: s.atual, nivelAtual: e ? e.nivel : null, item: s.item, versao: s.versao,
         historico: s.historico.slice(-400), observacoes: s.observacoes, parecer: s.parecer, escadas: s.escadas, tardia: s.tardia || null,
+        comportamento: s.comportamento || null, laudo: s.laudo || null, encontros: s.encontros || [], pausaEncontro: !!s.pausaEncontro,
         resultado: Motor.resultado(s, s.idadeAnos), estacao: s.estacao || null };
     }
 
@@ -61,7 +68,9 @@
       var res = Motor.corrigir(s.item, b.resposta, tempo), e = escada(s);
       s.status = 'em_andamento';
       s.historico.push({ dominio: s.item.dominio, nivel: s.item.nivel, itemId: s.item.id, treino: !!s.item.treino, tardia: !!s.item.tardia, resposta: b.resposta, certo: s.item.certo,
-        correto: res.correto, rapido: res.rapido, esgotado: res.esgotado, extra: res.extra || null, tempoMs: tempo, em: iso(), fala: s.item.fala });
+        correto: res.correto, rapido: res.rapido, esgotado: res.esgotado, extra: res.extra || null, tempoMs: tempo, em: iso(), fala: s.item.fala,
+        nOpcoes: (s.item.opcoes || []).length, chave: Motor.chaveItem(s.item), subtipo: s.item.subtipo || null,
+        tipoErro: res.correto ? null : Motor.classificarErro(s.item, b.resposta, res) });
       if (s.item.tardia) { s.tardia = res.extra; s.tardiaFeita = true; }
       else if (s.item.treino) e.treinoFeito = true;
       else Motor.registrar(e, s.item, res, tempo);
@@ -72,9 +81,26 @@
     // controles do avaliador: pausar, continuar, subir/descer nível, pular área, encerrar, repetir a fala, anotar
     function controle(s, b) {
       var e = escada(s), acao = String(b.acao || '');
-      if (['concluida', 'encerrada'].indexOf(s.status) >= 0 && acao !== 'observacao') return { erro: 'A sessão já terminou.' };
+      if (['concluida', 'encerrada'].indexOf(s.status) >= 0 && acao !== 'observacao' && acao !== 'comportamento' && acao !== 'laudo') return { erro: 'A sessão já terminou.' };
       if (acao === 'pausar') { s.status = 'pausada'; s.versao++; }
-      else if (acao === 'continuar') { s.status = s.historico.length ? 'em_andamento' : 'aguardando'; if (s.item) s.item.mostradoEm = agora(); s.versao++; }
+      else if (acao === 'encontro') {  // termina o encontro de hoje; continua outro dia do ponto onde parou
+        s.status = 'pausada'; s.pausaEncontro = true; s.versao++;
+        var ult = (s.encontros || [])[s.encontros.length - 1]; if (ult && !ult.fim) ult.fim = iso();
+      }
+      else if (acao === 'continuar') {
+        if (s.pausaEncontro) { s.pausaEncontro = false; s.encontros = s.encontros || []; s.encontros.push({ inicio: iso() }); }
+        s.status = s.historico.length ? 'em_andamento' : 'aguardando'; if (s.item) s.item.mostradoEm = agora(); s.versao++;
+      }
+      else if (acao === 'comportamento') {  // observação padronizada do comportamento (preenchida no fim)
+        var c = b.comportamento || {}, campos = ['cooperacao', 'atencao', 'humor', 'linguagem', 'atividade', 'ansiedade', 'compreensao'], ok = {};
+        campos.forEach(function (k) { if (['adequado', 'parcial', 'prejudicado'].indexOf(c[k]) >= 0) ok[k] = c[k]; });
+        s.comportamento = { itens: ok, recursos: String(c.recursos || '').slice(0, 200), nota: String(c.nota || '').slice(0, 1000), em: iso() };
+      }
+      else if (acao === 'laudo') {  // texto do laudo (modelo da Resolução CFP 06/2019), editado pelo profissional
+        var l = b.laudo || {}, secoes = ['solicitante', 'finalidade', 'demanda', 'procedimento', 'analise', 'conclusao', 'referencias', 'local'], txt = {};
+        secoes.forEach(function (k) { txt[k] = String(l[k] || '').slice(0, 8000); });
+        s.laudo = { secoes: txt, profissional: String(l.profissional || '').slice(0, 120), registro: String(l.registro || '').slice(0, 40), em: iso() };
+      }
       else if (acao === 'subir' || acao === 'descer') {
         if (!e) return { erro: 'Não há área em andamento.' };
         if (e.fixo) return { erro: 'A atenção contínua tem velocidade fixa; o nível não muda.' };

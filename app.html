@@ -45,6 +45,7 @@ html,body{max-width:100%;overflow-x:hidden}
   <p>Área do avaliador. Entre com o usuário e a senha que a RMD criou para você.</p>
   <label class="auth-field"><span>Usuário</span><input id="nt-usuario" autocomplete="username" required autocapitalize="none" spellcheck="false"></label>
   <label class="auth-field"><span>Senha</span><input id="nt-senha" type="password" autocomplete="current-password" required></label>
+  <label class="auth-field hidden" id="nt-codigo-wrap"><span>Código de 6 números do aplicativo autenticador</span><input id="nt-codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>
   <div class="auth-error" id="nt-erro-entrar" role="alert"></div>
   <button class="primary" type="submit" id="nt-botao-entrar">Entrar</button>
   <div class="auth-safe">Desenvolvido por RMD. Os dados dos pacientes ficam protegidos: cada profissional vê só os próprios.</div>
@@ -94,8 +95,11 @@ html,body{max-width:100%;overflow-x:hidden}
    <button class="quiet" id="ad-c-pausar">⏸ Pausar</button><button class="success hidden" id="ad-c-continuar">▶ Continuar</button>
    <button class="quiet" id="ad-c-repetir">🔊 Repetir a fala</button>
    <button class="quiet" id="ad-c-descer">▼ Nível mais fácil</button><button class="quiet" id="ad-c-subir">▲ Nível mais difícil</button>
-   <button class="quiet" id="ad-c-pular">⏭ Pular esta área</button><button class="danger" id="ad-c-encerrar">■ Encerrar sessão</button>
+   <button class="quiet" id="ad-c-pular">⏭ Pular esta área</button><button class="secondary" id="ad-c-encontro">📅 Encerrar o encontro de hoje</button><button class="danger" id="ad-c-encerrar">■ Encerrar sessão</button>
   </div>
+  <div class="panel hidden" id="ad-comportamento"><h3>Observação do comportamento durante a avaliação</h3><p class="small muted">Preencha ao terminar. Entra no relatório e no laudo.</p><div id="ad-comp-campos"></div>
+   <div class="ad-linkrow"><input id="ad-comp-recursos" maxlength="200" placeholder="Recursos usados (óculos, aparelho auditivo, medicação no dia…)"></div>
+   <div class="ad-linkrow"><input id="ad-comp-nota" maxlength="1000" placeholder="Outras observações sobre o comportamento"><button class="primary" id="ad-comp-salvar">Salvar observação</button></div></div>
   <div class="grid ad-vivo">
    <div class="panel"><h3>O que o paciente está vendo</h3><div id="ad-tarefa"></div></div>
    <div class="panel"><h3>Estimativa ao vivo</h3><div id="ad-parcial"></div><div id="ad-curva" style="margin-top:12px"></div><div id="ad-alertas"></div></div>
@@ -125,6 +129,7 @@ html,body{max-width:100%;overflow-x:hidden}
      <div><label for="f-resp">Responsável (se menor)</label><input id="f-resp" maxlength="120"></div>
      <div><label for="f-obs">Observações</label><textarea id="f-obs" rows="2" maxlength="2000" placeholder="Queixa, encaminhamento, uso de óculos/aparelho auditivo…"></textarea></div>
      <details><summary style="font-weight:700;cursor:pointer">Anamnese (opcional)</summary><div style="margin-top:8px"><label for="fa-queixa">Queixa principal / motivo da avaliação</label><textarea id="fa-queixa" rows="2" maxlength="1500"></textarea></div><div style="margin-top:8px"><label for="fa-gestacao">Gestação e parto</label><textarea id="fa-gestacao" rows="2" maxlength="1500"></textarea></div><div style="margin-top:8px"><label for="fa-desenvolvimento">Desenvolvimento (sentar, andar, falar, controle dos esfíncteres)</label><textarea id="fa-desenvolvimento" rows="2" maxlength="1500"></textarea></div><div style="margin-top:8px"><label for="fa-escola">Escola e aprendizagem</label><textarea id="fa-escola" rows="2" maxlength="1500"></textarea></div><div style="margin-top:8px"><label for="fa-saude">Saúde, sono, alimentação e medicação</label><textarea id="fa-saude" rows="2" maxlength="1500"></textarea></div><div style="margin-top:8px"><label for="fa-familia">Família e rotina</label><textarea id="fa-familia" rows="2" maxlength="1500"></textarea></div><div style="margin-top:8px"><label for="fa-diagnosticos">Diagnósticos, terapias ou avaliações anteriores</label><textarea id="fa-diagnosticos" rows="2" maxlength="1500"></textarea></div></details>
+     <div><label>Termo de consentimento (assinatura na tela, recomendado)</label><div id="f-termo"></div></div>
      <label class="nt-check"><input type="checkbox" id="f-consent" required> <span>O participante (ou responsável) autorizou o registro dos dados para esta avaliação (LGPD). *</span></label>
      <label class="nt-check"><input type="checkbox" id="f-pesquisa"> <span>Autoriza o uso <b>anônimo</b> dos resultados (sem nome nem contato) para pesquisa e normas brasileiras do NeuroTrilha. Opcional.</span></label>
      <div class="small" id="nt-ficha-msg" role="status"></div>
@@ -141,6 +146,10 @@ html,body{max-width:100%;overflow-x:hidden}
      <div><label for="s-conf">Repita a senha nova</label><input id="s-conf" type="password" minlength="6" required autocomplete="new-password"></div></div>
      <div class="small" id="nt-senha-msg" role="status"></div><button class="primary" type="submit">Salvar senha</button></form>
    </div>
+   <div class="panel" style="margin-top:14px"><h3>Verificação em duas etapas</h3><p class="small muted">Além da senha, pede um código de 6 números gerado no celular por um aplicativo autenticador (Google Authenticator, Microsoft Authenticator…). Protege os dados dos pacientes mesmo que alguém descubra a senha.</p>
+    <p class="small" id="nt-2fa-status"></p><button class="secondary" type="button" id="nt-2fa-ligar">Ligar</button><button class="quiet hidden" type="button" id="nt-2fa-desligar">Desligar</button>
+    <div class="hidden" id="nt-2fa-passos" style="margin-top:10px"><p class="small">1. No aplicativo autenticador, toque em <b>+</b> e escolha <b>digitar uma chave</b>. Nome: <b>NeuroTrilha</b>. Chave:</p><p><code id="nt-2fa-chave" style="font-size:17px;word-break:break-all"></code></p>
+     <p class="small">2. Digite o código de 6 números que aparecer:</p><div class="nt-dois"><input id="nt-2fa-codigo" inputmode="numeric" maxlength="6" placeholder="000000"><button class="primary" type="button" id="nt-2fa-confirmar">Confirmar</button></div><div class="small" id="nt-2fa-msg" role="status"></div></div></div>
    <div class="panel hidden" id="nt-admin" style="margin-top:14px">
     <h3>Profissionais (só a RMD vê)</h3>
     <form class="nt-form" id="nt-form-conta"><div class="nt-dois"><div><label for="c-usuario">Usuário</label><input id="c-usuario" required pattern="[a-z0-9._\-]{3,40}" placeholder="ex.: dra.ana" autocapitalize="none"></div>
@@ -148,6 +157,7 @@ html,body{max-width:100%;overflow-x:hidden}
      <div class="small muted">A senha inicial é 123456 (teste). O profissional troca em Conta.</div>
      <div class="small" id="nt-conta-msg" role="status"></div><button class="secondary" type="submit">Criar acesso</button></form>
     <div id="nt-contas" style="margin-top:12px"></div>
+    <div style="margin-top:14px"><b>Registro de acessos (LGPD)</b><p class="small muted">Quem entrou, abriu, criou, alterou, exportou ou apagou fichas e avaliações. Mostra os 1000 mais recentes.</p><button class="secondary" type="button" id="nt-auditoria">Ver registro</button> <button class="quiet hidden" type="button" id="nt-auditoria-csv">Baixar (CSV)</button><div class="tablewrap" id="nt-auditoria-tabela" style="margin-top:8px"></div></div>
     <div style="margin-top:14px"><b>Pesquisa e normas</b><p class="small muted">Exporta, sem nome nem código, os resultados de quem autorizou o uso anônimo.</p><button class="secondary" type="button" id="nt-normas">Exportar dados anônimos (CSV)</button></div>
    </div>
   </section>
@@ -158,6 +168,7 @@ html,body{max-width:100%;overflow-x:hidden}
 <script src="config.js"></script>
 <script src="motor-cognitivo.js"></script>
 <script src="questionario.js"></script>
+<script src="assinatura.js"></script>
 <script>
 "use strict";
 // Funções que o painel da aplicação adaptativa (avaliador-adaptativo.js) usa — aqui falando com a NUVEM.
@@ -202,10 +213,28 @@ async function api(path, opcoes = {}) {
   if (r.status === 401 && s) { try { s = await renovar(); r = await chamar(s.access_token); } catch (e) { /* cai no erro */ } }
   const dados = await r.json().catch(() => ({}));
   if (r.status === 401) { mostrarEntrar(); }
-  if (!r.ok) { const err = new Error(dados.error || "Falha de comunicação."); err.status = r.status; throw err; }
+  if (!r.ok) { const err = new Error(dados.error || "Falha de comunicação."); err.status = r.status; err.precisa2fa = !!dados.precisa2fa; throw err; }
   return dados;
 }
 function mostrarEntrar() { $id("nt-app").classList.add("hidden"); $id("nt-entrar").classList.remove("hidden"); }
+// ---- verificação em duas etapas (Supabase: fator TOTP do aplicativo autenticador)
+async function chamarAuth(caminho, metodo, corpo) {
+  const s = lerSessao(), r = await fetch(NT.SUPABASE_URL + "/auth/v1/" + caminho, { method: metodo || "GET", headers: { apikey: NT.CHAVE_PUBLICA, Authorization: "Bearer " + (s ? s.access_token : ""), "Content-Type": "application/json" }, body: corpo ? JSON.stringify(corpo) : undefined });
+  const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(/invalid|code/i.test(j.msg || j.error_description || "") ? "Código incorreto ou vencido. Tente o código novo." : (j.msg || j.error_description || "Falha na verificação."));
+  return j;
+}
+async function fatoresVerificados() { const u = await chamarAuth("user"); return (u.factors || []).filter((f) => f.factor_type === "totp" && f.status === "verified"); }
+async function confirmarCodigo(fatorId, codigo) {
+  const d = await chamarAuth("factors/" + fatorId + "/challenge", "POST", {});
+  const j = await chamarAuth("factors/" + fatorId + "/verify", "POST", { challenge_id: d.id, code: codigo });
+  gravarSessao({ access_token: j.access_token, refresh_token: j.refresh_token, expira: Date.now() + (j.expires_in || 3600) * 1000 });
+}
+let fatorLogin = null;
+async function pedirSegundaEtapa() {
+  const f = await fatoresVerificados(); if (!f.length) return false;
+  fatorLogin = f[0].id; mostrarEntrar(); $id("nt-codigo-wrap").classList.remove("hidden"); $id("nt-senha").required = false; $id("nt-codigo").focus();
+  $id("nt-erro-entrar").textContent = "Senha certa. Agora digite o código do aplicativo autenticador."; return true;
+}
 async function iniciar() {
   try {
     eu = await api("/api/eu");
@@ -213,17 +242,22 @@ async function iniciar() {
     $id("nt-nome").textContent = eu.nome;
     $id("nt-aviso-senha").classList.toggle("hidden", !eu.senhaProvisoria);
     $id("nt-admin").classList.toggle("hidden", eu.papel !== "admin");
+    estado2fa();
     $id("nt-conta-sub").textContent = "Usuário: " + eu.usuario + (eu.papel === "admin" ? " · RMD (administrador)" : " · profissional");
     await carregarPacientes();
     switchView("adaptive");
-  } catch (e) { mostrarEntrar(); if (e.status !== 401) $id("nt-erro-entrar").textContent = e.message; }
+  } catch (e) { if (e.precisa2fa && await pedirSegundaEtapa().catch(() => false)) return; mostrarEntrar(); if (e.status !== 401) $id("nt-erro-entrar").textContent = e.message; }
 }
 $id("nt-form-entrar").addEventListener("submit", async (ev) => {
   ev.preventDefault(); const bt = $id("nt-botao-entrar"); bt.disabled = true; $id("nt-erro-entrar").textContent = "";
   try {
+    // 2ª etapa: já entrou com a senha e falta o código do aplicativo
+    if (!$id("nt-codigo-wrap").classList.contains("hidden")) { await confirmarCodigo(fatorLogin, $id("nt-codigo").value.trim()); $id("nt-codigo").value = ""; $id("nt-codigo-wrap").classList.add("hidden"); $id("nt-senha").required = true; await iniciar(); return; }
     const usuario = $id("nt-usuario").value.trim().toLowerCase();
     gravarSessao(await pedirToken("password", { email: usuario + "@" + DOMINIO_EMAIL, password: $id("nt-senha").value }));
-    $id("nt-senha").value = ""; await iniciar();
+    $id("nt-senha").value = "";
+    if (await pedirSegundaEtapa()) return;
+    await iniciar();
   } catch (e) { $id("nt-erro-entrar").textContent = e.message; } finally { bt.disabled = false; }
 });
 $id("nt-sair").addEventListener("click", () => { if (!confirm("Sair do NeuroTrilha neste aparelho?")) return; gravarSessao(null); location.reload(); });
@@ -244,11 +278,12 @@ function desenharPacientes() {
   const termo = $id("nt-busca").value.trim().toLowerCase();
   const lista = db.participants.filter((p) => !termo || (p.name + " " + p.code).toLowerCase().includes(termo));
   $id("nt-lista").innerHTML = lista.length ? lista.map((p) => { const a = ageForParticipant(p);
-    return '<div class="nt-cartao"><span class="nt-av">' + esc((p.name || "?").trim()[0].toUpperCase()) + '</span><div><b>' + esc(p.name) + '</b><small>' + esc(p.code || "") + (a ? " · " + a.years + " anos" : "") + '</small></div><button class="quiet" data-editar="' + esc(p.id) + '">Editar</button><button class="primary" data-avaliar="' + esc(p.id) + '">Avaliar</button></div>'; }).join("")
+    return '<div class="nt-cartao"><span class="nt-av">' + esc((p.name || "?").trim()[0].toUpperCase()) + '</span><div><b>' + esc(p.name) + '</b><small>' + esc(p.code || "") + (a ? " · " + a.years + " anos" : "") + '</small></div><button class="quiet" data-editar="' + esc(p.id) + '">Editar</button><button class="quiet" data-exportar="' + esc(p.id) + '" title="Cópia de todos os dados (LGPD)">Dados</button><button class="quiet" data-apagar="' + esc(p.id) + '" title="Apagar todos os dados" style="color:#b42318">Apagar</button><button class="primary" data-avaliar="' + esc(p.id) + '">Avaliar</button></div>'; }).join("")
     : '<div class="empty"><b>' + (db.participants.length ? "Nenhuma ficha encontrada" : "Nenhuma ficha ainda") + '</b>Cadastre o primeiro paciente abaixo.</div>';
 }
 $id("nt-busca").addEventListener("input", desenharPacientes);
 const ANAM = ["queixa", "gestacao", "desenvolvimento", "escola", "saude", "familia", "diagnosticos"];
+const termoFicha = NeuroTrilhaAssinatura.montar($id("f-termo"));
 let editando = null;
 function preencherFicha(p) {
   editando = p ? p.id : null;
@@ -256,16 +291,27 @@ function preencherFicha(p) {
   $id("f-sexo").value = p ? p.sex || "" : ""; $id("f-escola").value = p ? p.education || "" : ""; $id("f-resp").value = p ? p.guardian || "" : ""; $id("f-obs").value = p ? p.notes || "" : "";
   $id("f-consent").checked = p ? !!p.consent : false; $id("f-pesquisa").checked = p ? !!p.pesquisa : false;
   ANAM.forEach((k) => { $id("fa-" + k).value = p && p.anamnese ? p.anamnese[k] || "" : ""; });
+  termoFicha.carregar(p && p.termo, p ? p.guardian || p.name || "" : "");
   $id("nt-ficha-titulo").textContent = p ? "Editar ficha · " + (p.code || "") : "Nova ficha"; $id("nt-ficha-salvar").textContent = p ? "Salvar alterações" : "Salvar ficha";
   $id("nt-ficha-cancelar").classList.toggle("hidden", !p);
 }
 $id("nt-ficha-cancelar").addEventListener("click", () => preencherFicha(null));
 $id("nt-lista").addEventListener("click", (ev) => { const e = ev.target.closest("[data-editar]"); if (e) { preencherFicha(db.participants.find((x) => x.id === e.dataset.editar)); $id("nt-ficha").scrollIntoView({ behavior: "smooth" }); } });
 $id("nt-lista").addEventListener("click", (ev) => { const b = ev.target.closest("[data-avaliar]"); if (!b) return; switchView("adaptive"); setTimeout(() => { const sel = $id("ad-participante"); sel.value = b.dataset.avaliar; sel.dispatchEvent(new Event("change")); }, 50); });
+$id("nt-lista").addEventListener("click", async (ev) => {
+  const x = ev.target.closest("[data-exportar]"), a = ev.target.closest("[data-apagar]");
+  if (x) { try { const d = await api("/api/participantes/" + x.dataset.exportar + "/exportar"), blob = new Blob([JSON.stringify(d, null, 2)], { type: "application/json" }), url = URL.createObjectURL(blob), l = document.createElement("a"); l.href = url; l.download = "NeuroTrilha-dados-" + (d.participante.code || "ficha") + ".json"; document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); toast("Arquivo com todos os dados gerado."); } catch (e) { toast(e.message); } }
+  if (a) {
+    const p = db.participants.find((y) => y.id === a.dataset.apagar); if (!p) return;
+    const c = prompt("Isto APAGA a ficha de " + p.name + " e TODAS as avaliações e questionários dela, sem volta.\n\nPara confirmar, digite o código da ficha: " + p.code); if (c === null) return;
+    try { await api("/api/participantes/" + p.id, { method: "DELETE", body: JSON.stringify({ confirmar: c }) }); toast("Dados apagados."); await carregarPacientes(); desenharPacientes(); } catch (e) { toast(e.message); }
+  }
+});
 $id("nt-ficha").addEventListener("submit", async (ev) => {
   ev.preventDefault(); const msg = $id("nt-ficha-msg"); msg.style.color = "#b42318"; msg.textContent = "";
   const p = { name: $id("f-nome").value.trim(), preferredName: $id("f-social").value.trim(), birthDate: $id("f-nasc").value, sex: $id("f-sexo").value, education: $id("f-escola").value.trim(), guardian: $id("f-resp").value.trim(), notes: $id("f-obs").value.trim(), consent: $id("f-consent").checked, pesquisa: $id("f-pesquisa").checked, evaluator: eu ? eu.nome : "", anamnese: {} };
   ANAM.forEach((k) => { const v = $id("fa-" + k).value.trim(); if (v) p.anamnese[k] = v; });
+  const termo = termoFicha.obter(); if (termo) p.termo = termo;
   try {
     const r = editando ? await api("/api/participantes/" + editando, { method: "PUT", body: JSON.stringify(p) }) : await api("/api/participantes", { method: "POST", body: JSON.stringify(p) });
     msg.style.color = "#087764"; msg.textContent = (editando ? "Ficha atualizada: " : "Ficha salva: ") + r.participant.code + "."; preencherFicha(null); await carregarPacientes(); desenharPacientes();
@@ -306,6 +352,35 @@ $id("nt-form-conta").addEventListener("submit", async (ev) => {
   try { await api("/api/admin/contas", { method: "POST", body: JSON.stringify({ usuario: $id("c-usuario").value.trim().toLowerCase(), nome: $id("c-nome").value.trim() }) }); ev.target.reset(); msg.style.color = "#087764"; msg.textContent = "Acesso criado. Senha inicial: 123456."; desenharContas(); }
   catch (e) { msg.textContent = e.message; }
 });
+// ---- duas etapas na conta
+function estado2fa() { $id("nt-2fa-status").innerHTML = eu && eu.mfa ? '<b style="color:#087764">Ligada.</b> Ao entrar, o sistema pede o código do aplicativo.' : "Desligada."; $id("nt-2fa-ligar").classList.toggle("hidden", !!(eu && eu.mfa)); $id("nt-2fa-desligar").classList.toggle("hidden", !(eu && eu.mfa)); }
+let fatorNovo = null;
+$id("nt-2fa-ligar").addEventListener("click", async () => {
+  try {
+    const u = await chamarAuth("user"); for (const f of (u.factors || []).filter((x) => x.status !== "verified")) await chamarAuth("factors/" + f.id, "DELETE");  // tentativa anterior não concluída
+    const f = await chamarAuth("factors", "POST", { factor_type: "totp", friendly_name: "NeuroTrilha " + Date.now() });
+    fatorNovo = f.id; $id("nt-2fa-chave").textContent = (f.totp.secret || "").replace(/(.{4})/g, "$1 ").trim(); $id("nt-2fa-passos").classList.remove("hidden"); $id("nt-2fa-codigo").focus();
+  } catch (e) { toast(e.message); }
+});
+$id("nt-2fa-confirmar").addEventListener("click", async () => {
+  const msg = $id("nt-2fa-msg"); msg.style.color = "#b42318";
+  try { await confirmarCodigo(fatorNovo, $id("nt-2fa-codigo").value.trim()); await api("/api/eu/2fa", { method: "POST", body: JSON.stringify({ ativo: true }) }); eu = await api("/api/eu"); $id("nt-2fa-passos").classList.add("hidden"); $id("nt-2fa-codigo").value = ""; estado2fa(); toast("Verificação em duas etapas ligada."); }
+  catch (e) { msg.textContent = e.message; }
+});
+$id("nt-2fa-desligar").addEventListener("click", async () => {
+  if (!confirm("Desligar a verificação em duas etapas? A conta fica protegida só pela senha.")) return;
+  try { await api("/api/eu/2fa", { method: "POST", body: JSON.stringify({ ativo: false }) }); for (const f of await fatoresVerificados()) await chamarAuth("factors/" + f.id, "DELETE"); eu = await api("/api/eu"); estado2fa(); toast("Verificação em duas etapas desligada."); }
+  catch (e) { toast(e.message); }
+});
+// ---- registro de acessos (RMD)
+const NOMES_ACAO = { entrou: "Entrou", listar_fichas: "Abriu a lista de fichas", criar_ficha: "Criou ficha", editar_ficha: "Alterou ficha", ver_avaliacao: "Abriu avaliação", exportar_dados: "Exportou dados", apagar_ficha: "Apagou ficha", "2fa_ligada": "Ligou duas etapas", "2fa_desligada": "Desligou duas etapas", ver_registro_acessos: "Viu o registro de acessos", senha_voltou_padrao: "Voltou a senha de uma conta" };
+let regs = [];
+$id("nt-auditoria").addEventListener("click", async () => {
+  try { regs = (await api("/api/admin/auditoria")).registros || []; $id("nt-auditoria-csv").classList.remove("hidden");
+    $id("nt-auditoria-tabela").innerHTML = regs.length ? '<table class="table"><thead><tr><th>Data e hora</th><th>Conta</th><th>O que fez</th><th>Ficha / avaliação</th></tr></thead><tbody>' + regs.map((r) => "<tr><td>" + new Date(r.at).toLocaleString("pt-BR") + "</td><td>" + esc(r.username) + "</td><td>" + esc(NOMES_ACAO[r.action] || r.action) + "</td><td>" + esc(r.target) + "</td></tr>").join("") + "</tbody></table>" : '<p class="small muted">Nenhum registro ainda.</p>'; }
+  catch (e) { toast(e.message); }
+});
+$id("nt-auditoria-csv").addEventListener("click", () => downloadCSV([["Data e hora", "Conta", "Ação", "Ficha/avaliação", "Detalhe", "Endereço"]].concat(regs.map((r) => [r.at, r.username, NOMES_ACAO[r.action] || r.action, r.target, r.detail, r.ip])), "NeuroTrilha-registro-acessos.csv"));
 </script>
 <script src="avaliador-adaptativo.js"></script>
 <script>

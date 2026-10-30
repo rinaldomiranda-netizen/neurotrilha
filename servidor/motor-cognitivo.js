@@ -627,12 +627,13 @@
     nivel = Math.max(1, Math.min(NIVEIS, Math.round(nivel)));
     var it = GERADORES[dom](rng(semente + '|' + dom + '|' + nivel), nivel);
     it.dominio = dom; it.nivel = nivel; it.id = 'it-' + hash(semente + dom + nivel).toString(36);
+    var st = subtipoDe(dom, nivel); if (st) it.subtipo = st;
     return it;
   }
   // o que vai para a tela do paciente (sem a resposta certa)
   function itemPublico(it) {
     if (!it) return null;
-    var x = Object.assign({}, it); delete x.certo; delete x.lentoMs; delete x.palavra; delete x.regra; delete x.condicao; delete x.margem; delete x.alvosFig; delete x.minimo;
+    var x = Object.assign({}, it); delete x.certo; delete x.lentoMs; delete x.palavra; delete x.regra; delete x.condicao; delete x.margem; delete x.alvosFig; delete x.minimo; delete x.subtipo;
     return x;
   }
   function corrigir(it, resposta, tempoMs) {
@@ -758,6 +759,10 @@
       res.fracos = comIndice.filter(function (a) { return a.indice <= media - 12; }).map(function (a) { return a.nome; });
     }
     res.alertas = alertas(sessao, areas);
+    var comp = indicesCompostos(areas, idadeAnos);
+    res.indices = comp.indices; res.discrepancias = comp.discrepancias; res.habilidadeGeral = comp.habilidadeGeral;
+    res.validade = validade(sessao);
+    res.erros = analiseErros(sessao);
     return res;
   }
 
@@ -824,6 +829,158 @@
     var obs = sessao.observacoes || [];
     if (obs.length) a.push({ tipo: 'observacoes', texto: obs.length + ' observação(ões) do avaliador registrada(s) durante a sessão.' });
     return a;
+  }
+
+  // ================================================================== REFINO DO DIAGNÓSTICO (pedido do Rinaldo, 30/10/2026)
+
+  // ---------------------------------------------------------------- tipo de item (para a análise de erros)
+  var FO_TIPO = ['rima', 'rima', 'som inicial', 'rima', 'som inicial', 'juntar sílabas', 'rima intrusa', 'tamanho da palavra', 'juntar sílabas', 'tamanho da palavra', 'trocar sílaba', 'trocar sílaba', 'tirar sílaba', 'tirar sílaba', 'trocar sílaba', 'tirar sílaba'];
+  function subtipoDe(dom, nivel) {
+    if (dom === 'fo') return FO_TIPO[nivel - 1];
+    if (dom === 'le') return nivel <= 7 ? 'palavra' : 'frase';
+    if (dom === 'em') return nivel <= 5 ? 'rosto' : nivel <= 12 ? 'situação' : 'o que o outro pensa';
+    if (dom === 'gc') return nivel <= 8 ? 'palavra' : 'definição';
+    if (dom === 'gq') return nivel <= 2 ? 'comparar quantidades' : nivel <= 4 ? 'contagem' : nivel <= 6 ? 'juntar e tirar' : [7, 8, 11, 12, 14, 16].indexOf(nivel) >= 0 ? 'sequência numérica' : nivel <= 10 ? 'conta' : 'problema';
+    if (dom === 'gf') return nivel <= 8 ? 'sequência' : 'matriz';
+    if (dom === 'rv') return nivel <= 6 ? 'o que não combina' : nivel <= 10 ? 'o que combina' : 'analogia';
+    return null;
+  }
+  // "impressão digital" da tarefa: serve para não repetir tarefas na reavaliação (formas paralelas)
+  function chaveItem(it) {
+    var figs = (it.opcoes || []).map(function (o) { return JSON.stringify(o.fig); }).sort();
+    return it.dominio + '|' + it.nivel + '|' + hash(it.fala + '|' + JSON.stringify(it.estimulo || it.sequencia || it.pontos || it.inicio || '') + '|' + figs.join(',')).toString(36);
+  }
+
+  // ---------------------------------------------------------------- tipo de cada erro (análise qualitativa)
+  function figDaOpcao(it, id) { var o = (it.opcoes || []).filter(function (x) { return x.id === id; })[0]; return o ? o.fig : null; }
+  function classificarErro(it, resposta, res) {
+    if (res && res.esgotado) return 'tempo esgotado';
+    if (it.tipo === 'gonogo') return it.certo === null ? 'tocou sem dever (impulsividade)' : 'deixou passar (omissão)';
+    if (it.tipo === 'corsi' || it.tipo === 'digitos') {
+      var r = Array.isArray(resposta) ? resposta.map(Number) : [], c = it.certo;
+      if (r.length === c.length && r.slice().sort().join() === c.slice().sort().join()) {
+        if (it.tipo === 'digitos' && it.inverso && igual(r, it.sequencia)) return 'repetiu na ordem direta (não inverteu)';
+        return 'ordem trocada';
+      }
+      return 'esqueceu ou trocou itens';
+    }
+    if (it.tipo === 'torre') return res && res.extra && res.extra.resolveu ? 'resolveu com jogadas a mais' : 'não resolveu';
+    if (it.tipo === 'pontos') return it.certo.some(function (t) { return /[A-J]/.test(t); }) ? 'erro ao alternar número e letra' : 'erro na sequência simples';
+    if (it.tipo === 'reconhecer') { var x = res && res.extra; return x && x.falsos > 0 ? (x.acertos < x.total ? 'esqueceu e marcou figuras que não viu' : 'marcou figuras que não viu') : 'esqueceu figuras'; }
+    var escolhida = figDaOpcao(it, resposta), certa = figDaOpcao(it, it.certo);
+    if (resposta == null) return 'não respondeu';
+    if (it.dominio === 'gv' && escolhida && escolhida.poli && it.estimulo[0] && it.estimulo[0].poli) {
+      var esp = rotacoes(espelhar(it.estimulo[0].poli));
+      return esp.indexOf(JSON.stringify(escolhida.poli)) >= 0 ? 'espelhamento (inverteu a forma)' : 'escolheu outra forma';
+    }
+    if (it.dominio === 'gf' && escolhida && certa) {
+      var nomes = { f: 'forma', c: 'cor', n: 'quantidade', r: 'rotação', t: 'tamanho' }, dif = Object.keys(nomes).filter(function (k) { return (escolhida[k] || 0) !== (certa[k] || 0); });
+      return dif.length === 1 ? 'errou a regra de ' + nomes[dif[0]] : dif.length ? 'errou mais de uma regra (' + dif.map(function (k) { return nomes[k]; }).join(', ') + ')' : 'outra figura';
+    }
+    if (it.dominio === 'at') return it.condicao === 'contra' ? 'interferência (peixes do lado contrário)' : 'erro sem interferência';
+    if (it.dominio === 'fx' && escolhida && it.estimulo[0]) {
+      var carta = it.estimulo[0], outraRegra = it.regra === 'cor' ? (escolhida.f === carta.f) : (escolhida.c === carta.c);
+      return outraRegra ? 'seguiu a regra errada (perseveração)' : 'outro erro';
+    }
+    if (it.dominio === 'em' && escolhida && escolhida.e) {
+      var nome = Object.keys(EMO).filter(function (k) { return EMO[k] === escolhida.e; })[0];
+      return (it.subtipo || 'emoção') + (nome ? ': confundiu com ' + nome : '');
+    }
+    return it.subtipo ? 'erro em ' + it.subtipo : 'resposta errada';
+  }
+  var DICA_ERRO = {
+    'espelhamento (inverteu a forma)': 'Espelhamentos frequentes são comuns em dificuldades visuoespaciais e na dislexia; observar também na escrita (b/d, p/q).',
+    'interferência (peixes do lado contrário)': 'Erros só com peixes contrários indicam dificuldade de filtrar distrações (controle de interferência).',
+    'seguiu a regra errada (perseveração)': 'Continuar na regra antiga indica rigidez cognitiva (dificuldade de trocar de estratégia).',
+    'repetiu na ordem direta (não inverteu)': 'Não conseguir inverter indica sobrecarga da memória de trabalho (manipular, não só guardar).',
+    'ordem trocada': 'Lembrar os itens mas trocar a ordem sugere fragilidade no sequenciamento.',
+    'tocou sem dever (impulsividade)': 'Toques indevidos frequentes indicam impulsividade (controle inibitório).',
+    'deixou passar (omissão)': 'Omissões frequentes indicam desatenção.',
+    'marcou figuras que não viu': 'Falsos reconhecimentos sugerem impulsividade ou memória pouco precisa.',
+    'erro ao alternar número e letra': 'Errar só ao alternar indica dificuldade de flexibilidade/atenção alternada.'
+  };
+  // agrupa os erros da sessão por área e por tipo
+  function analiseErros(sessao) {
+    var porArea = {};
+    (sessao.historico || []).forEach(function (h) {
+      if (h.treino || h.tardia || h.correto || !h.tipoErro) return;
+      var a = porArea[h.dominio] = porArea[h.dominio] || { area: h.dominio, nome: (dominio(h.dominio) || {}).nome, total: 0, tipos: {} };
+      a.total++; a.tipos[h.tipoErro] = (a.tipos[h.tipoErro] || 0) + 1;
+    });
+    return Object.keys(porArea).map(function (k) {
+      var a = porArea[k], tipos = Object.keys(a.tipos).map(function (t) { return { tipo: t, vezes: a.tipos[t], dica: DICA_ERRO[t] || null }; }).sort(function (x, y) { return y.vezes - x.vezes; });
+      return { area: a.area, nome: a.nome, total: a.total, tipos: tipos };
+    });
+  }
+
+  // ---------------------------------------------------------------- índices compostos (como nas baterias profissionais)
+  // Fidedignidade ASSUMIDA (sem estudo próprio ainda): 0,85 para índice com 2+ áreas, 0,75 com 1 área.
+  var INDICES = [
+    { id: 'icv', nome: 'Compreensão verbal', sigla: 'ICV', areas: ['gc', 'rv'] },
+    { id: 'irf', nome: 'Raciocínio fluido', sigla: 'IRF', areas: ['gf', 'gq'] },
+    { id: 'ive', nome: 'Visuoespacial', sigla: 'IVE', areas: ['gv'] },
+    { id: 'imt', nome: 'Memória de trabalho', sigla: 'IMT', areas: ['gwm', 'dg', 'di'] },
+    { id: 'ivp', nome: 'Velocidade de processamento', sigla: 'IVP', areas: ['gs'] },
+    { id: 'iml', nome: 'Memória de longo prazo', sigla: 'IML', areas: ['ml'] }
+  ];
+  function semIndice(nAreas) { return 15 * Math.sqrt(1 - (nAreas >= 2 ? 0.85 : 0.75)); }
+  function indicesCompostos(areas, idadeAnos) {
+    var lista = INDICES.map(function (ix) {
+      var comp = areas.filter(function (a) { return ix.areas.indexOf(a.id) >= 0 && a.nivel != null; });
+      if (!comp.length) return null;
+      var nivel = comp.reduce(function (s, a) { return s + a.nivel; }, 0) / comp.length, v = indice(nivel, idadeAnos), sem = semIndice(comp.length);
+      return { id: ix.id, nome: ix.nome, sigla: ix.sigla, areas: comp.map(function (a) { return a.nome; }), valor: v, faixa: faixa(v), sem: Math.round(sem * 10) / 10,
+        intervalo: [Math.max(40, Math.round(v - 1.96 * sem)), Math.min(160, Math.round(v + 1.96 * sem))] };
+    }).filter(Boolean);
+    // diferenças entre índices maiores que o acaso (diferença crítica a 95%)
+    var discrepancias = [];
+    for (var i = 0; i < lista.length; i++) for (var j = i + 1; j < lista.length; j++) {
+      var a = lista[i], b = lista[j], critica = Math.round(1.96 * Math.sqrt(a.sem * a.sem + b.sem * b.sem));
+      if (Math.abs(a.valor - b.valor) >= critica) discrepancias.push({ maior: a.valor > b.valor ? a.sigla : b.sigla, menor: a.valor > b.valor ? b.sigla : a.sigla, diferenca: Math.abs(a.valor - b.valor), critica: critica });
+    }
+    // pontos fortes e fracos pessoais: índice longe da média dos próprios índices
+    var media = lista.length ? lista.reduce(function (s, x) { return s + x.valor; }, 0) / lista.length : null;
+    lista.forEach(function (x) { if (lista.length >= 3) { var d = x.valor - media; x.relativo = Math.abs(d) >= 1.96 * x.sem ? (d > 0 ? 'ponto forte' : 'ponto fraco') : null; } });
+    // índice de habilidade geral (sem memória de trabalho e velocidade): útil quando elas puxam o QI para baixo (ex.: TDAH)
+    var gaiComp = lista.filter(function (x) { return ['icv', 'irf', 'ive'].indexOf(x.id) >= 0; }), gai = null;
+    if (gaiComp.length >= 2) {
+      var niv = areas.filter(function (a) { return ['gc', 'rv', 'gf', 'gq', 'gv'].indexOf(a.id) >= 0 && a.nivel != null; });
+      var nv = niv.reduce(function (s, a) { return s + a.nivel; }, 0) / niv.length;
+      gai = { valor: indice(nv, idadeAnos), faixa: faixa(indice(nv, idadeAnos)) };
+    }
+    return { indices: lista, discrepancias: discrepancias, habilidadeGeral: gai };
+  }
+
+  // ---------------------------------------------------------------- conferência do esforço (validade da sessão)
+  function validade(sessao) {
+    var h = (sessao.historico || []).filter(function (x) { return !x.treino && !x.tardia; }), sinais = [];
+    var escolhas = h.filter(function (x) { return typeof x.resposta === 'string' && x.resposta !== 'toque' && ['gn', 'ac'].indexOf(x.dominio) < 0; });
+    var rapidas = escolhas.filter(function (x) { return x.tempoMs < 600; });
+    if (escolhas.length >= 8 && rapidas.length / escolhas.length >= 0.25) sinais.push('Respostas rápidas demais (menos de 0,6 s) em ' + rapidas.length + ' de ' + escolhas.length + ' tarefas de escolha: pode ter respondido sem olhar.');
+    var repetidas = 0; for (var i = 1; i < escolhas.length; i++) if (escolhas[i].resposta === escolhas[i - 1].resposta) repetidas++;
+    if (escolhas.length >= 8 && repetidas / (escolhas.length - 1) >= 0.6) sinais.push('Escolheu muitas vezes seguidas a mesma posição de resposta (' + Math.round(100 * repetidas / (escolhas.length - 1)) + '%): padrão repetitivo.');
+    // erros em itens fáceis com acertos em itens bem mais difíceis da mesma área
+    var incoerentes = 0;
+    (sessao.escadas || []).forEach(function (e) {
+      var acertosAltos = e.itens.filter(function (x) { return x.correto; }).map(function (x) { return x.nivel; });
+      var maxCerto = acertosAltos.length ? Math.max.apply(null, acertosAltos) : 0;
+      incoerentes += e.itens.filter(function (x) { return !x.correto && x.nivel <= 3 && maxCerto >= x.nivel + 5; }).length;
+    });
+    if (incoerentes >= 3) sinais.push(incoerentes + ' erros em tarefas muito fáceis depois de acertar tarefas bem mais difíceis: desempenho incoerente (atenção oscilante ou pouco esforço).');
+    // acertos abaixo do acaso no conjunto das escolhas
+    if (escolhas.length >= 15) {
+      var acaso = escolhas.reduce(function (s, x) { return s + 1 / Math.max(2, x.nOpcoes || 4); }, 0), acertos = escolhas.filter(function (x) { return x.correto; }).length;
+      if (acertos < acaso * 0.8) sinais.push('Acertos abaixo do esperado por acaso (' + acertos + ' de ' + escolhas.length + '): resultado muito provavelmente NÃO reflete a capacidade real.');
+    }
+    var nivel = !sinais.length ? 'adequada' : sinais.length === 1 && !/acaso/.test(sinais[0]) ? 'atenção' : 'questionável';
+    return { nivel: nivel, sinais: sinais };
+  }
+
+  // ---------------------------------------------------------------- mudança confiável entre duas avaliações (índice de mudança confiável)
+  // Fidedignidade assumida 0,80 para o QI estimado (sem estudo próprio): mudança só é "confiável" se passar do limiar.
+  function mudancaConfiavel(antes, depois, fidedignidade) {
+    var r = fidedignidade || 0.8, sdif = Math.sqrt(2) * 15 * Math.sqrt(1 - r), limiar = Math.round(1.96 * sdif), delta = depois - antes;
+    return { delta: delta, limiar: limiar, confiavel: Math.abs(delta) >= limiar, sentido: Math.abs(delta) < limiar ? 'dentro da variação normal' : delta > 0 ? 'melhora confiável' : 'piora confiável' };
   }
 
   // ------------------------------------------------------------------ desenho das figuras (SVG, igual no paciente e no avaliador)
@@ -899,7 +1056,8 @@
   // identificador da fala (nome do arquivo de áudio gravado)
   function idFala(texto) { return hash(String(texto).trim()).toString(36); }
 
-  return { idFala: idFala, GRUPOS: GRUPOS, recomendadas: recomendadas, itemTardio: itemTardio, NIVEIS: NIVEIS, DOMINIOS: DOMINIOS, IDADE_REF: IDADE_REF, DP_NIVEIS: DP_NIVEIS, dominio: dominio, gerarItem: gerarItem, itemPublico: itemPublico, corrigir: corrigir,
+  return { chaveItem: chaveItem, classificarErro: classificarErro, analiseErros: analiseErros, indicesCompostos: indicesCompostos, validade: validade, mudancaConfiavel: mudancaConfiavel, INDICES: INDICES,
+    idFala: idFala, GRUPOS: GRUPOS, recomendadas: recomendadas, itemTardio: itemTardio, NIVEIS: NIVEIS, DOMINIOS: DOMINIOS, IDADE_REF: IDADE_REF, DP_NIVEIS: DP_NIVEIS, dominio: dominio, gerarItem: gerarItem, itemPublico: itemPublico, corrigir: corrigir,
     novaEscada: novaEscada, registrar: registrar, nivelEstimado: nivelEstimado, idadeDoNivel: idadeDoNivel, nivelEsperado: nivelEsperado, indice: indice, faixa: faixa,
     resultado: resultado, svg: svg, rng: rng };
 });

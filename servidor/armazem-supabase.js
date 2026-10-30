@@ -6,7 +6,7 @@ export function criarArmazem(sb) {
   const ok = ({ data, error }) => { if (error) throw new Error(error.message); return data; };
   return {
     async conta(id) { return ok(await sb.from('nt_contas').select('*').eq('user_id', id).maybeSingle()); },
-    async contas() { return ok(await sb.from('nt_contas').select('user_id,usuario,nome,papel,ativo,senha_provisoria,criado_em').order('papel').order('usuario')); },
+    async contas() { return ok(await sb.from('nt_contas').select('user_id,usuario,nome,papel,ativo,senha_provisoria,mfa,criado_em').order('papel').order('usuario')); },
     async criarConta({ usuario, nome, papel, senha }) {
       const { data, error } = await sb.auth.admin.createUser({ email: usuario + '@' + DOMINIO_EMAIL, password: senha, email_confirm: true, user_metadata: { usuario, nome, app: 'neurotrilha' } });
       if (error || !data || !data.user) throw new Error(error ? error.message : 'conta não criada');
@@ -46,6 +46,21 @@ export function criarArmazem(sb) {
     async questionarioPorToken(token) { return ok(await sb.from('nt_questionarios').select('id,participante,dono,dados').eq('token', token).maybeSingle()); },
     async salvarQuestionario(id, dados) { ok(await sb.from('nt_questionarios').update({ dados, respondido_em: dados.respondidoEm || null }).eq('id', id)); },
     async questionarios(participante) { return ok(await sb.from('nt_questionarios').select('id,dados').eq('participante', participante).order('criado_em', { ascending: false })); },
+
+    // LGPD: registro de acessos, exclusão completa de uma pessoa e verificação em duas etapas
+    async registrar(reg) { try { await sb.from('nt_auditoria').insert(reg); } catch (e) { /* o registro nunca derruba o atendimento */ } },
+    async auditoria(limite) { return ok(await sb.from('nt_auditoria').select('em,usuario,acao,alvo,detalhe,ip').order('id', { ascending: false }).limit(limite)).map((r) => ({ at: r.em, username: r.usuario, action: r.acao, target: r.alvo, detail: r.detalhe, ip: r.ip })); },
+    async apagarParticipante(id) {
+      const tokens = ok(await sb.from('nt_sessoes').select('token').eq('participante', id)).map((r) => r.token);
+      if (tokens.length) ok(await sb.from('nt_estacoes').update({ sessao_token: null }).in('sessao_token', tokens));
+      ok(await sb.from('nt_questionarios').delete().eq('participante', id));
+      ok(await sb.from('nt_sessoes').delete().eq('participante', id));
+      ok(await sb.from('nt_participantes').delete().eq('id', id));
+    },
+    async limparMfa(id) {
+      const { data } = await sb.auth.admin.mfa.listFactors({ userId: id });
+      for (const f of (data && data.factors) || []) await sb.auth.admin.mfa.deleteFactor({ id: f.id, userId: id });
+    },
 
     async criarEstacao(reg) { ok(await sb.from('nt_estacoes').insert(reg)); },
     async estacaoPorCodigo(codigo) { return ok(await sb.from('nt_estacoes').select('*').eq('codigo', codigo).maybeSingle()); },

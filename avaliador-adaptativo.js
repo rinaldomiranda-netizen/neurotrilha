@@ -9,6 +9,8 @@
   var NOME_STATUS = { aguardando: "Aguardando o paciente", em_andamento: "Em andamento", pausada: "Pausada", concluida: "Concluída", encerrada: "Encerrada pelo avaliador" };
   var NOME_FIM = { itens: "limite de itens", estavel: "nível estabilizado", piso: "não alcançou o nível inicial", teto: "atingiu o nível máximo", pulado: "pulada pelo avaliador" };
   var DECISAO = { aceito: "Aceito pelo profissional", aceito_ressalvas: "Aceito com ressalvas", nao_aceito: "Não aceito pelo profissional" };
+  var COMP = [["cooperacao", "Cooperação"], ["atencao", "Atenção à tarefa"], ["humor", "Humor / afeto"], ["linguagem", "Linguagem e comunicação"], ["atividade", "Agitação motora"], ["ansiedade", "Ansiedade"], ["compreensao", "Compreensão das instruções"]];
+  var COMP_NIVEL = { adequado: "Adequado", parcial: "Parcialmente prejudicado", prejudicado: "Prejudicado" };
   var FLAGS = ["Repetiu a instrução", "Distraído(a)", "Cansado(a)", "Precisou de ajuda", "Interrompeu", "Recusou", "Ansioso(a)", "Muito rápido / impulsivo"];
 
   TITLES.adaptive = ["Aplicação adaptativa", "Do mais fácil ao mais difícil, ajustado pela resposta e pelo tempo — acompanhe ao vivo."];
@@ -107,7 +109,16 @@
     $("ad-rede").innerHTML = s.nuvem ? "No tablet, abra o aplicativo NeuroTrilha (modo Paciente) e digite aqui o código que aparece na tela dele." :
       s.rede && s.rede.enderecos.length ? "No tablet (mesmo Wi-Fi), abra: " + s.rede.enderecos.map(function (ip) { return "<b>" + esc(linkPaciente(s, ip)) + "</b>"; }).join(" ou ") :
       "Para usar num tablet, abra o programa pelo atalho <b>“NeuroTrilha - Tablet (rede)”</b>. Agora ele só aceita esta tela neste computador (uma segunda janela ou um segundo monitor).";
-    ["pausar", "continuar", "subir", "descer", "pular", "repetir", "encerrar"].forEach(function (a) { var b = $("ad-c-" + a); if (b) b.disabled = fim; });
+    ["pausar", "continuar", "subir", "descer", "pular", "repetir", "encerrar", "encontro"].forEach(function (a) { var b = $("ad-c-" + a); if (b) b.disabled = fim; });
+    $("ad-c-encontro").classList.toggle("hidden", s.status === "pausada");
+    if (s.pausaEncontro) $("ad-av-status").textContent = "Encontro encerrado · continua em outro dia";
+    // observação do comportamento: aparece no fim; preenche uma vez por sessão (não apaga o que o avaliador está marcando)
+    $("ad-comportamento").classList.toggle("hidden", !fim);
+    if (fim && st.compSessao !== s.id) {
+      st.compSessao = s.id; var c = s.comportamento || {}, itens = c.itens || {};
+      document.querySelectorAll("#ad-comp-campos input").forEach(function (x) { x.checked = itens[x.name.slice(5)] === x.value; });
+      $("ad-comp-recursos").value = c.recursos || ""; $("ad-comp-nota").value = c.nota || "";
+    }
     $("ad-c-pausar").classList.toggle("hidden", s.status === "pausada"); $("ad-c-continuar").classList.toggle("hidden", s.status !== "pausada");
     $("ad-ver-relatorio").classList.toggle("hidden", !fim);
     // tarefa da vez (com a resposta certa marcada, só para o avaliador)
@@ -166,6 +177,11 @@
     var caminho = itens.map(function (it, i) { return (i ? "L" : "M") + x(i) + " " + y(it.nivel); }).join(" ");
     var pts = itens.map(function (it, i) { return '<circle cx="' + x(i) + '" cy="' + y(it.nivel) + '" r="5" fill="' + (it.correto ? "#1f9d6b" : "#e5484d") + '"/>'; }).join("");
     return '<svg viewBox="0 0 ' + w + " " + h + '" class="ad-curva" role="img" aria-label="Níveis apresentados">' + linhas + '<path d="' + caminho + '" fill="none" stroke="#2f6fe4" stroke-width="2"/>' + pts + "</svg>";
+  }
+  async function salvarComportamento() {
+    var c = { recursos: $("ad-comp-recursos").value.trim(), nota: $("ad-comp-nota").value.trim() };
+    COMP.forEach(function (k) { var m = document.querySelector('#ad-comp-campos input[name="comp-' + k[0] + '"]:checked'); if (m) c[k[0]] = m.value; });
+    await controle("comportamento", { comportamento: c }); toast("Observação do comportamento salva.");
   }
   async function observar() {
     var flags = [].slice.call(document.querySelectorAll("#ad-flags input:checked")).map(function (x) { return x.value; }), nota = $("ad-nota").value.trim();
@@ -244,22 +260,27 @@
   async function complementos(s, p, sec) {
     try {
       var d = await api("/api/adaptativa?participante=" + encodeURIComponent(s.participantId)), lista = (d.sessoes || []).filter(function (x) { return x.qiEstimado != null; }).reverse();
-      if (lista.length >= 2) $("ad-evolucao").innerHTML = "<h3>Evolução entre avaliações</h3>" + graficoEvolucao(lista) + '<div class="tablewrap"><table class="table"><thead><tr><th>Data</th><th>QI estimado</th>' +
+      if (lista.length >= 2) $("ad-evolucao").innerHTML = "<h3>Evolução entre avaliações</h3>" + graficoEvolucao(lista) + '<div class="tablewrap"><p class="small muted">Mudança confiável: só é considerada mudança real quando a diferença passa de ' + M.mudancaConfiavel(100, 100).limiar + ' pontos (índice de mudança confiável, fidedignidade assumida 0,80). Diferenças menores podem ser só variação normal de uma aplicação para outra. As tarefas da reavaliação são formas paralelas (não repetem as já vistas).</p><table class="table"><thead><tr><th>Data</th><th>QI estimado (mudança)</th>' +
         M.DOMINIOS.filter(function (dm) { return lista.some(function (x) { return (x.areas || []).some(function (a) { return a.id === dm.id && a.indice != null; }); }); }).map(function (dm) { return "<th>" + esc(dm.curto) + "</th>"; }).join("") + "</tr></thead><tbody>" +
-        lista.map(function (x) { return "<tr><td>" + dataHora(x.criadoEm) + (x.id === s.id ? " <b>(esta)</b>" : "") + "</td><td><b>" + x.qiEstimado + "</b></td>" + M.DOMINIOS.filter(function (dm) { return lista.some(function (y) { return (y.areas || []).some(function (a) { return a.id === dm.id && a.indice != null; }); }); }).map(function (dm) { var a = (x.areas || []).filter(function (z) { return z.id === dm.id; })[0]; return "<td>" + (a && a.indice != null ? a.indice : "—") + "</td>"; }).join("") + "</tr>"; }).join("") + "</tbody></table></div>";
+        lista.map(function (x, i) { var mc = i ? M.mudancaConfiavel(lista[i - 1].qiEstimado, x.qiEstimado) : null; return "<tr><td>" + dataHora(x.criadoEm) + (x.id === s.id ? " <b>(esta)</b>" : "") + "</td><td><b>" + x.qiEstimado + "</b>" + (mc ? ' <span class="small">(' + (mc.delta > 0 ? "+" : "") + mc.delta + ": " + (mc.confiavel ? "<b>" + mc.sentido + "</b>" : mc.sentido) + ")</span>" : "") + "</td>" + M.DOMINIOS.filter(function (dm) { return lista.some(function (y) { return (y.areas || []).some(function (a) { return a.id === dm.id && a.indice != null; }); }); }).map(function (dm) { var a = (x.areas || []).filter(function (z) { return z.id === dm.id; })[0]; return "<td>" + (a && a.indice != null ? a.indice : "—") + "</td>"; }).join("") + "</tr>"; }).join("") + "</tbody></table></div>";
     } catch (e) { /* sem evolução */ }
     try {
       var q = await api("/api/questionarios?participante=" + encodeURIComponent(s.participantId));
       var resp = (q.questionarios || []).filter(function (x) { return x.respondidoEm; }), pend = (q.questionarios || []).length - resp.length;
-      $("ad-questionarios").innerHTML = "<h3>Questionário dos pais e professores (SNAP-IV)</h3>" +
-        '<div class="ad-qbotoes no-print"><button type="button" class="secondary" data-questionario="pais">Gerar link para os pais</button><button type="button" class="secondary" data-questionario="professor">Gerar link para o professor</button></div><div id="ad-qlink" class="no-print"></div>' +
+      var QI = window.NeuroTrilhaQuestionario, idade = s.idadeAnos || 0, botoes = [];
+      if (QI) Object.keys(QI.INSTRUMENTOS).forEach(function (k) {
+        var I = QI.INSTRUMENTOS[k]; if (idade < I.idade[0] || idade > I.idade[1]) return;
+        I.respondentes.forEach(function (quem) { botoes.push('<button type="button" class="secondary" data-questionario="' + quem + '" data-instrumento="' + k + '">' + esc(I.nome) + " · " + esc(quem === "proprio" ? "para o paciente" : quem === "professor" ? "para o professor" : "para os pais") + "</button>"); });
+      });
+      $("ad-questionarios").innerHTML = "<h3>Questionários complementares (triagem)</h3>" + '<p class="small muted no-print">Aparecem só os indicados para a idade. SNAP-IV: comportamento (pais e professor) · ASRS: atenção no adulto · PHQ-9: humor · GAD-7: ansiedade.</p>' +
+        '<div class="ad-qbotoes no-print">' + botoes.join("") + '</div><div id="ad-qlink" class="no-print"></div>' +
         (resp.length && window.NeuroTrilhaQuestionario ? resp.map(window.NeuroTrilhaQuestionario.resumoHtml).join("") : '<p class="small muted">' + (pend ? pend + " link(s) enviado(s), aguardando resposta." : "Nenhum questionário respondido ainda.") + "</p>");
       $("ad-questionarios").querySelectorAll("[data-questionario]").forEach(function (b) { b.addEventListener("click", async function () {
         try {
-          var r = await api("/api/questionarios", { method: "POST", body: JSON.stringify({ participantId: s.participantId, respondente: b.dataset.questionario }) });
+          var r = await api("/api/questionarios", { method: "POST", body: JSON.stringify({ participantId: s.participantId, respondente: b.dataset.questionario, instrumento: b.dataset.instrumento }) });
           var link = location.href.replace(/[?#].*$/, "").replace(/[^/]*$/, "") + "questionario.html?q=" + encodeURIComponent(r.token);
-          var texto = "Olá! Por favor, responda este questionário sobre " + (p ? (p.preferredName || p.name || "").split(" ")[0] : "a criança") + " pedido pelo(a) profissional (leva cerca de 5 minutos): " + link;
-          $("ad-qlink").innerHTML = '<p class="small">Envie este link para ' + (b.dataset.questionario === "professor" ? "o(a) professor(a)" : "os pais ou responsáveis") + ':</p><input class="ad-qlink" readonly value="' + esc(link) + '"> <a class="secondary" style="display:inline-block;margin-top:6px;padding:9px 12px;border-radius:10px;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(texto) + '">Enviar pelo WhatsApp</a>';
+          var nomeP = p ? (p.preferredName || p.name || "").split(" ")[0] : "o paciente", texto = b.dataset.questionario === "proprio" ? "Olá, " + nomeP + "! Por favor, responda este questionário pedido pelo(a) profissional (leva poucos minutos): " + link : "Olá! Por favor, responda este questionário sobre " + nomeP + " pedido pelo(a) profissional (leva cerca de 5 minutos): " + link;
+          $("ad-qlink").innerHTML = '<p class="small">Envie este link para ' + (b.dataset.questionario === "professor" ? "o(a) professor(a)" : b.dataset.questionario === "proprio" ? "o próprio paciente" : "os pais ou responsáveis") + ':</p><input class="ad-qlink" readonly value="' + esc(link) + '"> <a class="secondary" style="display:inline-block;margin-top:6px;padding:9px 12px;border-radius:10px;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(texto) + '">Enviar pelo WhatsApp</a>';
         } catch (e) { toast(e.message); }
       }); });
     } catch (e) { /* sem questionário */ }
@@ -272,13 +293,103 @@
       lista.map(function (s2, i) { return '<circle cx="' + x(i) + '" cy="' + y(s2.qiEstimado) + '" r="5" fill="#17a895"/><text x="' + x(i) + '" y="' + (y(s2.qiEstimado) - 10) + '" font-size="11" text-anchor="middle">' + s2.qiEstimado + '</text><text x="' + x(i) + '" y="' + (h - 4) + '" font-size="10" text-anchor="middle" fill="#6b7b90">' + new Date(s2.criadoEm).toLocaleDateString("pt-BR") + "</text>"; }).join("") + "</svg>";
   }
 
+  // ---- refinamentos do relatório: índices compostos, validade, erros, comportamento, encontros
+  var VALIDADE = { adequada: "Adequada", "atenção": "Pede atenção", "questionável": "Questionável" };
+  function indicesHtml(r, sec) {
+    var ix = r.indices || []; if (!ix.length) return "";
+    var h = sec("Índices compostos") + '<p class="small muted">Agrupam áreas que medem a mesma capacidade, como nas baterias profissionais. Intervalo de 95% com fidedignidade <b>assumida</b> (0,85 com 2 ou mais áreas; 0,75 com uma área) até haver estudo próprio.</p>' +
+      barrasIndices(ix.map(function (x) { return { nome: x.sigla + " · " + x.nome, indice: x.valor }; })) +
+      '<div class="tablewrap"><table class="table"><thead><tr><th>Índice</th><th>Áreas</th><th>Valor</th><th>Intervalo 95%</th><th>Faixa</th><th>Comparado com a própria pessoa</th></tr></thead><tbody>' +
+      ix.map(function (x) { return "<tr><td><b>" + esc(x.sigla) + "</b> " + esc(x.nome) + "</td><td class=\"small\">" + esc(x.areas.join(", ")) + "</td><td><b>" + x.valor + "</b></td><td>" + x.intervalo[0] + "–" + x.intervalo[1] + "</td><td>" + esc(x.faixa) + "</td><td>" + esc(x.relativo || "—") + "</td></tr>"; }).join("") + "</tbody></table></div>";
+    if (r.habilidadeGeral) h += '<p><b>Índice de habilidade geral (IHG): ' + r.habilidadeGeral.valor + "</b> (" + esc(r.habilidadeGeral.faixa) + '). Usa só compreensão verbal, raciocínio e visuoespacial — sem memória de trabalho e velocidade. Quando fica bem acima do QI estimado, sugere que atenção/memória de trabalho/rapidez estão "puxando para baixo" o resultado geral (comum no TDAH).</p>';
+    var d = r.discrepancias || [];
+    h += d.length ? "<p><b>Diferenças significativas entre índices</b> (maiores que o acaso, 95%):</p><ul>" + d.map(function (x) { return "<li>" + esc(x.maior) + " &gt; " + esc(x.menor) + ": diferença de " + x.diferenca + " pontos (mínimo para ser significativa: " + x.critica + ").</li>"; }).join("") + "</ul>"
+      : '<p class="small muted">Nenhuma diferença entre índices passou do valor crítico: o perfil é relativamente homogêneo.</p>';
+    return h;
+  }
+  function validadeHtml(r, sec) {
+    var v = r.validade; if (!v) return "";
+    return sec("Validade da aplicação (esforço e atenção)") + '<p>Resultado da conferência automática: <b class="ad-val-' + esc(v.nivel) + '">' + esc(VALIDADE[v.nivel] || v.nivel) + "</b>.</p>" +
+      (v.sinais.length ? '<div class="notice' + (v.nivel === "questionável" ? " danger-note" : "") + '"><ul style="margin:0">' + v.sinais.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" + (v.nivel === "questionável" ? "<p><b>Os resultados desta sessão devem ser interpretados com muito cuidado</b> ou a aplicação deve ser repetida.</p>" : "") + "</div>"
+        : '<p class="small muted">Não houve respostas rápidas demais, padrão repetitivo, erros incoerentes nem acertos abaixo do acaso.</p>');
+  }
+  function errosHtml(r, sec) {
+    var e = (r.erros || []).filter(function (a) { return a.total; }); if (!e.length) return "";
+    return sec("Análise qualitativa dos erros") + '<p class="small muted">Que tipo de erro a pessoa cometeu em cada área. O tipo de erro ajuda a entender o porquê da dificuldade.</p><div class="tablewrap"><table class="table"><thead><tr><th>Área</th><th>Erros</th><th>Tipos mais comuns</th></tr></thead><tbody>' +
+      e.map(function (a) { return "<tr><td><b>" + esc(a.nome) + "</b></td><td>" + a.total + "</td><td>" + a.tipos.slice(0, 3).map(function (t) { return esc(t.tipo) + " (" + t.vezes + "x)"; }).join("; ") + "</td></tr>"; }).join("") + "</tbody></table></div>" +
+      (function () { var dicas = {}; e.forEach(function (a) { a.tipos.forEach(function (t) { if (t.dica && t.vezes >= 2) dicas[t.dica] = 1; }); }); var l = Object.keys(dicas); return l.length ? "<ul class=\"ad-base\">" + l.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : ""; })();
+  }
+  function comportamentoHtml(s) {
+    var c = s.comportamento, h = "";
+    if (c && Object.keys(c.itens || {}).length) h += '<div class="tablewrap"><table class="table"><thead><tr><th>Aspecto observado</th><th>Avaliação</th></tr></thead><tbody>' +
+      COMP.filter(function (k) { return c.itens[k[0]]; }).map(function (k) { return "<tr><td>" + esc(k[1]) + "</td><td><b>" + esc(COMP_NIVEL[c.itens[k[0]]]) + "</b></td></tr>"; }).join("") + "</tbody></table></div>";
+    if (c && c.recursos) h += "<p><b>Recursos usados:</b> " + esc(c.recursos) + "</p>";
+    if (c && c.nota) h += "<p><b>Observação do avaliador:</b> " + esc(c.nota) + "</p>";
+    var enc = (s.encontros || []).filter(function (x) { return x.inicio; });
+    if (enc.length > 1) h += "<p><b>Aplicada em " + enc.length + " encontros:</b> " + enc.map(function (x, i) { return (i + 1) + "º em " + dataHora(x.inicio); }).join("; ") + ".</p>";
+    return h || '<p class="small muted no-print">A observação do comportamento ainda não foi preenchida (aparece na tela ao vivo, no fim da sessão).</p>';
+  }
+  function textoComportamento(s) {
+    var c = s.comportamento; if (!c || !Object.keys(c.itens || {}).length) return "";
+    var bons = COMP.filter(function (k) { return c.itens[k[0]] === "adequado"; }).map(function (k) { return k[1].toLowerCase(); });
+    var ruins = COMP.filter(function (k) { return c.itens[k[0]] && c.itens[k[0]] !== "adequado"; }).map(function (k) { return k[1].toLowerCase() + " (" + COMP_NIVEL[c.itens[k[0]]].toLowerCase() + ")"; });
+    return "Durante a avaliação, " + (bons.length ? "mostrou-se adequado(a) quanto a " + bons.join(", ") : "") + (bons.length && ruins.length ? "; " : "") + (ruins.length ? "observou-se: " + ruins.join(", ") : "") + "." + (c.nota ? " " + c.nota : "");
+  }
+  // ---- laudo no modelo da Resolução CFP 06/2019 (o profissional revisa e assina; o sistema só monta o rascunho)
+  var LAUDO_SECOES = [["solicitante", "Solicitante"], ["finalidade", "Finalidade"], ["demanda", "Descrição da demanda"], ["procedimento", "Procedimento"], ["analise", "Análise"], ["conclusao", "Conclusão"], ["referencias", "Referências"], ["local", "Local e data"]];
+  function rascunhoLaudo(s, p, r) {
+    var nome = p ? p.name : "o(a) avaliado(a)", a = (p && p.anamnese) || {}, ix = r.indices || [];
+    var enc = (s.encontros || []).length, areas = (r.areas || []).filter(function (x) { return x.itens; }).map(function (x) { return x.nome; });
+    return {
+      solicitante: "", finalidade: "Avaliação das funções cognitivas para subsidiar " + (s.idadeAnos < 18 ? "orientação escolar e familiar" : "orientação clínica") + ".",
+      demanda: a.queixa ? a.queixa : "",
+      procedimento: "Entrevista de anamnese" + (a.queixa ? "" : " (a completar)") + "; aplicação informatizada adaptativa do NeuroTrilha (RMD) em " + (enc > 1 ? enc + " encontros" : "um encontro") + ", com as tarefas: " + areas.join(", ") + "; observação do comportamento durante a aplicação" +
+        "; questionários complementares, quando houver. Instrumentos validados e aprovados no SATEPSI utilizados: (completar).",
+      analise: interpretacao(s, r, p).join("\n\n") + (ix.length ? "\n\nÍndices compostos: " + ix.map(function (x) { return x.sigla + " " + x.valor + " (" + x.faixa.toLowerCase() + ")"; }).join("; ") + "." : "") +
+        (r.habilidadeGeral ? " Índice de habilidade geral: " + r.habilidadeGeral.valor + "." : "") + ((r.discrepancias || []).length ? " Diferenças significativas: " + r.discrepancias.map(function (d) { return d.maior + " > " + d.menor; }).join("; ") + "." : "") +
+        (r.validade && r.validade.nivel !== "adequada" ? "\n\nValidade da aplicação: " + r.validade.sinais.join(" ") : "") + (textoComportamento(s) ? "\n\n" + textoComportamento(s) : ""),
+      conclusao: "", referencias: "Conselho Federal de Psicologia. Resolução CFP nº 06/2019 (elaboração de documentos escritos).\nConselho Federal de Psicologia. Resolução CFP nº 31/2022 (avaliação psicológica e SATEPSI).\nMcGrew, K. S. (2009). CHC theory and the human cognitive abilities project. Intelligence, 37(1), 1-10.\nJacobson, N. S., & Truax, P. (1991). Clinical significance: a statistical approach. Journal of Consulting and Clinical Psychology, 59(1), 12-19.",
+      local: "(cidade), " + new Date().toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" }) + "."
+    };
+  }
+  function mostrarLaudo(s) {
+    var p = pessoa(s.participantId), r = s.resultado || {}, base = rascunhoLaudo(s, p, r), salvo = s.laudo || {}, txt = Object.assign({}, base, salvo.secoes || {});
+    var prof = salvo.profissional || (s.parecer && s.parecer.profissional) || "", reg = salvo.registro || (s.parecer && s.parecer.registro) || "";
+    var h = '<div class="ad-rel-cab no-print"><button class="quiet" id="ad-laudo-voltar">← Voltar ao relatório</button><div class="actions"><button class="secondary" id="ad-laudo-salvar">Salvar laudo</button><button class="primary" id="ad-laudo-imprimir">Imprimir / salvar PDF</button><a class="secondary" style="padding:9px 12px;border-radius:10px;text-decoration:none" href="https://assinador.iti.br/" target="_blank" rel="noopener">Assinar no gov.br</a></div></div>' +
+      '<div class="notice no-print">Rascunho no modelo da <b>Resolução CFP 06/2019</b>. Revise cada parte: só o(a) psicólogo(a) pode concluir e assinar. Para assinar com o gov.br: salve em PDF, abra <b>assinador.iti.br</b>, envie o PDF e baixe o arquivo assinado.</div>' +
+      '<div class="panel no-print ad-laudo-editor"><div class="formgrid"><div class="field"><label>Psicólogo(a) responsável</label><input id="ad-laudo-prof" maxlength="120" value="' + esc(prof) + '"></div><div class="field"><label>CRP</label><input id="ad-laudo-reg" maxlength="40" value="' + esc(reg) + '" placeholder="CRP 00/00000"></div></div>' +
+      LAUDO_SECOES.map(function (k) { return '<div class="field"><label>' + esc(k[1]) + '</label><textarea data-laudo="' + k[0] + '" rows="' + (k[0] === "analise" ? 12 : k[0] === "local" ? 1 : 4) + '">' + esc(txt[k[0]] || "") + "</textarea></div>"; }).join("") + '<span id="ad-laudo-msg" class="small"></span></div>' +
+      '<div class="panel ad-rel ad-laudo" id="ad-laudo-doc"></div>';
+    $("ad-relatorio").innerHTML = h;
+    function desenhar() {
+      var v = function (k) { var x = document.querySelector('[data-laudo="' + k + '"]'); return x ? x.value : ""; };
+      var num = 0, par = function (t) { return esc(t).split(/\n{2,}/).map(function (x) { return "<p>" + x.replace(/\n/g, "<br>") + "</p>"; }).join(""); };
+      $("ad-laudo-doc").innerHTML = '<h2 style="text-align:center">LAUDO PSICOLÓGICO</h2>' +
+        "<h3>" + (++num) + ". Identificação</h3><p><b>Autor(a):</b> " + esc($("ad-laudo-prof").value || "(nome)") + " — " + esc($("ad-laudo-reg").value || "CRP (número)") + "<br><b>Interessado(a):</b> " + esc(p ? p.name : "—") + (p && p.birthDate ? ", nascido(a) em " + p.birthDate.split("-").reverse().join("/") : "") + " (" + idadeTexto(s.idadeAnos) + ")" +
+        (v("solicitante") ? "<br><b>Solicitante:</b> " + esc(v("solicitante")) : "") + "<br><b>Finalidade:</b> " + esc(v("finalidade")) + "</p>" +
+        ["demanda", "procedimento", "analise", "conclusao", "referencias"].map(function (k) { var t = LAUDO_SECOES.filter(function (x) { return x[0] === k; })[0][1]; return "<h3>" + (++num) + ". " + esc(k === "demanda" ? "Descrição da demanda" : t) + "</h3>" + (v(k) ? par(v(k)) : '<p class="muted">(a completar)</p>'); }).join("") +
+        '<p style="margin-top:28px">' + esc(v("local")) + '</p><p style="margin-top:46px;text-align:center">______________________________________<br>' + esc($("ad-laudo-prof").value || "Psicólogo(a)") + "<br>" + esc($("ad-laudo-reg").value || "CRP") + "</p>" +
+        '<p class="small muted" style="margin-top:20px">Documento sigiloso, de uso restrito do interessado e do solicitante. Os resultados do NeuroTrilha são experimentais (sem normas brasileiras e sem aprovação no SATEPSI) e foram usados de forma complementar.</p>';
+    }
+    desenhar();
+    $("ad-relatorio").querySelectorAll("textarea,input").forEach(function (x) { x.addEventListener("input", desenhar); });
+    $("ad-laudo-voltar").onclick = function () { mostrarRelatorio(st.sessao); };
+    $("ad-laudo-imprimir").onclick = function () { window.print(); };
+    $("ad-laudo-salvar").onclick = async function () {
+      var l = { profissional: $("ad-laudo-prof").value, registro: $("ad-laudo-reg").value };
+      LAUDO_SECOES.forEach(function (k) { l[k[0]] = document.querySelector('[data-laudo="' + k[0] + '"]').value; });
+      try { st.sessao = await api("/api/adaptativa/" + encodeURIComponent(s.id) + "/controle", { method: "POST", body: JSON.stringify({ acao: "laudo", laudo: l }) }); $("ad-laudo-msg").textContent = "Laudo salvo em " + dataHora(st.sessao.laudo.em) + "."; toast("Laudo salvo."); }
+      catch (e) { $("ad-laudo-msg").textContent = e.message; }
+    };
+    window.scrollTo(0, 0);
+  }
   function mostrarRelatorio(s) {
     clearInterval(st.timer); st.sessao = s;
     var p = pessoa(s.participantId), r = s.resultado || {}, itens = s.historico.filter(function (h) { return !h.treino; });
     var ini = s.historico.length ? s.historico[0].em : s.criadoEm, fimT = s.historico.length ? s.historico[s.historico.length - 1].em : s.atualizadoEm;
     var dur = Math.max(0, Math.round((Date.parse(fimT) - Date.parse(ini)) / 60000));
     var num = 0, sec = function (titulo) { num++; return "<h3>" + num + ". " + titulo + "</h3>"; };
-    var h = '<div class="ad-rel-cab no-print"><button class="quiet" id="ad-rel-voltar">← Voltar</button><div class="actions"><button class="secondary" id="ad-rel-csv">Exportar respostas (CSV)</button><button class="primary" id="ad-rel-imprimir">Imprimir / salvar PDF</button></div></div>';
+    var h = '<div class="ad-rel-cab no-print"><button class="quiet" id="ad-rel-voltar">← Voltar</button><div class="actions"><button class="secondary" id="ad-rel-csv">Exportar respostas (CSV)</button><button class="secondary" id="ad-rel-laudo">Laudo (modelo CFP)</button><button class="primary" id="ad-rel-imprimir">Imprimir / salvar PDF</button></div></div>';
     h += '<div class="panel ad-rel"><div class="ad-rel-topo"><div><div class="ad-marca">NeuroTrilha</div><h2>Relatório de avaliação cognitiva adaptativa</h2><p class="muted">Instrumento experimental de apoio ao profissional · desenvolvido por RMD</p></div><div class="ad-rel-id">Sessão ' + esc(s.id.slice(0, 11)) + "<br>" + dataHora(s.criadoEm) + "</div></div>";
     h += sec("Identificação") + '<div class="ad-ficha">' + [["Nome", p ? p.name : "—"], ["Código", p ? p.code : "—"], ["Nascimento", p ? p.birthDate.split("-").reverse().join("/") : "—"], ["Idade na aplicação", idadeTexto(s.idadeAnos)],
       ["Sexo", p && p.sex || "—"], ["Escolaridade", p && p.education || "—"], ["Avaliador", s.avaliador || "—"], ["Duração aproximada", dur + " min"], ["Situação", NOME_STATUS[s.status] || s.status], ["Forma de aplicação", s.leitor ? "instruções escritas e faladas" : "instruções só faladas, respostas por figuras"]]
@@ -288,6 +399,7 @@
     h += r.qiEstimado == null ? '<div class="empty">Sem respostas suficientes para estimar.</div>' : '<div class="ad-resumo"><div class="ad-qi grande"><span>QI estimado</span><b>' + r.qiEstimado + "</b><small>faixa provável (95%): " + r.intervalo[0] + "–" + r.intervalo[1] + "</small></div>" +
       '<div class="ad-fatos"><div><span>Classificação descritiva</span><b>' + esc(r.faixa) + "</b></div><div><span>Idade de desempenho</span><b>≈ " + numero(r.idadeDesempenho, 1) + " anos</b></div><div><span>Nível médio alcançado</span><b>" + numero(r.nivelGeral, 1) + " de 16</b></div><div><span>Nível esperado para a idade</span><b>" + numero(r.nivelEsperado, 1) + "</b></div></div></div>";
     h += '<div class="notice"><b>Importante:</b> o QI aqui é uma <b>estimativa experimental</b>, calculada pela distância entre o nível alcançado e o nível esperado para a idade (referências aproximadas da literatura, desvio-padrão assumido de 15 pontos). O instrumento <b>não tem normas brasileiras e não é aprovado no SATEPSI</b>; pela Resolução CFP 31/2022, decisões de avaliação psicológica devem se apoiar em testes com parecer favorável, entrevista e observação. Use como informação complementar.</div>';
+    h += validadeHtml(r, sec);
     var comIndice = (r.areas || []).filter(function (a) { return a.indice != null; });
     h += sec("Perfil por área") + barrasIndices(comIndice) +
       '<div class="tablewrap"><table class="table"><thead><tr><th>Área</th><th>CHC</th><th>Itens</th><th>Acertos</th><th>Nível alcançado</th><th>Idade de desempenho</th><th>Índice</th><th>Faixa</th><th>Tempo mediano</th><th>Término</th></tr></thead><tbody>' +
@@ -296,11 +408,13 @@
         if (!doGrupo.length) return "";
         return '<tr><td colspan="10" style="background:#f3f8ff"><b>' + esc(M.GRUPOS[g]) + "</b></td></tr>" + doGrupo.map(function (a) { return "<tr><td><b>" + esc(a.nome) + "</b></td><td>" + esc(a.chc) + "</td><td>" + a.itens + "</td><td>" + a.acertos + "</td><td>" + (a.fixo ? "bloco fixo" : numero(a.nivel, 1)) + "</td><td>" + (a.idadeDesempenho == null ? "—" : "≈ " + numero(a.idadeDesempenho, 1) + " anos") + "</td><td><b>" + (a.indice == null ? "—" : a.indice) + "</b></td><td>" + esc(a.fixo ? "ver medidas abaixo" : a.faixa) + "</td><td>" + seg(a.tempoMedianoMs) + "</td><td class=\"small\">" + esc(NOME_FIM[a.motivoFim] || (a.terminado ? "concluída" : "não aplicada")) + "</td></tr>"; }).join("");
       }).join("") + "</tbody></table></div>";
+    h += indicesHtml(r, sec);
     h += medidasHtml(r, sec);
+    h += errosHtml(r, sec);
     h += sec("Como a dificuldade evoluiu em cada área") + "<div class=\"ad-curvas\">" + s.escadas.filter(function (e) { return !e.fixo; }).map(function (e) { return '<div class="ad-curvabox"><b>' + esc(M.dominio(e.dominio).nome) + "</b>" + curva(e.itens, 300, 120) + "</div>"; }).join("") + "</div>";
     h += '<div id="ad-evolucao"></div><div id="ad-questionarios"></div>';
     h += sec("Pontos fortes e frágeis (comparando a pessoa com ela mesma)") + "<div class=\"ad-ff\"><div><span>Mais fortes</span><b>" + esc((r.fortes || []).join(", ") || "nenhuma área se destacou") + "</b></div><div><span>Mais frágeis</span><b>" + esc((r.fracos || []).join(", ") || "nenhuma área ficou abaixo do restante") + "</b></div></div>";
-    h += sec("Comportamento e observações") + ((r.alertas || []).length ? (r.alertas || []).map(function (a) { return '<div class="notice">' + esc(a.texto) + "</div>"; }).join("") : '<p class="muted">Nenhum alerta automático.</p>') +
+    h += sec("Comportamento e observações") + comportamentoHtml(s) + ((r.alertas || []).length ? (r.alertas || []).map(function (a) { return '<div class="notice">' + esc(a.texto) + "</div>"; }).join("") : '<p class="muted">Nenhum alerta automático.</p>') +
       ((s.observacoes || []).length ? "<ul class=\"ad-obs\">" + s.observacoes.map(function (o) { return "<li><b>" + dataHora(o.em) + (o.dominio ? " · " + esc(M.dominio(o.dominio).curto) : "") + ":</b> " + esc((o.flags || []).join(", ")) + (o.nota ? " — " + esc(o.nota) : "") + "</li>"; }).join("") + "</ul>" : "");
     var ajustes = s.escadas.filter(function (e) { return e.ajustesAvaliador; }).map(function (e) { return M.dominio(e.dominio).nome + " (" + e.ajustesAvaliador + "x)"; });
     if (ajustes.length) h += '<p class="small muted">O avaliador ajustou o nível manualmente em: ' + esc(ajustes.join(", ")) + ".</p>";
@@ -318,6 +432,7 @@
     ["ad-setup", "ad-lista-painel", "ad-aovivo"].forEach(function (x) { $(x).classList.add("hidden"); }); $("ad-relatorio").classList.remove("hidden");
     $("ad-rel-voltar").onclick = voltar;
     $("ad-rel-imprimir").onclick = function () { window.print(); };
+    $("ad-rel-laudo").onclick = function () { mostrarLaudo(s); };
     $("ad-rel-csv").onclick = function () {
       var rows = [["Sessão", "Participante", "Código", "Idade", "Área", "Nível", "Treino", "Resultado", "Tempo (s)", "Instrução", "Data"]].concat(s.historico.map(function (x) {
         return [s.id, p ? p.name : "", p ? p.code : "", numero(s.idadeAnos, 2), M.dominio(x.dominio).nome, x.nivel, x.treino ? "sim" : "não", x.correto ? (x.rapido ? "acerto" : "acerto lento") : x.esgotado ? "tempo esgotado" : "erro", numero(x.tempoMs / 1000, 2), x.fala || "", x.em];
@@ -338,6 +453,9 @@
   $("ad-iniciar").addEventListener("click", iniciar);
   $("ad-flags").innerHTML = FLAGS.map(function (f) { return '<label class="ad-chip"><input type="checkbox" value="' + esc(f) + '"><span>' + esc(f) + "</span></label>"; }).join("");
   $("ad-obs-salvar").addEventListener("click", observar);
+  $("ad-comp-campos").innerHTML = COMP.map(function (k) { return '<div class="ad-comp-linha"><span>' + esc(k[1]) + '</span><div class="ad-flags">' + Object.keys(COMP_NIVEL).map(function (v) { return '<label class="ad-chip"><input type="radio" name="comp-' + k[0] + '" value="' + v + '"><span>' + esc(COMP_NIVEL[v]) + "</span></label>"; }).join("") + "</div></div>"; }).join("");
+  $("ad-comp-salvar").addEventListener("click", salvarComportamento);
+  $("ad-c-encontro").addEventListener("click", function () { if (confirm("Encerrar o encontro de hoje? O paciente vê \"Por hoje é só!\" e, no próximo dia, a sessão continua de onde parou (toque em Continuar).")) controle("encontro"); });
   $("ad-copiar").addEventListener("click", function () { var i = $("ad-link"); i.select(); try { navigator.clipboard.writeText(i.value); } catch (e) { document.execCommand("copy"); } toast("Endereço copiado."); });
   $("ad-abrir-paciente").addEventListener("click", function () { if (st.sessao) window.open(linkPaciente(st.sessao), "neurotrilha_paciente", "width=1100,height=760"); });
   $("ad-ver-relatorio").addEventListener("click", function () { if (st.sessao) mostrarRelatorio(st.sessao); });
