@@ -46,7 +46,7 @@ html,body{max-width:100%;overflow-x:hidden}
 <section class="auth-gate" id="nt-entrar">
  <form class="auth-card" id="nt-form-entrar" autocomplete="on">
   <div class="auth-mark">N</div><h2>NeuroTrilha</h2>
-  <p>NeuroTrilha <b>pela internet</b>. Entre com o usuário e a senha criados no ícone <b>NeuroTrilha ONLINE - 1 Desenvolvedor</b> (Conta → Contas e liberações). A senha inicial é <b>123456</b>.</p>
+  <p>NeuroTrilha <b>pela internet</b>. Entre com o usuário e a senha criados no ícone <b>NeuroTrilha 1 - DESENVOLVEDOR</b> (Conta → Contas e liberações). A senha inicial é <b>123456</b>.</p>
   <label class="auth-field"><span>Usuário</span><input id="nt-usuario" autocomplete="username" required autocapitalize="none" spellcheck="false"></label>
   <label class="auth-field"><span>Senha</span><input id="nt-senha" type="password" autocomplete="current-password" required></label>
   <label class="auth-field hidden" id="nt-codigo-wrap"><span>Código de 6 números do aplicativo autenticador</span><input id="nt-codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>
@@ -155,7 +155,7 @@ html,body{max-width:100%;overflow-x:hidden}
     <div class="hidden" id="nt-2fa-passos" style="margin-top:10px"><p class="small">1. No aplicativo autenticador, toque em <b>+</b> e escolha <b>digitar uma chave</b>. Nome: <b>NeuroTrilha</b>. Chave:</p><p><code id="nt-2fa-chave" style="font-size:17px;word-break:break-all"></code></p>
      <p class="small">2. Digite o código de 6 números que aparecer:</p><div class="nt-dois"><input id="nt-2fa-codigo" inputmode="numeric" maxlength="6" placeholder="000000"><button class="primary" type="button" id="nt-2fa-confirmar">Confirmar</button></div><div class="small" id="nt-2fa-msg" role="status"></div></div></div>
    <div class="panel hidden" id="nt-admin" style="margin-top:14px">
-    <h3>Contas e liberações dos profissionais (só a RMD vê)</h3><p class="small muted">As contas criadas aqui são as que entram no NeuroTrilha pela internet (ícone Avaliador). As do programa do computador são separadas.</p>
+    <h3>Contas e liberações dos profissionais (só a RMD vê)</h3><p class="small muted">As contas criadas aqui são as que entram no NeuroTrilha pela internet (ícone NeuroTrilha 2 - CLÍNICA). As do programa do computador são separadas.</p>
     <form class="nt-form" id="nt-form-conta"><div class="nt-dois"><div><label for="c-usuario">Usuário</label><input id="c-usuario" required maxlength="40" placeholder="ex.: dra.ana" autocapitalize="none" spellcheck="false"><small class="muted" id="c-usuario-vira"></small></div>
      <div><label for="c-nome">Nome do profissional</label><input id="c-nome" required maxlength="100"></div></div>
      <div class="small muted">A senha inicial é 123456 (teste). O profissional troca em Conta.</div>
@@ -205,7 +205,7 @@ function gravarSessao(s) { try { if (s) localStorage.setItem("nt_sessao", JSON.s
 async function pedirToken(tipo, corpo) {
   const r = await fetch(NT.SUPABASE_URL + "/auth/v1/token?grant_type=" + tipo, { method: "POST", headers: { apikey: NT.CHAVE_PUBLICA, "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(/invalid/i.test(j.error_description || j.msg || "") ? "Usuário ou senha incorretos. Confira se a conta foi criada no ícone NeuroTrilha ONLINE - 1 Desenvolvedor (contas do programa do computador não valem aqui) e se a senha tem 6 números (123456)." : (j.error_description || j.msg || "Não foi possível entrar."));
+  if (!r.ok) throw new Error(/invalid/i.test(j.error_description || j.msg || "") ? "Usuário ou senha incorretos. Confira se a conta foi criada no ícone NeuroTrilha 1 - DESENVOLVEDOR (contas do programa do computador não valem aqui) e se a senha tem 6 números (123456)." : (j.error_description || j.msg || "Não foi possível entrar."));
   return { access_token: j.access_token, refresh_token: j.refresh_token, expira: Date.now() + (j.expires_in || 3600) * 1000 };
 }
 async function renovar() { const s = lerSessao(); if (!s || !s.refresh_token) throw new Error("Entre de novo."); const n = await pedirToken("refresh_token", { refresh_token: s.refresh_token }); gravarSessao(n); return n; }
