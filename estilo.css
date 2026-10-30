@@ -87,7 +87,7 @@ body{font-family:"Plus Jakarta Sans",Inter,"Segoe UI",Arial,sans-serif;backgroun
 .stat,.panel{transition:box-shadow .25s ease,transform .25s ease}
 .stat:hover{box-shadow:0 14px 32px rgba(20,48,79,.11);transform:translateY(-2px)}
 .stat-num{color:var(--nav)}
-.primary{background:var(--blue)}.primary:hover{background:#1E5594}
+.primary,button.primary{background:var(--blue);box-shadow:0 6px 16px rgba(37,99,168,.22)}.primary:hover,button.primary:hover{background:#1E5594}.ad-marca{background:var(--blue)!important}
 .secondary{background:#EAF1FA;color:#1F4F8A;border-color:#D3E1F3}
 .nav button{border-radius:12px}.nav button.active{background:#24476F}
 .progress span{background:var(--blue)}
