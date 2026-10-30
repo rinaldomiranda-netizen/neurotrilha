@@ -46,9 +46,10 @@ html,body{max-width:100%;overflow-x:hidden}
 <section class="auth-gate" id="nt-entrar">
  <form class="auth-card" id="nt-form-entrar" autocomplete="on">
   <div class="auth-mark">N</div><h2>NeuroTrilha</h2>
-  <p>NeuroTrilha <b>pela internet</b>. Entre com o usuário e a senha criados no ícone <b>NeuroTrilha 1 - DESENVOLVEDOR</b> (Conta → Contas e liberações). A senha inicial é <b>123456</b>.</p>
+  <p>NeuroTrilha <b>pela internet</b>. Digite o seu usuário e a sua senha. <b>Primeiro acesso?</b> Digite só o usuário liberado pela RMD e toque em Entrar: você mesmo cria a sua senha.</p>
   <label class="auth-field"><span>Usuário</span><input id="nt-usuario" autocomplete="username" required autocapitalize="none" spellcheck="false"></label>
-  <label class="auth-field"><span>Senha</span><input id="nt-senha" type="password" autocomplete="current-password" required></label>
+  <label class="auth-field"><span id="nt-senha-rotulo">Senha</span><input id="nt-senha" type="password" autocomplete="current-password"></label>
+  <label class="auth-field hidden" id="nt-senha2-wrap"><span>Repita a senha nova</span><input id="nt-senha2" type="password" autocomplete="new-password"></label>
   <label class="auth-field hidden" id="nt-codigo-wrap"><span>Código de 6 números do aplicativo autenticador</span><input id="nt-codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>
   <div class="auth-error" id="nt-erro-entrar" role="alert"></div>
   <button class="primary" type="submit" id="nt-botao-entrar">Entrar</button>
@@ -158,7 +159,7 @@ html,body{max-width:100%;overflow-x:hidden}
     <h3>Contas e liberações dos profissionais (só a RMD vê)</h3><p class="small muted">As contas criadas aqui são as que entram no NeuroTrilha pela internet (ícone NeuroTrilha 2 - CLÍNICA). As do programa do computador são separadas.</p>
     <form class="nt-form" id="nt-form-conta"><div class="nt-dois"><div><label for="c-usuario">Usuário</label><input id="c-usuario" required maxlength="40" placeholder="ex.: dra.ana" autocapitalize="none" spellcheck="false"><small class="muted" id="c-usuario-vira"></small></div>
      <div><label for="c-nome">Nome do profissional</label><input id="c-nome" required maxlength="100"></div></div>
-     <div class="small muted">A senha inicial é 123456 (teste). O profissional troca em Conta.</div>
+     <div class="small muted">Você só libera o usuário. No primeiro acesso, no ícone <b>NeuroTrilha 2 - CLÍNICA</b>, a pessoa digita o usuário e cria a própria senha.</div>
      <div class="small" id="nt-conta-msg" role="status"></div><button class="secondary" type="submit">Criar acesso</button></form>
     <div id="nt-contas" style="margin-top:12px"></div>
     <div style="margin-top:14px"><b>Registro de acessos (LGPD)</b><p class="small muted">Quem entrou, abriu, criou, alterou, exportou ou apagou fichas e avaliações. Mostra os 1000 mais recentes.</p><button class="secondary" type="button" id="nt-auditoria">Ver registro</button> <button class="quiet hidden" type="button" id="nt-auditoria-csv">Baixar (CSV)</button><div class="tablewrap" id="nt-auditoria-tabela" style="margin-top:8px"></div></div>
@@ -205,7 +206,7 @@ function gravarSessao(s) { try { if (s) localStorage.setItem("nt_sessao", JSON.s
 async function pedirToken(tipo, corpo) {
   const r = await fetch(NT.SUPABASE_URL + "/auth/v1/token?grant_type=" + tipo, { method: "POST", headers: { apikey: NT.CHAVE_PUBLICA, "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(/invalid/i.test(j.error_description || j.msg || "") ? "Usuário ou senha incorretos. Confira se a conta foi criada no ícone NeuroTrilha 1 - DESENVOLVEDOR (contas do programa do computador não valem aqui) e se a senha tem 6 números (123456)." : (j.error_description || j.msg || "Não foi possível entrar."));
+  if (!r.ok) throw new Error(/invalid/i.test(j.error_description || j.msg || "") ? "Usuário ou senha incorretos. Confira o usuário liberado pela RMD (no ícone NeuroTrilha 1 - DESENVOLVEDOR) e a senha que você criou. Esqueceu? Peça à RMD um novo primeiro acesso." : (j.error_description || j.msg || "Não foi possível entrar."));
   return { access_token: j.access_token, refresh_token: j.refresh_token, expira: Date.now() + (j.expires_in || 3600) * 1000 };
 }
 async function renovar() { const s = lerSessao(); if (!s || !s.refresh_token) throw new Error("Entre de novo."); const n = await pedirToken("refresh_token", { refresh_token: s.refresh_token }); gravarSessao(n); return n; }
@@ -222,6 +223,21 @@ async function api(path, opcoes = {}) {
 }
 // usuário sempre no mesmo formato: minúsculas, sem acento, espaço vira ponto ("Doutora Teste" → "doutora.teste")
 function normUsuario(t) { return String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim().replace(/\s+/g, ".").replace(/[^a-z0-9._-]/g, "").replace(/\.{2,}/g, ".").replace(/^\.|\.$/g, "").slice(0, 40); }
+// ---- primeiro acesso (a RMD só liberou o usuário; a pessoa cria a própria senha)
+let modoPrimeiro = false;
+async function chamarPrimeiroAcesso(corpo) {
+  const r = await fetch(NT.FUNCOES + "/api/primeiro-acesso", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+  const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || "Não foi possível criar a senha."); return j;
+}
+function entrarPrimeiroAcesso() {
+  modoPrimeiro = true; $id("nt-senha-rotulo").textContent = "Crie a sua senha (pelo menos 6 letras ou números)"; $id("nt-senha").autocomplete = "new-password"; $id("nt-senha").value = "";
+  $id("nt-senha2-wrap").classList.remove("hidden"); $id("nt-botao-entrar").textContent = "Criar minha senha e entrar";
+  $id("nt-erro-entrar").style.color = "#087764"; $id("nt-erro-entrar").textContent = "Primeiro acesso: o seu acesso foi liberado pela RMD. Crie agora a sua senha particular."; $id("nt-senha").focus();
+}
+function sairPrimeiroAcesso() {
+  modoPrimeiro = false; $id("nt-senha-rotulo").textContent = "Senha"; $id("nt-senha").autocomplete = "current-password"; $id("nt-senha2-wrap").classList.add("hidden");
+  $id("nt-botao-entrar").textContent = "Entrar"; $id("nt-erro-entrar").style.color = "";
+}
 function mostrarEntrar() { $id("nt-app").classList.add("hidden"); $id("nt-entrar").classList.remove("hidden"); }
 // ---- verificação em duas etapas (Supabase: fator TOTP do aplicativo autenticador)
 async function chamarAuth(caminho, metodo, corpo) {
@@ -251,15 +267,30 @@ async function iniciar() {
     estado2fa();
     $id("nt-conta-sub").textContent = "Usuário: " + eu.usuario + (eu.papel === "admin" ? " · RMD (administrador)" : " · profissional");
     await carregarPacientes();
-    switchView("adaptive");
+    if (eu.papel === "admin" && /[?&]tela=contas/.test(location.search)) { switchView("conta"); setTimeout(() => $id("nt-admin").scrollIntoView({ behavior: "smooth" }), 200); }
+    else switchView("adaptive");
   } catch (e) { if (e.precisa2fa && await pedirSegundaEtapa().catch(() => false)) return; mostrarEntrar(); if (e.status !== 401) $id("nt-erro-entrar").textContent = e.message; }
 }
 $id("nt-form-entrar").addEventListener("submit", async (ev) => {
-  ev.preventDefault(); const bt = $id("nt-botao-entrar"); bt.disabled = true; $id("nt-erro-entrar").textContent = "";
+  ev.preventDefault(); const bt = $id("nt-botao-entrar"); bt.disabled = true; $id("nt-erro-entrar").textContent = ""; $id("nt-erro-entrar").style.color = "";
   try {
     // 2ª etapa: já entrou com a senha e falta o código do aplicativo
     if (!$id("nt-codigo-wrap").classList.contains("hidden")) { await confirmarCodigo(fatorLogin, $id("nt-codigo").value.trim()); $id("nt-codigo").value = ""; $id("nt-codigo-wrap").classList.add("hidden"); $id("nt-senha").required = true; await iniciar(); return; }
     const usuario = normUsuario($id("nt-usuario").value);
+    if (!usuario) throw new Error("Digite o seu usuário.");
+    // primeiro acesso: a pessoa cria a própria senha
+    if (modoPrimeiro) {
+      const s1 = $id("nt-senha").value, s2 = $id("nt-senha2").value;
+      if (s1.length < 6) throw new Error("A senha precisa ter pelo menos 6 caracteres (letras ou números).");
+      if (s1 !== s2) throw new Error("As duas senhas não são iguais.");
+      await chamarPrimeiroAcesso({ usuario, senha: s1 });
+      sairPrimeiroAcesso(); toast("Senha criada. Entrando…");
+      gravarSessao(await pedirToken("password", { email: usuario + "@" + DOMINIO_EMAIL, password: s1 }));
+      $id("nt-senha").value = ""; $id("nt-senha2").value = ""; await iniciar(); return;
+    }
+    const pendente = (await chamarPrimeiroAcesso({ usuario }).catch(() => ({}))).pendente;
+    if (pendente) { entrarPrimeiroAcesso(); return; }
+    if (!$id("nt-senha").value) throw new Error("Digite a sua senha.");
     gravarSessao(await pedirToken("password", { email: usuario + "@" + DOMINIO_EMAIL, password: $id("nt-senha").value }));
     $id("nt-senha").value = "";
     if (await pedirSegundaEtapa()) return;
@@ -336,8 +367,8 @@ async function desenharContas() {
   const host = $id("nt-contas");
   try {
     const { contas } = await api("/api/admin/contas");
-    host.innerHTML = contas.map((c) => '<div class="nt-cartao"><span class="nt-av">' + esc(c.usuario[0].toUpperCase()) + '</span><div><b>' + esc(c.nome) + '</b><small>' + esc(c.usuario) + " · " + (c.papel === "admin" ? "RMD" : "profissional") + (c.ativo ? "" : " · BLOQUEADO") + (c.senha_provisoria ? " · senha de teste" : "") + "</small></div>" +
-      (c.papel === "admin" ? "" : '<button class="quiet" data-ativo="' + c.user_id + '" data-v="' + (c.ativo ? 0 : 1) + '">' + (c.ativo ? "Bloquear" : "Liberar") + '</button><button class="quiet" data-senha="' + c.user_id + '">Senha 123456</button><button class="quiet" style="color:#b42318" data-excluir="' + c.user_id + '" data-nome="' + esc(c.usuario) + '">Excluir</button>') + "</div>").join("");
+    host.innerHTML = contas.map((c) => '<div class="nt-cartao"><span class="nt-av">' + esc(c.usuario[0].toUpperCase()) + '</span><div><b>' + esc(c.nome) + '</b><small>' + esc(c.usuario) + " · " + (c.papel === "admin" ? "RMD" : "profissional") + (c.ativo ? "" : " · BLOQUEADO") + (c.papel === "admin" ? "" : c.primeiro_acesso ? " · <b>aguardando a pessoa criar a senha</b>" : " · senha criada pela pessoa") + "</small></div>" +
+      (c.papel === "admin" ? "" : '<button class="quiet" data-ativo="' + c.user_id + '" data-v="' + (c.ativo ? 0 : 1) + '">' + (c.ativo ? "Bloquear" : "Liberar") + '</button><button class="quiet" data-senha="' + c.user_id + '" title="Esqueceu a senha ou perdeu o celular: a pessoa cria outra senha ao entrar">Novo primeiro acesso</button><button class="quiet" style="color:#b42318" data-excluir="' + c.user_id + '" data-nome="' + esc(c.usuario) + '">Excluir</button>') + "</div>").join("");
   } catch (e) { host.innerHTML = '<div class="notice danger-note">' + esc(e.message) + "</div>"; }
 }
 $id("nt-contas").addEventListener("click", async (ev) => {
@@ -348,7 +379,7 @@ $id("nt-contas").addEventListener("click", async (ev) => {
       const r = await api("/api/admin/contas/" + ex.dataset.excluir, { method: "DELETE" }); toast("Conta " + ex.dataset.nome + " excluída." + (r.fichasMovidas ? " " + r.fichasMovidas + " ficha(s) passaram para você." : ""));
     }
     if (a) { await api("/api/admin/contas/" + a.dataset.ativo, { method: "PUT", body: JSON.stringify({ ativo: a.dataset.v === "1" }) }); toast("Acesso atualizado."); }
-    if (sb && confirm("Voltar a senha deste profissional para 123456?")) { await api("/api/admin/contas/" + sb.dataset.senha + "/senha", { method: "POST", body: "{}" }); toast("Senha voltou para 123456."); }
+    if (sb && confirm("Liberar um NOVO primeiro acesso? A senha atual deixa de valer e, ao entrar, a pessoa cria outra senha.")) { await api("/api/admin/contas/" + sb.dataset.senha + "/senha", { method: "POST", body: "{}" }); toast("Novo primeiro acesso liberado."); }
     desenharContas();
   } catch (e) { toast(e.message); }
 });
@@ -362,7 +393,7 @@ $id("nt-form-conta").addEventListener("submit", async (ev) => {
   ev.preventDefault(); const msg = $id("nt-conta-msg"); msg.style.color = "#b42318";
   const usuario = normUsuario($id("c-usuario").value);
   if (usuario.length < 3) { msg.textContent = "O usuário precisa ter pelo menos 3 letras ou números."; return; }
-  try { await api("/api/admin/contas", { method: "POST", body: JSON.stringify({ usuario, nome: $id("c-nome").value.trim() }) }); ev.target.reset(); $id("c-usuario-vira").textContent = ""; msg.style.color = "#087764"; msg.innerHTML = "Acesso criado. Para entrar: usuário <b>" + esc(usuario) + "</b> e senha <b>123456</b>."; desenharContas(); }
+  try { await api("/api/admin/contas", { method: "POST", body: JSON.stringify({ usuario, nome: $id("c-nome").value.trim() }) }); ev.target.reset(); $id("c-usuario-vira").textContent = ""; msg.style.color = "#087764"; msg.innerHTML = "Acesso liberado para <b>" + esc(usuario) + "</b>. Avise a pessoa: no ícone NeuroTrilha 2 - CLÍNICA, digite <b>" + esc(usuario) + "</b>, toque em Entrar e crie a própria senha."; desenharContas(); }
   catch (e) { msg.textContent = e.message; }
 });
 // ---- duas etapas na conta
@@ -386,7 +417,7 @@ $id("nt-2fa-desligar").addEventListener("click", async () => {
   catch (e) { toast(e.message); }
 });
 // ---- registro de acessos (RMD)
-const NOMES_ACAO = { entrou: "Entrou", listar_fichas: "Abriu a lista de fichas", criar_ficha: "Criou ficha", editar_ficha: "Alterou ficha", ver_avaliacao: "Abriu avaliação", exportar_dados: "Exportou dados", apagar_ficha: "Apagou ficha", "2fa_ligada": "Ligou duas etapas", "2fa_desligada": "Desligou duas etapas", ver_registro_acessos: "Viu o registro de acessos", senha_voltou_padrao: "Voltou a senha de uma conta", excluir_conta: "Excluiu uma conta" };
+const NOMES_ACAO = { entrou: "Entrou", listar_fichas: "Abriu a lista de fichas", criar_ficha: "Criou ficha", editar_ficha: "Alterou ficha", ver_avaliacao: "Abriu avaliação", exportar_dados: "Exportou dados", apagar_ficha: "Apagou ficha", "2fa_ligada": "Ligou duas etapas", "2fa_desligada": "Desligou duas etapas", ver_registro_acessos: "Viu o registro de acessos", senha_voltou_padrao: "Voltou a senha de uma conta", novo_primeiro_acesso: "Liberou novo primeiro acesso", liberar_conta: "Liberou acesso", criou_propria_senha: "Criou a própria senha", excluir_conta: "Excluiu uma conta" };
 let regs = [];
 $id("nt-auditoria").addEventListener("click", async () => {
   try { regs = (await api("/api/admin/auditoria")).registros || []; $id("nt-auditoria-csv").classList.remove("hidden");

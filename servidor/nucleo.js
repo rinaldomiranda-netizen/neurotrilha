@@ -136,6 +136,20 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
         }
       }
 
+      // ---- primeiro acesso: a RMD só libera o usuário; a própria pessoa cria a senha particular na primeira entrada
+      if (caminho === '/api/primeiro-acesso' && req.method === 'POST') {
+        const b = await corpo(req) || {}, usuario = String(b.usuario || '').trim().toLowerCase().slice(0, 40);
+        const c = /^[a-z0-9._-]{3,40}$/.test(usuario) ? await armazem.contaPorUsuario(usuario) : null;
+        const pendente = !!(c && c.ativo && c.primeiro_acesso);
+        if (b.senha === undefined) return json(200, { pendente });  // só pergunta se falta criar a senha
+        if (!pendente) return erro(409, 'Este usuário já tem senha. Entre com ela, ou peça à RMD um novo primeiro acesso.');
+        const senha = String(b.senha);
+        if (senha.length < 6 || senha.length > 128) return erro(400, 'A senha precisa ter pelo menos 6 caracteres.');
+        await armazem.trocarSenha(c.user_id, senha); await armazem.atualizarConta(c.user_id, { primeiro_acesso: false, senha_provisoria: false });
+        await armazem.registrar({ user_id: c.user_id, usuario: c.usuario, acao: 'criou_propria_senha', alvo: '', detalhe: '', ip: String(req.headers.get('x-forwarded-for') || '').split(',')[0].trim().slice(0, 60) });
+        return json(200, { ok: true });
+      }
+
       // ---- daqui para baixo: só com login de profissional liberado
       const au = await autenticar(req), userId = au && typeof au === 'object' ? au.id : au, aal = au && typeof au === 'object' ? au.aal || 'aal1' : 'aal1';
       if (!userId) return erro(401, 'Entre com seu usuário e senha.');
@@ -157,7 +171,7 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
       if (caminho === '/api/eu/senha' && req.method === 'POST') {
         const b = await corpo(req), nova = String((b && b.nova) || '');
         if (nova.length < 6 || nova.length > 128) return erro(400, 'A senha precisa ter pelo menos 6 caracteres.');
-        await armazem.trocarSenha(userId, nova); await armazem.atualizarConta(userId, { senha_provisoria: nova === SENHA_TESTE });
+        await armazem.trocarSenha(userId, nova); await armazem.atualizarConta(userId, { senha_provisoria: nova === SENHA_TESTE, primeiro_acesso: false });
         return json(200, { ok: true });
       }
 
@@ -231,7 +245,11 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
           if (!/^[a-z0-9._-]{3,40}$/.test(usuario)) return erro(400, 'Usuário: 3 a 40 letras minúsculas, números, ponto, hífen ou sublinhado.');
           if (nome.length < 2) return erro(400, 'Informe o nome do profissional.');
           if ((await armazem.contas()).some((c) => c.usuario === usuario)) return erro(409, 'Já existe esse usuário.');
-          return json(201, { conta: await armazem.criarConta({ usuario, nome, papel: 'profissional', senha: SENHA_TESTE }) });
+          // sem senha definida pela RMD: a conta fica aguardando a própria pessoa criar a senha no primeiro acesso
+          const nova = await armazem.criarConta({ usuario, nome, papel: 'profissional', senha: base64url(rnd(24)) });
+          await armazem.atualizarConta(nova.user_id, { primeiro_acesso: true, senha_provisoria: false });
+          await registrar('liberar_conta', usuario);
+          return json(201, { conta: { ...nova, primeiro_acesso: true } });
         }
         m = caminho.match(/^\/api\/admin\/contas\/([0-9a-f-]{36})(\/senha)?$/);
         if (m) {
@@ -244,9 +262,9 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
             await registrar('excluir_conta', alvo.usuario, movidas + ' ficha(s) passaram para ' + conta.usuario);
             return json(200, { ok: true, fichasMovidas: movidas });
           }
-          if (m[2] && req.method === 'POST') {  // volta a senha de teste e desliga as duas etapas (ex.: celular perdido)
-            await armazem.trocarSenha(m[1], SENHA_TESTE); await armazem.limparMfa(m[1]); await armazem.atualizarConta(m[1], { senha_provisoria: true, mfa: false });
-            await registrar('senha_voltou_padrao', alvo.usuario, 'senha de teste e duas etapas desligada'); return json(200, { ok: true });
+          if (m[2] && req.method === 'POST') {  // novo primeiro acesso (esqueceu a senha, celular perdido): a pessoa cria outra senha ao entrar
+            await armazem.trocarSenha(m[1], base64url(rnd(24))); await armazem.limparMfa(m[1]); await armazem.atualizarConta(m[1], { primeiro_acesso: true, senha_provisoria: false, mfa: false });
+            await registrar('novo_primeiro_acesso', alvo.usuario, 'a pessoa cria outra senha ao entrar; duas etapas desligada'); return json(200, { ok: true });
           }
         }
         return erro(404, 'Rota não encontrada.');

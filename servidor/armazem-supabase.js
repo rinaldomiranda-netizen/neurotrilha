@@ -6,7 +6,8 @@ export function criarArmazem(sb) {
   const ok = ({ data, error }) => { if (error) throw new Error(error.message); return data; };
   return {
     async conta(id) { return ok(await sb.from('nt_contas').select('*').eq('user_id', id).maybeSingle()); },
-    async contas() { return ok(await sb.from('nt_contas').select('user_id,usuario,nome,papel,ativo,senha_provisoria,mfa,criado_em').order('papel').order('usuario')); },
+    async contaPorUsuario(usuario) { return ok(await sb.from('nt_contas').select('*').eq('usuario', usuario).maybeSingle()); },
+    async contas() { return ok(await sb.from('nt_contas').select('user_id,usuario,nome,papel,ativo,senha_provisoria,mfa,primeiro_acesso,criado_em').order('papel').order('usuario')); },
     async criarConta({ usuario, nome, papel, senha }) {
       const { data, error } = await sb.auth.admin.createUser({ email: usuario + '@' + DOMINIO_EMAIL, password: senha, email_confirm: true, user_metadata: { usuario, nome, app: 'neurotrilha' } });
       if (error || !data || !data.user) throw new Error(error ? error.message : 'conta não criada');
