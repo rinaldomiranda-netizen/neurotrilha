@@ -46,7 +46,7 @@ html,body{max-width:100%;overflow-x:hidden}
 <section class="auth-gate" id="nt-entrar">
  <form class="auth-card" id="nt-form-entrar" autocomplete="on">
   <div class="auth-mark">N</div><h2>NeuroTrilha</h2>
-  <p>Área do avaliador. Entre com o usuário e a senha que a RMD criou para você.</p>
+  <p>NeuroTrilha <b>pela internet</b>. Entre com o usuário e a senha criados no ícone <b>NeuroTrilha ONLINE - 1 Desenvolvedor</b> (Conta → Contas e liberações). A senha inicial é <b>123456</b>.</p>
   <label class="auth-field"><span>Usuário</span><input id="nt-usuario" autocomplete="username" required autocapitalize="none" spellcheck="false"></label>
   <label class="auth-field"><span>Senha</span><input id="nt-senha" type="password" autocomplete="current-password" required></label>
   <label class="auth-field hidden" id="nt-codigo-wrap"><span>Código de 6 números do aplicativo autenticador</span><input id="nt-codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>
@@ -205,7 +205,7 @@ function gravarSessao(s) { try { if (s) localStorage.setItem("nt_sessao", JSON.s
 async function pedirToken(tipo, corpo) {
   const r = await fetch(NT.SUPABASE_URL + "/auth/v1/token?grant_type=" + tipo, { method: "POST", headers: { apikey: NT.CHAVE_PUBLICA, "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(/invalid/i.test(j.error_description || j.msg || "") ? "Usuário ou senha incorretos." : (j.error_description || j.msg || "Não foi possível entrar."));
+  if (!r.ok) throw new Error(/invalid/i.test(j.error_description || j.msg || "") ? "Usuário ou senha incorretos. Confira se a conta foi criada no ícone NeuroTrilha ONLINE - 1 Desenvolvedor (contas do programa do computador não valem aqui) e se a senha tem 6 números (123456)." : (j.error_description || j.msg || "Não foi possível entrar."));
   return { access_token: j.access_token, refresh_token: j.refresh_token, expira: Date.now() + (j.expires_in || 3600) * 1000 };
 }
 async function renovar() { const s = lerSessao(); if (!s || !s.refresh_token) throw new Error("Entre de novo."); const n = await pedirToken("refresh_token", { refresh_token: s.refresh_token }); gravarSessao(n); return n; }
