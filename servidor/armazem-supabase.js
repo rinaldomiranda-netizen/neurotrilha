@@ -57,6 +57,12 @@ export function criarArmazem(sb) {
       ok(await sb.from('nt_sessoes').delete().eq('participante', id));
       ok(await sb.from('nt_participantes').delete().eq('id', id));
     },
+    async excluirConta(id, para) {
+      const movidas = ok(await sb.from('nt_participantes').select('id').eq('dono', id)).length;
+      for (const t of ['nt_participantes', 'nt_sessoes', 'nt_questionarios']) ok(await sb.from(t).update({ dono: para }).eq('dono', id));
+      const { error } = await sb.auth.admin.deleteUser(id); if (error) throw new Error(error.message);  // apaga também a linha em nt_contas (cascade)
+      return movidas;
+    },
     async limparMfa(id) {
       const { data } = await sb.auth.admin.mfa.listFactors({ userId: id });
       for (const f of (data && data.factors) || []) await sb.auth.admin.mfa.deleteFactor({ id: f.id, userId: id });

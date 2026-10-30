@@ -155,7 +155,7 @@ html,body{max-width:100%;overflow-x:hidden}
     <div class="hidden" id="nt-2fa-passos" style="margin-top:10px"><p class="small">1. No aplicativo autenticador, toque em <b>+</b> e escolha <b>digitar uma chave</b>. Nome: <b>NeuroTrilha</b>. Chave:</p><p><code id="nt-2fa-chave" style="font-size:17px;word-break:break-all"></code></p>
      <p class="small">2. Digite o código de 6 números que aparecer:</p><div class="nt-dois"><input id="nt-2fa-codigo" inputmode="numeric" maxlength="6" placeholder="000000"><button class="primary" type="button" id="nt-2fa-confirmar">Confirmar</button></div><div class="small" id="nt-2fa-msg" role="status"></div></div></div>
    <div class="panel hidden" id="nt-admin" style="margin-top:14px">
-    <h3>Profissionais (só a RMD vê)</h3>
+    <h3>Contas e liberações dos profissionais (só a RMD vê)</h3><p class="small muted">As contas criadas aqui são as que entram no NeuroTrilha pela internet (ícone Avaliador). As do programa do computador são separadas.</p>
     <form class="nt-form" id="nt-form-conta"><div class="nt-dois"><div><label for="c-usuario">Usuário</label><input id="c-usuario" required maxlength="40" placeholder="ex.: dra.ana" autocapitalize="none" spellcheck="false"><small class="muted" id="c-usuario-vira"></small></div>
      <div><label for="c-nome">Nome do profissional</label><input id="c-nome" required maxlength="100"></div></div>
      <div class="small muted">A senha inicial é 123456 (teste). O profissional troca em Conta.</div>
@@ -337,12 +337,16 @@ async function desenharContas() {
   try {
     const { contas } = await api("/api/admin/contas");
     host.innerHTML = contas.map((c) => '<div class="nt-cartao"><span class="nt-av">' + esc(c.usuario[0].toUpperCase()) + '</span><div><b>' + esc(c.nome) + '</b><small>' + esc(c.usuario) + " · " + (c.papel === "admin" ? "RMD" : "profissional") + (c.ativo ? "" : " · BLOQUEADO") + (c.senha_provisoria ? " · senha de teste" : "") + "</small></div>" +
-      (c.papel === "admin" ? "" : '<button class="quiet" data-ativo="' + c.user_id + '" data-v="' + (c.ativo ? 0 : 1) + '">' + (c.ativo ? "Bloquear" : "Liberar") + '</button><button class="quiet" data-senha="' + c.user_id + '">Senha 123456</button>') + "</div>").join("");
+      (c.papel === "admin" ? "" : '<button class="quiet" data-ativo="' + c.user_id + '" data-v="' + (c.ativo ? 0 : 1) + '">' + (c.ativo ? "Bloquear" : "Liberar") + '</button><button class="quiet" data-senha="' + c.user_id + '">Senha 123456</button><button class="quiet" style="color:#b42318" data-excluir="' + c.user_id + '" data-nome="' + esc(c.usuario) + '">Excluir</button>') + "</div>").join("");
   } catch (e) { host.innerHTML = '<div class="notice danger-note">' + esc(e.message) + "</div>"; }
 }
 $id("nt-contas").addEventListener("click", async (ev) => {
-  const a = ev.target.closest("[data-ativo]"), sb = ev.target.closest("[data-senha]");
+  const a = ev.target.closest("[data-ativo]"), sb = ev.target.closest("[data-senha]"), ex = ev.target.closest("[data-excluir]");
   try {
+    if (ex) {
+      if (!confirm("EXCLUIR a conta " + ex.dataset.nome + "? " + "Ela não poderá mais entrar. As fichas e avaliações que ela cadastrou NÃO são apagadas: passam para a sua conta (RMD).")) return;
+      const r = await api("/api/admin/contas/" + ex.dataset.excluir, { method: "DELETE" }); toast("Conta " + ex.dataset.nome + " excluída." + (r.fichasMovidas ? " " + r.fichasMovidas + " ficha(s) passaram para você." : ""));
+    }
     if (a) { await api("/api/admin/contas/" + a.dataset.ativo, { method: "PUT", body: JSON.stringify({ ativo: a.dataset.v === "1" }) }); toast("Acesso atualizado."); }
     if (sb && confirm("Voltar a senha deste profissional para 123456?")) { await api("/api/admin/contas/" + sb.dataset.senha + "/senha", { method: "POST", body: "{}" }); toast("Senha voltou para 123456."); }
     desenharContas();
@@ -382,7 +386,7 @@ $id("nt-2fa-desligar").addEventListener("click", async () => {
   catch (e) { toast(e.message); }
 });
 // ---- registro de acessos (RMD)
-const NOMES_ACAO = { entrou: "Entrou", listar_fichas: "Abriu a lista de fichas", criar_ficha: "Criou ficha", editar_ficha: "Alterou ficha", ver_avaliacao: "Abriu avaliação", exportar_dados: "Exportou dados", apagar_ficha: "Apagou ficha", "2fa_ligada": "Ligou duas etapas", "2fa_desligada": "Desligou duas etapas", ver_registro_acessos: "Viu o registro de acessos", senha_voltou_padrao: "Voltou a senha de uma conta" };
+const NOMES_ACAO = { entrou: "Entrou", listar_fichas: "Abriu a lista de fichas", criar_ficha: "Criou ficha", editar_ficha: "Alterou ficha", ver_avaliacao: "Abriu avaliação", exportar_dados: "Exportou dados", apagar_ficha: "Apagou ficha", "2fa_ligada": "Ligou duas etapas", "2fa_desligada": "Desligou duas etapas", ver_registro_acessos: "Viu o registro de acessos", senha_voltou_padrao: "Voltou a senha de uma conta", excluir_conta: "Excluiu uma conta" };
 let regs = [];
 $id("nt-auditoria").addEventListener("click", async () => {
   try { regs = (await api("/api/admin/auditoria")).registros || []; $id("nt-auditoria-csv").classList.remove("hidden");

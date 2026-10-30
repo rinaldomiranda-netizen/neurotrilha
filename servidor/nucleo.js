@@ -238,6 +238,12 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
           const alvo = await armazem.conta(m[1]);
           if (!alvo || alvo.papel === 'admin') return erro(404, 'Conta de profissional não encontrada.');
           if (!m[2] && req.method === 'PUT') { const b = await corpo(req) || {}; await armazem.atualizarConta(m[1], { ativo: !!b.ativo }); return json(200, { ok: true }); }
+          // excluir conta: as fichas, avaliações e questionários dela passam para a RMD (nenhum dado de paciente se perde)
+          if (!m[2] && req.method === 'DELETE') {
+            const movidas = await armazem.excluirConta(m[1], userId);
+            await registrar('excluir_conta', alvo.usuario, movidas + ' ficha(s) passaram para ' + conta.usuario);
+            return json(200, { ok: true, fichasMovidas: movidas });
+          }
           if (m[2] && req.method === 'POST') {  // volta a senha de teste e desliga as duas etapas (ex.: celular perdido)
             await armazem.trocarSenha(m[1], SENHA_TESTE); await armazem.limparMfa(m[1]); await armazem.atualizarConta(m[1], { senha_provisoria: true, mfa: false });
             await registrar('senha_voltou_padrao', alvo.usuario, 'senha de teste e duas etapas desligada'); return json(200, { ok: true });
