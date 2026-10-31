@@ -25,7 +25,7 @@ ul{margin:6px 0 0;padding-left:22px}li{margin:4px 0}
 <script src="config.js" onerror="this.remove()"></script>
 <script>
 "use strict";
-// Página que a família recebe pelo WhatsApp: só a devolutiva em linguagem simples (sem QI nem respostas).
+// Página que a família recebe pelo WhatsApp: só a devolutiva em linguagem simples (sem índices numéricos nem respostas).
 const API = (window.NT_CONFIG && window.NT_CONFIG.FUNCOES) || "";
 const TOKEN = (new URLSearchParams(location.search).get("d") || "").replace(/[^A-Za-z0-9_-]/g, "");
 const TITULOS = [["abertura", "Para começar"], ["fortes", "O que foi bem"], ["atencao", "O que precisa de mais apoio"], ["casa", "Ideias para casa"], ["escola", "Ideias para a escola"], ["encaminhamentos", "Próximos passos"], ["fechamento", "Para terminar"]];

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#14304F">
+<title>NeuroTrilha — Fundamentação e limites</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:17px/1.65 "Plus Jakarta Sans","Segoe UI",Roboto,Arial,sans-serif;color:#172438;background:#F4F7FB}
+.topo{background:#14304F;color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px}.topo svg{width:38px;height:38px}.topo b{font-size:18px}
+main{max-width:860px;margin:auto;padding:20px 16px 40px}
+.cartao{background:#fff;border-radius:22px;box-shadow:0 8px 24px rgba(20,48,79,.08);padding:24px 26px;margin-bottom:14px}
+h1{font-size:28px;margin:0 0 4px;line-height:1.2}h2{font-size:20px;color:#1F4F8A;margin:22px 0 6px}.muted{color:#4A5B72;font-size:15px}
+.aviso{background:#FFF3D6;border-left:4px solid #E0AD45;border-radius:0 12px 12px 0;padding:12px 14px;font-size:15px;color:#6B4A0F}
+.lacuna{background:#FFF3D6;color:#6B4A0F;border-radius:6px;padding:0 5px;font-weight:700}
+a{color:#2563A8}ul{padding-left:22px}li{margin:4px 0}
+@media print{.topo{display:none}body{background:#fff}.cartao{box-shadow:none}}
+table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px solid #E3E9F1;padding:8px 6px;text-align:left;vertical-align:top}th{color:#4A5B72;font-size:13px}
+</style>
+</head>
+<body>
+<div class="topo"><svg viewBox="0 0 96 96" aria-hidden="true"><rect width="96" height="96" rx="26" fill="#2563A8"/><circle cx="22" cy="74" r="4" fill="#fff" opacity=".55"/><circle cx="34" cy="66" r="5" fill="#fff" opacity=".7"/><circle cx="44" cy="55" r="6" fill="#fff" opacity=".85"/><circle cx="50" cy="42" r="7" fill="#fff"/><path d="M72 14 L76.7 24.2 L87.8 25.4 L79.5 32.9 L81.8 43.8 L72 38.2 L62.2 43.8 L64.5 32.9 L56.2 25.4 L67.3 24.2 Z" fill="#F6C453"/></svg><div><b>NeuroTrilha</b><br><small>uma solução RMD</small></div></div>
+<main>
+<div class="cartao">
+<h1>Fundamentação e limites</h1>
+<p class="muted">Versão do sistema 2026.10.31 · <a href="termos.html">Termos de uso</a> · <a href="privacidade.html">Política de privacidade</a></p>
+
+<h2>Finalidade de uso</h2>
+<p><b>O NeuroTrilha é uma ferramenta complementar de apoio ao profissional de saúde.</b> Ele aplica tarefas no tablet, no computador ou no celular, mede o desempenho e organiza os resultados. Quem interpreta e conclui é sempre o profissional habilitado.</p>
+<ul>
+<li><b>Não faz diagnóstico</b> e não indica, sozinho, nenhum transtorno ou condição.</li>
+<li><b>Não é teste psicológico</b> aprovado no SATEPSI (Conselho Federal de Psicologia).</li>
+<li>O <b>índice geral não é QI</b>.</li>
+<li>As referências por idade ainda são <b>provisórias</b>: não há estudo brasileiro de normas próprio.</li>
+</ul>
+
+<h2>Como usar sem prejudicar o profissional</h2>
+<ul>
+<li>Use os resultados como <b>fonte complementar</b>, junto com a entrevista, a observação e, quando for o caso, testes aprovados (para psicólogos, os que têm parecer favorável no SATEPSI, conforme a Resolução CFP nº 31/2022).</li>
+<li>Não apresente o NeuroTrilha como teste psicológico, nem o índice geral como QI.</li>
+<li>No laudo ou relatório, registre que o NeuroTrilha foi usado de forma complementar e qual versão foi usada. O rascunho do laudo do sistema já traz essa frase, e a versão aparece em cada relatório.</li>
+<li>A devolutiva para a família é em linguagem simples, sem índices numéricos, e deixa claro que não é um diagnóstico.</li>
+</ul>
+
+<h2>Como funciona a aplicação</h2>
+<ul>
+<li><b>Escada adaptativa:</b> cada área tem 16 níveis de dificuldade e começa fácil. Um acerto rápido sobe de nível, um acerto lento mantém e um erro desce. A área termina pelo limite de tarefas, quando o nível se estabiliza, no piso ou no teto.</li>
+<li>A primeira tarefa de cada área é de <b>treino</b>, com retorno, e não entra no cálculo.</li>
+<li>As tarefas são <b>originais</b>, geradas pelo programa, e não se repetem nas reaplicações (formas paralelas). As figuras usam o conjunto Fluent Emoji 3D (Microsoft, MIT) e Twemoji (CC-BY 4.0).</li>
+<li>O profissional acompanha ao vivo e pode pausar, repetir a instrução, ajustar o nível, pular a área ou encerrar. Os ajustes ficam registrados no relatório.</li>
+</ul>
+
+<h2>Como os números são calculados</h2>
+<ul>
+<li><b>Nível alcançado:</b> o nível em que o desempenho se estabilizou em cada área.</li>
+<li><b>Nível esperado para a idade:</b> vem de idades de referência aproximadas por nível (3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 17 anos), tiradas da literatura sobre desenvolvimento cognitivo. São provisórias.</li>
+<li><b>Índice da área e índice geral:</b> a distância entre o alcançado e o esperado, em uma escala de média 100 e desvio-padrão 15 (desvio-padrão <b>assumido</b> de 1.5 nível). O índice geral junta só as áreas de raciocínio, memória e conhecimento.</li>
+<li><b>Faixas descritivas:</b> do "muito abaixo" ao "muito acima do esperado para a idade". Não são classificações diagnósticas.</li>
+<li><b>Intervalos e mudanças:</b> calculados com fidedignidade <b>assumida</b> (0,75 a 0,85), já que ainda não há estudo próprio. Uma mudança entre avaliações só é chamada de "confiável" quando passa do limite estatístico (Jacobson e Truax, 1991).</li>
+<li><b>Validade da aplicação:</b> o sistema avisa quando há sinais de que a aplicação pode não refletir o desempenho real, como respostas rápidas demais, tempo esgotado ou muitos ajustes manuais.</li>
+</ul>
+
+<h2>O que o resultado NÃO permite concluir</h2>
+<ul>
+<li>Não confirma nem descarta nenhum diagnóstico.</li>
+<li>Não substitui instrumentos padronizados nem a avaliação clínica.</li>
+<li>Não deve ser usado sozinho para decisões escolares, trabalhistas, judiciais ou de benefício.</li>
+<li>Pode ser influenciado por cansaço, ansiedade, visão, audição, motricidade, idioma, familiaridade com telas e condições do ambiente. O profissional deve observar e registrar esses fatores.</li>
+</ul>
+
+<h2>Tarefas e o que cada uma observa</h2>
+<p class="muted">A organização segue o modelo CHC (Cattell-Horn-Carroll) e áreas usadas em baterias neuropsicológicas. A coluna "Referência teórica" indica a capacidade do modelo à qual a tarefa se relaciona; isso não quer dizer que ela tenha sido validada como medida dessa capacidade.</p>
+<h2>Raciocínio, memória e conhecimento (entram no índice geral)</h2><table><thead><tr><th>Tarefa</th><th>O que observa</th><th>Idades</th><th>Referência teórica</th></tr></thead><tbody><tr><td><b>Raciocínio fluido</b></td><td>Descobrir a regra de uma sequência ou matriz de figuras.</td><td>4 anos ou mais</td><td>Gf</td></tr><tr><td><b>Memória de trabalho</b></td><td>Guardar e repetir a ordem em que os quadrados acendem.</td><td>4 anos ou mais</td><td>Gwm</td></tr><tr><td><b>Visuoespacial</b></td><td>Achar a mesma forma, mesmo girada (sem espelhar).</td><td>4 anos ou mais</td><td>Gv</td></tr><tr><td><b>Velocidade de processamento</b></td><td>Encontrar rápido o desenho igual ao modelo.</td><td>5 anos ou mais</td><td>Gs</td></tr><tr><td><b>Vocabulário e conhecimento</b></td><td>Ouvir uma palavra ou definição e tocar na figura certa.</td><td>4 anos ou mais</td><td>Gc</td></tr><tr><td><b>Raciocínio quantitativo</b></td><td>Quantidades, contas e sequências numéricas.</td><td>4 anos ou mais</td><td>Gq</td></tr><tr><td><b>Categorias e semelhanças</b></td><td>Achar o que não combina, o que combina e completar analogias com figuras.</td><td>4 anos ou mais</td><td>Gc/Gf</td></tr><tr><td><b>Números ouvidos (na ordem)</b></td><td>Ouvir números e tocar neles na mesma ordem.</td><td>5 anos ou mais</td><td>Gwm auditiva</td></tr><tr><td><b>Números de trás para frente</b></td><td>Ouvir números e tocar neles de trás para frente.</td><td>7 anos ou mais</td><td>Gwm</td></tr><tr><td><b>Memória de figuras</b></td><td>Memorizar figuras, reconhecer em seguida e lembrar de novo no fim da sessão.</td><td>4 anos ou mais</td><td>Glr</td></tr></tbody></table><h2>Atenção e funções executivas</h2><table><thead><tr><th>Tarefa</th><th>O que observa</th><th>Idades</th><th>Referência teórica</th></tr></thead><tbody><tr><td><b>Atenção e controle inibitório</b></td><td>Dizer para onde nada o peixe do meio, ignorando os outros.</td><td>4 anos ou mais</td><td>Atenção</td></tr><tr><td><b>Controle de impulsos (toque ou não toque)</b></td><td>Tocar quando aparece peixe e segurar quando aparece tubarão. Mede impulsividade e tempo de reação.</td><td>4 anos ou mais</td><td>Inibição</td></tr><tr><td><b>Atenção contínua</b><br><small class="muted">bloco fixo (sem escada)</small></td><td>Cerca de 2 minutos tocando só na estrela. Mede desatenção e queda da atenção com o tempo.</td><td>5 anos ou mais</td><td>Atenção sustentada</td></tr><tr><td><b>Flexibilidade cognitiva</b></td><td>Separar cartas pela cor ou pela forma, trocando a regra.</td><td>5 anos ou mais</td><td>Funções executivas</td></tr><tr><td><b>Planejamento (torre)</b></td><td>Mover bolinhas até ficar igual ao modelo com o menor número de jogadas.</td><td>6 anos ou mais</td><td>Funções executivas</td></tr><tr><td><b>Ligar os pontos</b></td><td>Tocar em ordem (1, 2, 3...) e depois alternando número e letra (1, A, 2, B...).</td><td>6 anos ou mais</td><td>Atenção alternada</td></tr><tr><td><b>Caminhos</b></td><td>Seguir com os olhos o caminho do ratinho até o prêmio.</td><td>4 anos ou mais</td><td>Rastreio visual</td></tr></tbody></table><h2>Memória verbal e linguagem</h2><table><thead><tr><th>Tarefa</th><th>O que observa</th><th>Idades</th><th>Referência teórica</th></tr></thead><tbody><tr><td><b>Memória de palavras (lista)</b><br><small class="muted">bloco fixo (sem escada)</small></td><td>Ouvir uma lista de palavras várias vezes, dizer as que lembra e lembrar de novo no fim da sessão (e reconhecer entre figuras). O avaliador marca no celular.</td><td>5 anos ou mais</td><td>Glr verbal</td></tr><tr><td><b>Fluência verbal</b><br><small class="muted">bloco fixo (sem escada)</small></td><td>Dizer em 1 minuto o máximo de animais (e, a partir de 8 anos, palavras com F). O avaliador conta no celular.</td><td>5 anos ou mais</td><td>Glr / fluência</td></tr></tbody></table><h2>Aprendizagem escolar (sons, leitura, escrita e matemática)</h2><table><thead><tr><th>Tarefa</th><th>O que observa</th><th>Idades</th><th>Referência teórica</th></tr></thead><tbody><tr><td><b>Rimas e sons (consciência fonológica)</b></td><td>Rimas, sons iniciais, juntar e trocar pedaços de palavras. Base da alfabetização.</td><td>4 a 10 anos</td><td>Pré-leitura</td></tr><tr><td><b>Leitura</b></td><td>Ler palavras e frases e tocar na figura certa (decodificação e compreensão).</td><td>6 anos ou mais</td><td>Leitura</td></tr><tr><td><b>Leitura de texto (fluência e compreensão)</b><br><small class="muted">bloco fixo (sem escada)</small></td><td>Ler um texto em voz alta (o avaliador marca os erros; o sistema calcula palavras por minuto) e responder 3 perguntas sobre ele.</td><td>7 anos ou mais</td><td>Leitura</td></tr><tr><td><b>Ditado (escrita de palavras)</b></td><td>Ouvir uma palavra e escrever no teclado da tela. Separa erros de som (fonológicos) de erros de regra (ortográficos).</td><td>7 anos ou mais</td><td>Escrita</td></tr><tr><td><b>Matemática escolar</b></td><td>Contas e problemas: somar, subtrair, tabuada, divisão, frações, porcentagem e equação.</td><td>6 anos ou mais</td><td>Gq escolar</td></tr></tbody></table><h2>Cognição social</h2><table><thead><tr><th>Tarefa</th><th>O que observa</th><th>Idades</th><th>Referência teórica</th></tr></thead><tbody><tr><td><b>Emoções e situações sociais</b></td><td>Reconhecer emoções em rostos e situações e entender o que o outro pensa.</td><td>4 anos ou mais</td><td>Cognição social</td></tr><tr><td><b>Entender o outro (teoria da mente)</b></td><td>Histórias curtas: o que a pessoa quer, pensa e sabe; crença falsa, ironia e gafes.</td><td>4 anos ou mais</td><td>Cognição social</td></tr></tbody></table><h2>Desenho, coordenação e reação</h2><table><thead><tr><th>Tarefa</th><th>O que observa</th><th>Idades</th><th>Referência teórica</th></tr></thead><tbody><tr><td><b>Cópia de figura</b><br><small class="muted">bloco fixo (sem escada)</small></td><td>Copiar desenhos no tablet com o dedo ou caneta. O avaliador pontua cada elemento.</td><td>4 anos ou mais</td><td>Visuoconstrução</td></tr><tr><td><b>Desenho do relógio</b><br><small class="muted">bloco fixo (sem escada)</small></td><td>Desenhar um relógio marcando 11h10. Também usado no rastreio de idosos. O avaliador pontua.</td><td>8 anos ou mais</td><td>Visuoconstrução e planejamento</td></tr><tr><td><b>Toque rápido (coordenação fina)</b><br><small class="muted">bloco fixo (sem escada)</small></td><td>Tocar o mais rápido possível por 10 segundos com cada mão (duas vezes).</td><td>4 anos ou mais</td><td>Motor fino</td></tr><tr><td><b>Tempo de reação</b><br><small class="muted">bloco fixo (sem escada)</small></td><td>Reagir rápido a uma estrela (reação simples) e tocar o lado da seta (reação de escolha).</td><td>5 anos ou mais</td><td>Velocidade de reação</td></tr></tbody></table><h2>Rastreio cognitivo (adultos e idosos)</h2><table><thead><tr><th>Tarefa</th><th>O que observa</th><th>Idades</th><th>Referência teórica</th></tr></thead><tbody><tr><td><b>Orientação (tempo e lugar)</b><br><small class="muted">bloco fixo (sem escada)</small></td><td>Perguntas sobre data, hora e lugar. Rastreio de memória em adultos e idosos. O avaliador marca certo ou errado.</td><td>10 anos ou mais</td><td>Rastreio cognitivo</td></tr></tbody></table>
+
+<h2>Questionários complementares</h2>
+<p>Os questionários para pais, professores ou o próprio paciente são instrumentos de <b>triagem</b>, de domínio público ou de uso livre. Eles ajudam a organizar informações, mas também não fazem diagnóstico.</p>
+
+<h2>Pesquisa e futuro</h2>
+<p>Com autorização separada da família, resultados <b>anônimos</b> podem ser usados em pesquisa para criar normas brasileiras próprias. Enquanto esse estudo não existir, os resultados continuam sendo complementares.</p>
+
+<h2>Referências</h2>
+<ul>
+<li>Conselho Federal de Psicologia. Resolução CFP nº 31/2022 (avaliação psicológica e SATEPSI) e Resolução CFP nº 06/2019 (documentos escritos).</li>
+<li>McGrew, K. S. (2009). CHC theory and the human cognitive abilities project. <i>Intelligence</i>, 37(1), 1-10.</li>
+<li>Jacobson, N. S., &amp; Truax, P. (1991). Clinical significance: a statistical approach. <i>Journal of Consulting and Clinical Psychology</i>, 59(1), 12-19.</li>
+<li>Lei nº 13.709/2018 (Lei Geral de Proteção de Dados).</li>
+</ul>
+</div>
+</main>
+</body>
+</html>

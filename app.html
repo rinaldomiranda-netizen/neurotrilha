@@ -75,7 +75,7 @@ html,body{max-width:100%;overflow-x:hidden}
   <label class="auth-field hidden" id="nt-codigo-wrap"><span>Código de 6 números do aplicativo autenticador</span><input id="nt-codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>
   <div class="auth-error" id="nt-erro-entrar" role="alert"></div>
   <button class="primary" type="submit" id="nt-botao-entrar">Entrar</button>
-  <div class="auth-safe">Uma solução RMD. Os dados dos pacientes ficam protegidos: cada profissional vê só os próprios, e nem a RMD tem acesso. <a href="termos.html" target="_blank" rel="noopener">Termos de uso</a> · <a href="privacidade.html" target="_blank" rel="noopener">Privacidade</a></div>
+  <div class="auth-safe">Uma solução RMD. Ferramenta complementar de apoio ao profissional: não faz diagnóstico. Os dados dos pacientes ficam protegidos: cada profissional vê só os próprios, e nem a RMD tem acesso. <a href="termos.html" target="_blank" rel="noopener">Termos de uso</a> · <a href="privacidade.html" target="_blank" rel="noopener">Privacidade</a></div>
  </form>
 </section>
 
@@ -180,6 +180,7 @@ html,body{max-width:100%;overflow-x:hidden}
      <p class="small">2. Digite o código de 6 números que aparecer:</p><div class="nt-dois"><input id="nt-2fa-codigo" inputmode="numeric" maxlength="6" placeholder="000000"><button class="primary" type="button" id="nt-2fa-confirmar">Confirmar</button></div><div class="small" id="nt-2fa-msg" role="status"></div></div></div>
    <div class="panel hidden" id="nt-plano-meu" style="margin-top:14px"></div>
    <div class="panel" id="nt-clinica" style="margin-top:14px"></div>
+   <div class="panel" style="margin-top:14px"><h3>Como usar com segurança</h3><p class="small">O NeuroTrilha é uma <b>ferramenta complementar</b>: use os resultados junto com a entrevista, a observação e, quando for o caso, testes aprovados. Não apresente o NeuroTrilha como teste psicológico nem o índice geral como QI. No laudo, registre que ele foi usado de forma complementar (o rascunho do laudo já traz essa frase).</p><a class="secondary" style="display:inline-block;padding:9px 12px;border-radius:10px;text-decoration:none" href="fundamentacao.html" target="_blank" rel="noopener">Fundamentação e limites</a></div>
    <div class="panel" id="nt-tutorial-painel" style="margin-top:14px"><h3>Tutorial</h3><p class="small muted">Mostra de novo, em 5 passos, onde fica cada coisa.</p><button type="button" class="secondary" id="nt-ver-tutorial">Ver o tutorial</button></div>
   </section>
 
@@ -190,7 +191,8 @@ html,body{max-width:100%;overflow-x:hidden}
     <h3>Liberar um cliente novo</h3>
     <form class="nt-form" id="nt-form-conta"><div class="nt-dois"><div><label for="c-usuario">Usuário</label><input id="c-usuario" required maxlength="40" placeholder="ex.: dra.ana" autocapitalize="none" spellcheck="false"><small class="muted" id="c-usuario-vira"></small></div>
      <div><label for="c-nome">Nome do profissional ou da clínica</label><input id="c-nome" required maxlength="100"></div></div>
-     <div><label for="c-plano">Plano</label><select id="c-plano"></select></div>
+     <div class="nt-dois"><div><label for="c-registro">Registro no conselho (obrigatório)</label><input id="c-registro" required maxlength="40" placeholder="ex.: CRP 19/12345 · CRM-SE 1234 · CRFa 4-1234"><small class="muted">Só profissional habilitado usa o NeuroTrilha. Confira o número no site do conselho antes de liberar.</small></div>
+     <div><label for="c-plano">Plano</label><select id="c-plano"></select></div></div>
      <div class="small muted">Você só libera o usuário. No primeiro acesso, no ícone <b>NeuroTrilha 2 - CLÍNICA</b>, a pessoa digita o usuário e cria a própria senha.</div>
      <div class="small" id="nt-conta-msg" role="status"></div><button class="secondary" type="submit">Liberar acesso</button></form>
    </div>
@@ -483,6 +485,7 @@ async function desenharContas() {
       if (c.valor != null && pl) etq.push('<span class="dev-etiqueta">' + reais(c.valor) + "/mês</span>");
       if (c.vencimento) etq.push('<span class="dev-etiqueta ' + (c.vencido ? "alerta" : "ok") + '">' + (c.vencido ? "VENCEU " : "vence ") + dataBr(c.vencimento) + "</span>");
       if (!c.ativo) etq.push('<span class="dev-etiqueta alerta">BLOQUEADO</span>');
+      etq.push(c.registro ? '<span class="dev-etiqueta">' + esc(c.registro) + "</span>" : '<span class="dev-etiqueta alerta">SEM REGISTRO NO CONSELHO</span>');
       return '<div class="nt-cartao"><span class="nt-av">' + esc(c.usuario[0].toUpperCase()) + '</span><div><b>' + esc(c.nome) + '</b><small>' + esc(c.usuario) + (c.primeiro_acesso ? " · <b>aguardando a pessoa criar a senha</b>" : " · senha criada pela pessoa") + " · " + c.fichas + (c.limite_pacientes ? " de " + c.limite_pacientes : "") + " fichas · " + c.aplicacoes30 + ' aplicações em 30 dias</small><div style="margin-top:4px">' + etq.join("") + "</div></div>" +
         '<button class="secondary" data-editar-lib="' + c.user_id + '">Liberações</button><button class="quiet" data-ativo="' + c.user_id + '" data-v="' + (c.ativo ? 0 : 1) + '">' + (c.ativo ? "Bloquear" : "Liberar") + '</button><button class="quiet" data-senha="' + c.user_id + '" title="Esqueceu a senha ou perdeu o celular: a pessoa cria outra senha ao entrar">Novo primeiro acesso</button><button class="quiet" style="color:#b42318" data-excluir="' + c.user_id + '" data-nome="' + esc(c.usuario) + '">Excluir</button></div><div class="dev-editor hidden" id="lib-' + c.user_id + '"></div>';
     }).join("");
@@ -492,6 +495,7 @@ function editorLiberacoes(c) {
   const rec = c.recursos || [];
   return '<div class="nt-form"><div class="nt-dois"><div><label>Plano</label><select data-l="plano">' + opcoesPlano(c.plano || "") + (c.plano ? "" : '<option value="" selected>Sem plano (tudo liberado)</option>') + '</select><small class="muted">Trocar o plano volta funções, limite, valor e vencimento ao padrão dele.</small></div>' +
     '<div><label>Valor por mês (R$)</label><input data-l="valor" type="number" min="0" step="0.01" value="' + (c.valor == null ? "" : c.valor) + '"></div></div>' +
+    '<div><label>Registro no conselho</label><input data-l="registro" maxlength="40" value="' + esc(c.registro || "") + '" placeholder="ex.: CRP 19/12345"></div>' +
     '<div class="nt-dois"><div><label>Vence em</label><input data-l="vencimento" type="date" value="' + esc(c.vencimento || "") + '"><small class="muted">Vazio = não vence. Vencido: a pessoa ainda vê os dados, mas não cria fichas nem avaliações novas.</small></div>' +
     '<div><label>Limite de fichas de pacientes</label><input data-l="limite" type="number" min="0" step="1" value="' + (c.limite_pacientes || 0) + '"><small class="muted">0 = sem limite.</small></div></div>' +
     '<div><label>Funções liberadas</label><div class="dev-recursos">' + Object.keys(nomesRecursos).map((k) => '<label class="nt-check"><input type="checkbox" data-rec="' + k + '"' + (rec.includes(k) ? " checked" : "") + "> <span>" + esc(nomesRecursos[k]) + "</span></label>").join("") + "</div></div>" +
@@ -511,7 +515,7 @@ $id("nt-contas").addEventListener("click", async (ev) => {
   if (fe) { $id("lib-" + fe.dataset.fecharLib).classList.add("hidden"); return; }
   if (sl) {
     const box = $id("lib-" + sl.dataset.salvarLib), c = contasDev.find((x) => x.user_id === sl.dataset.salvarLib), plano = box.querySelector('[data-l="plano"]').value, msg = box.querySelector('[data-l="msg"]');
-    const corpo = { valor: box.querySelector('[data-l="valor"]').value, vencimento: box.querySelector('[data-l="vencimento"]').value, limite_pacientes: box.querySelector('[data-l="limite"]').value, recursos: [...box.querySelectorAll("[data-rec]:checked")].map((x) => x.dataset.rec) };
+    const corpo = { registro: box.querySelector('[data-l="registro"]').value, valor: box.querySelector('[data-l="valor"]').value, vencimento: box.querySelector('[data-l="vencimento"]').value, limite_pacientes: box.querySelector('[data-l="limite"]').value, recursos: [...box.querySelectorAll("[data-rec]:checked")].map((x) => x.dataset.rec) };
     try {
       if (plano && plano !== c.plano) await api("/api/admin/contas/" + c.user_id, { method: "PUT", body: JSON.stringify({ plano }) });  // primeiro o plano, depois os ajustes desta tela
       await api("/api/admin/contas/" + c.user_id, { method: "PUT", body: JSON.stringify(corpo) });
@@ -549,7 +553,7 @@ $id("nt-form-conta").addEventListener("submit", async (ev) => {
   ev.preventDefault(); const msg = $id("nt-conta-msg"); msg.style.color = "#b42318";
   const usuario = normUsuario($id("c-usuario").value);
   if (usuario.length < 3) { msg.textContent = "O usuário precisa ter pelo menos 3 letras ou números."; return; }
-  try { await api("/api/admin/contas", { method: "POST", body: JSON.stringify({ usuario, nome: $id("c-nome").value.trim(), plano: $id("c-plano").value }) }); ev.target.reset(); $id("c-usuario-vira").textContent = ""; msg.style.color = "#087764"; msg.innerHTML = "Acesso liberado para <b>" + esc(usuario) + "</b>. Avise a pessoa: no ícone NeuroTrilha 2 - CLÍNICA, digite <b>" + esc(usuario) + "</b>, toque em Entrar e crie a própria senha."; desenharContas(); }
+  try { await api("/api/admin/contas", { method: "POST", body: JSON.stringify({ usuario, nome: $id("c-nome").value.trim(), registro: $id("c-registro").value.trim(), plano: $id("c-plano").value }) }); ev.target.reset(); $id("c-usuario-vira").textContent = ""; msg.style.color = "#087764"; msg.innerHTML = "Acesso liberado para <b>" + esc(usuario) + "</b>. Avise a pessoa: no ícone NeuroTrilha 2 - CLÍNICA, digite <b>" + esc(usuario) + "</b>, toque em Entrar e crie a própria senha."; desenharContas(); }
   catch (e) { msg.textContent = e.message; }
 });
 // planos e preços
@@ -593,7 +597,7 @@ function desenharMeuPlano() {
   const box = $id("nt-plano-meu");
   if (!eu || eu.papel === "admin" || !eu.plano) { box.classList.add("hidden"); return; }
   box.classList.remove("hidden");
-  box.innerHTML = "<h3>Meu plano: " + esc(eu.plano) + "</h3>" + (eu.vencimento ? '<p class="small">' + (eu.vencido ? '<b style="color:#b42318">Venceu em ' + dataBr(eu.vencimento) + ".</b> Você ainda vê os seus dados, mas para criar fichas e avaliações novas fale com a RMD." : "Válido até " + dataBr(eu.vencimento) + ".") + "</p>" : "") +
+  box.innerHTML = "<h3>Meu plano: " + esc(eu.plano) + "</h3>" + (eu.registro ? '<p class="small">Registro no conselho: <b>' + esc(eu.registro) + "</b> (aparece no laudo e no parecer).</p>" : "") + (eu.vencimento ? '<p class="small">' + (eu.vencido ? '<b style="color:#b42318">Venceu em ' + dataBr(eu.vencimento) + ".</b> Você ainda vê os seus dados, mas para criar fichas e avaliações novas fale com a RMD." : "Válido até " + dataBr(eu.vencimento) + ".") + "</p>" : "") +
     (eu.limitePacientes ? '<p class="small">Até ' + eu.limitePacientes + " fichas de pacientes.</p>" : "") +
     '<p class="small" style="margin-bottom:4px"><b>Funções liberadas:</b></p><ul class="small nt-plano-meu">' + Object.keys(eu.nomesRecursos || {}).map((k) => "<li>" + ((eu.recursos || []).includes(k) ? "✅ " : "⛔ ") + esc(eu.nomesRecursos[k]) + "</li>").join("") + "</ul>";
 }

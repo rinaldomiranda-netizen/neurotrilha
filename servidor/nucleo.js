@@ -104,7 +104,7 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
     for (const r of await arm.sessoes(null, null)) {
       const s = r.dados; if (!['concluida', 'encerrada'].includes(s.status)) continue;
       const part = await arm.participante(r.participante); if (!part || !part.dados.pesquisa) continue;
-      const res = Motor.resultado(s, s.idadeAnos), linha = { idade: Math.round(s.idadeAnos * 10) / 10, sexo: part.dados.sex || '', escolaridade: part.dados.education || '', mes: String(s.criadoEm).slice(0, 7), qi_estimado: res.qiEstimado == null ? '' : res.qiEstimado };
+      const res = Motor.resultado(s, s.idadeAnos), linha = { idade: Math.round(s.idadeAnos * 10) / 10, sexo: part.dados.sex || '', escolaridade: part.dados.education || '', mes: String(s.criadoEm).slice(0, 7), indice_geral: res.qiEstimado == null ? '' : res.qiEstimado };
       res.areas.forEach((a) => { linha[a.id + '_nivel'] = a.nivel == null ? '' : a.nivel; linha[a.id + '_indice'] = a.indice == null ? '' : a.indice; linha[a.id + '_itens'] = a.itens; linha[a.id + '_tempo_ms'] = a.tempoMedianoMs == null ? '' : Math.round(a.tempoMedianoMs);
         if (a.metricas && a.metricas.omissoes != null) { linha[a.id + '_omissoes'] = a.metricas.omissoes; linha[a.id + '_comissoes'] = a.metricas.comissoes; linha[a.id + '_tr_ms'] = a.metricas.trMedioMs == null ? '' : a.metricas.trMedioMs; } });
       if (res.tardia) linha.ml_tardia = res.tardia.acertos + '/' + res.tardia.total;
@@ -251,7 +251,7 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
         await registrarLeitura('entrou');
         const pl = conta.plano ? (await planos())[conta.plano] : null;
         return json(200, { usuario: conta.usuario, nome: conta.nome, papel: conta.papel, senhaProvisoria: conta.senha_provisoria, mfa: !!conta.mfa, aal,
-          plano: pl ? pl.nome : null, vencimento: conta.vencimento || null, vencido: vencido(conta), limitePacientes: conta.limite_pacientes || 0,
+          registro: conta.registro || '', plano: pl ? pl.nome : null, vencimento: conta.vencimento || null, vencido: vencido(conta), limitePacientes: conta.limite_pacientes || 0,
           recursos: conta.papel === 'admin' ? [] : recursosDe(conta), nomesRecursos: RECURSOS });
       }
       // dados da clínica deste profissional (logo, nome, endereço e contato no laudo e na devolutiva)
@@ -389,11 +389,14 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
           const b = await corpo(req) || {}, usuario = String(b.usuario || '').trim().toLowerCase(), nome = String(b.nome || '').trim().slice(0, 100);
           if (!/^[a-z0-9._-]{3,40}$/.test(usuario)) return erro(400, 'Usuário: 3 a 40 letras minúsculas, números, ponto, hífen ou sublinhado.');
           if (nome.length < 2) return erro(400, 'Informe o nome do profissional.');
+          // só profissional habilitado usa a ferramenta: registro no conselho (CRP, CRM, CRFa...) obrigatório
+          const registroProf = String(b.registro || '').trim().slice(0, 40);
+          if (registroProf.length < 4) return erro(400, 'Informe o registro do profissional no conselho (ex.: CRP 19/12345, CRM-SE 1234).');
           if ((await armazem.contas()).some((c) => c.usuario === usuario)) return erro(409, 'Já existe esse usuário.');
           const pls = await planos(), chave = Object.prototype.hasOwnProperty.call(pls, b.plano) ? b.plano : 'teste';
           // sem senha definida pela RMD: a conta fica aguardando a própria pessoa criar a senha no primeiro acesso
           const nova = await armazem.criarConta({ usuario, nome, papel: 'profissional', senha: base64url(rnd(24)) });
-          const campos = { primeiro_acesso: true, senha_provisoria: false, ...camposDoPlano(pls, chave) };
+          const campos = { primeiro_acesso: true, senha_provisoria: false, registro: registroProf, ...camposDoPlano(pls, chave) };
           await armazem.atualizarConta(nova.user_id, campos);
           await registrar('liberar_conta', usuario, pls[chave].nome);
           return json(201, { conta: { ...nova, ...campos } });
@@ -406,6 +409,7 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
           if (!m[2] && req.method === 'PUT') {
             const b = await corpo(req) || {}, campos = {}, pls = await planos();
             if (b.ativo !== undefined) campos.ativo = !!b.ativo;
+            if (b.registro !== undefined) { const rg = String(b.registro || '').trim().slice(0, 40); if (rg.length < 4) return erro(400, 'Informe o registro do profissional no conselho.'); campos.registro = rg; }
             if (b.plano !== undefined) { if (!Object.prototype.hasOwnProperty.call(pls, b.plano)) return erro(400, 'Plano desconhecido.'); Object.assign(campos, camposDoPlano(pls, b.plano)); }
             if (b.valor !== undefined) campos.valor = Math.max(0, Math.min(99999, Math.round(Number(b.valor) * 100) / 100 || 0));
             if (b.vencimento !== undefined) { if (b.vencimento && !/^\d{4}-\d{2}-\d{2}$/.test(b.vencimento)) return erro(400, 'Data de vencimento inválida.'); campos.vencimento = b.vencimento || null; }

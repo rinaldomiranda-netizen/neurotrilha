@@ -1,6 +1,6 @@
 /* NeuroTrilha (RMD) — aplicação adaptativa: preparar a sessão, acompanhar AO VIVO o que o paciente faz,
    controlar (pausar, subir/descer nível, pular área, encerrar, repetir a fala, anotar) e o relatório completo
-   com QI estimado e o parecer do profissional. Usa as funções da tela principal (api, esc, db, switchView, toast...). */
+   com o índice geral (ferramenta complementar, não é QI) e o parecer do profissional. Usa as funções da tela principal (api, esc, db, switchView, toast...). */
 (function () {
   "use strict";
   var M = window.RmdMotor;
@@ -83,7 +83,7 @@
         return '<div class="ad-grupo"><b>' + esc(M.GRUPOS[g]) + "</b>" + M.DOMINIOS.filter(function (d) { return d.grupo === g; }).map(function (d) {
           return '<label class="ad-dom"><input type="checkbox" value="' + d.id + '"><span><b>' + esc(d.nome) + "</b><small>" + esc(d.chc) + " · " + esc(d.desc) + " (" + d.idades[0] + (d.idades[1] < 100 ? " a " + d.idades[1] + " anos" : " anos ou mais") + ")</small></span></label>";
         }).join("") + "</div>";
-      }).join("") + '<div class="ad-atalhos"><button type="button" class="quiet" data-marcar="rec">Recomendadas para a idade</button><button type="button" class="quiet" data-marcar="qi">Só as do QI</button><button type="button" class="quiet" data-marcar="todas">Todas</button><button type="button" class="quiet" data-marcar="nenhuma">Nenhuma</button></div>' +
+      }).join("") + '<div class="ad-atalhos"><button type="button" class="quiet" data-marcar="rec">Recomendadas para a idade</button><button type="button" class="quiet" data-marcar="qi">Só as do índice geral</button><button type="button" class="quiet" data-marcar="todas">Todas</button><button type="button" class="quiet" data-marcar="nenhuma">Nenhuma</button></div>' +
         '<div class="ad-atalhos"><span class="small muted">Conjuntos prontos:</span>' + Object.keys(M.PROTOCOLOS).map(function (k) { return '<button type="button" class="quiet" data-protocolo="' + k + '">' + esc(M.PROTOCOLOS[k].nome) + "</button>"; }).join("") + '</div><p class="small muted" id="ad-duracao"></p>';
       $("ad-dominios").addEventListener("click", function (ev) { var b = ev.target.closest("[data-marcar]"); if (b) marcar(b.dataset.marcar); var pr = ev.target.closest("[data-protocolo]"); if (pr) aplicarProtocolo(pr.dataset.protocolo); });
       $("ad-dominios").addEventListener("change", duracao);
@@ -92,7 +92,7 @@
     atualizarDica();
   }
   function idadeEscolhida() { var p = pessoa($("ad-participante").value), a = p ? ageForParticipant(p) : null; return a ? a.years + a.months / 12 : 8; }
-  // marca as áreas: recomendadas para a idade, só as do QI, todas ou nenhuma (o profissional pode ajustar depois)
+  // marca as áreas: recomendadas para a idade, só as do índice geral, todas ou nenhuma (o profissional pode ajustar depois)
   function marcar(modo) {
     var idade = idadeEscolhida(), rec = M.recomendadas(idade); st.curta = false;
     document.querySelectorAll("#ad-dominios input[type=checkbox]").forEach(function (x) {
@@ -192,7 +192,7 @@
     $("ad-curva").innerHTML = e ? "<h4>Escada de dificuldade · " + esc(M.dominio(e.dominio).nome) + "</h4>" + curva(e.itens, 320, 120) : "";
     // estimativa parcial
     $("ad-parcial").innerHTML = r.qiEstimado == null ? '<div class="small muted">A estimativa aparece depois das primeiras respostas.</div>' :
-      '<div class="ad-qi"><span>QI estimado' + (fim ? "" : " (parcial)") + "</span><b>" + r.qiEstimado + '</b><small>faixa provável ' + r.intervalo[0] + "–" + r.intervalo[1] + " · " + esc(r.faixa) + "</small></div>" +
+      '<div class="ad-qi"><span>Índice geral' + (fim ? "" : " (parcial)") + "</span><b>" + r.qiEstimado + '</b><small>faixa provável ' + r.intervalo[0] + "–" + r.intervalo[1] + " · " + esc(r.faixa) + "</small></div>" +
       '<div class="small muted">Idade de desempenho ≈ ' + numero(r.idadeDesempenho, 1) + " anos (idade real " + numero(s.idadeAnos, 1) + ").</div>";
     // últimas respostas
     var hist = (s.historico || []).slice(-8).reverse();
@@ -259,7 +259,7 @@
         var p = pessoa(x.participantId), fim = ["concluida", "encerrada"].indexOf(x.status) >= 0, niv = (x.areas || []).filter(function (a) { return a.nivel != null; }).map(function (a) { return esc(M.dominio(a.id).curto) + " " + numero(a.nivel, 1); }).join(" · ");
         return "<tr><td><b>" + esc(p ? p.name : "—") + "</b></td><td>" + dataHora(x.atualizadoEm || x.criadoEm) + "</td><td>" + (fim ? '<span class="pill">feito ✔</span>' : '<span class="small muted">começou, não terminou</span>') + "</td><td class=\"small\">" + (niv || "—") + '</td><td><button class="secondary" data-ad-abrir="' + esc(x.id) + '" data-fim="' + (fim ? 1 : 0) + '">Ver</button></td></tr>'; }).join("") + "</tbody></table></div>" : "";
       hostCasa.innerHTML += lembretesHtml(st.lista);
-      host.innerHTML = st.lista.length ? '<table class="table"><thead><tr><th>Participante</th><th>Data</th><th>Situação</th><th>Áreas</th><th>QI estimado</th><th>Parecer</th><th></th></tr></thead><tbody>' + st.lista.map(function (x) {
+      host.innerHTML = st.lista.length ? '<table class="table"><thead><tr><th>Participante</th><th>Data</th><th>Situação</th><th>Áreas</th><th>Índice geral</th><th>Parecer</th><th></th></tr></thead><tbody>' + st.lista.map(function (x) {
         var p = pessoa(x.participantId), fim = ["concluida", "encerrada"].indexOf(x.status) >= 0;
         return "<tr><td><b>" + esc(p ? p.name : "—") + '</b><br><span class="small muted">' + esc(p ? p.code : "") + "</span></td><td>" + dataHora(x.criadoEm) + "</td><td>" + esc(NOME_STATUS[x.status] || x.status) + (x.modo === "estimulacao" ? ' <span class="pill">estimulação</span>' : "") + "</td><td>" + (x.dominios || []).length +
           "</td><td>" + (x.qiEstimado == null ? "—" : "<b>" + x.qiEstimado + "</b>") + "</td><td>" + (x.parecer ? esc(DECISAO[x.parecer.decisao]) : '<span class="small muted">pendente</span>') +
@@ -304,7 +304,7 @@
 
   // ================================================================ AMPLIAÇÃO (30/10/2026): pontuar no celular, relatório novo, devolutiva, estimulação
   st.marcas = {}; st.curta = false;
-  // conjuntos prontos (avaliação rápida, escolar, TDAH, TEA, idoso)
+  // conjuntos prontos (avaliação rápida, escolar, atenção, comunicação e interação, idoso)
   function aplicarProtocolo(id) {
     var idade = idadeEscolhida(), p = M.protocolo(id, idade); if (!p) return;
     document.querySelectorAll("#ad-dominios input[type=checkbox]").forEach(function (x) { x.checked = p.areas.indexOf(x.value) >= 0; });
@@ -386,7 +386,7 @@
     a = por("lx");
     if (a) { m = a.metricas; h += sec("Leitura de texto: fluência e compreensão") + '<div class="ad-fatos"><div><span>Palavras corretas por minuto</span><b>' + (m.ppm == null ? (m.tempoInvalido ? "— (tempo inválido)" : "—") : m.ppm) + '</b></div><div><span>Referência aproximada para a idade</span><b>≈ ' + m.referenciaPpm + "</b></div><div><span>Erros de leitura</span><b>" + (m.erros == null ? "—" : m.erros + " de " + m.palavras + " palavras") + "</b></div><div><span>Compreensão</span><b>" + (m.compreensao ? m.compreensao.acertos + " de " + m.compreensao.total : "—") + "</b></div></div>"; }
     a = por("dt");
-    if (a) h += sec("Ditado: tipo de erro na escrita") + "<p>Erros de <b>som</b> (troca, falta ou sobra de letras): <b>" + a.metricas.errosSom + "</b> · erros de <b>regra ortográfica</b> (escreveu como se fala): <b>" + a.metricas.errosRegra + '</b>.</p><p class="small muted">Muitos erros de som sugerem dificuldade fonológica (dislexia/disortografia); erros de regra são esperados nos primeiros anos e preocupam depois.</p>' +
+    if (a) h += sec("Ditado: tipo de erro na escrita") + "<p>Erros de <b>som</b> (troca, falta ou sobra de letras): <b>" + a.metricas.errosSom + "</b> · erros de <b>regra ortográfica</b> (escreveu como se fala): <b>" + a.metricas.errosRegra + '</b>.</p><p class="small muted">Muitos erros de som sugerem dificuldade fonológica (investigar com instrumentos específicos); erros de regra são esperados nos primeiros anos e preocupam depois.</p>' +
       (function () { var errs = s.historico.filter(function (x) { return x.dominio === "dt" && !x.treino && !x.correto; }); return !errs.length ? "" : '<div class="tablewrap"><table class="table"><thead><tr><th>Palavra</th><th>Escreveu</th></tr></thead><tbody>' + errs.map(function (x) { return "<tr><td>" + esc(x.extra && x.extra.palavra) + "</td><td>" + esc(x.extra && x.extra.escrito) + " <span class=\"small muted\">(" + esc(x.tipoErro || "") + ")</span></td></tr>"; }).join("") + "</tbody></table></div>"; })();
     var des = s.historico.filter(function (x) { return (x.dominio === "dc" || x.dominio === "rl") && x.resposta && x.resposta.pontuacao; });
     if (des.length) h += sec("Desenhos (cópia de figura e relógio)") + '<div class="ad-desenhos">' + des.map(function (x) {
@@ -445,7 +445,7 @@
       if (!sx.devolutivaLink) { $("ad-dev-link").innerHTML = ""; return; }
       var link = location.href.replace(/[?#].*$/, "").replace(/[^/]*$/, "") + "familia.html?d=" + encodeURIComponent(sx.devolutivaLink);
       var texto = "Olá! Segue a devolutiva da avaliação" + (p ? " de " + (p.preferredName || p.name || "").split(" ")[0] : "") + ", em linguagem simples. Qualquer dúvida, estou à disposição: " + link;
-      $("ad-dev-link").innerHTML = '<div class="notice"><b>Link para a família</b> (só leitura, sem QI): <input class="ad-qlink" readonly value="' + esc(link) + '"> <a class="secondary" style="display:inline-block;margin-top:6px;padding:9px 12px;border-radius:10px;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(texto) + '">Abrir o WhatsApp com a mensagem</a> <button type="button" class="quiet" id="ad-dev-revogar">Desativar este link</button></div>';
+      $("ad-dev-link").innerHTML = '<div class="notice"><b>Link para a família</b> (só leitura, sem índices numéricos): <input class="ad-qlink" readonly value="' + esc(link) + '"> <a class="secondary" style="display:inline-block;margin-top:6px;padding:9px 12px;border-radius:10px;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(texto) + '">Abrir o WhatsApp com a mensagem</a> <button type="button" class="quiet" id="ad-dev-revogar">Desativar este link</button></div>';
       $("ad-dev-revogar").onclick = async function () { if (!confirm("Desativar o link? Quem tiver recebido não conseguirá mais abrir.")) return; try { st.sessao = await api("/api/adaptativa/" + encodeURIComponent(s.id) + "/controle", { method: "POST", body: JSON.stringify({ acao: "revogarDevolutiva" }) }); mostrarLinkFamilia(st.sessao); toast("Link desativado."); } catch (e) { toast(e.message); } };
     }
     mostrarLinkFamilia(s);
@@ -512,10 +512,10 @@
 
   // ---------------------------------------------------------------- relatório
   function interpretacao(s, r, p) {
-    if (r.qiEstimado == null) return ["Esta aplicação não teve tarefas de inteligência suficientes para estimar o QI. Os resultados de cada área estão nos quadros acima."].concat((r.alertas || []).map(function (a) { return a.texto; }));
+    if (r.qiEstimado == null) return ["Esta aplicação não teve tarefas suficientes de raciocínio, memória e conhecimento para calcular o índice geral. Os resultados de cada área estão nos quadros acima."].concat((r.alertas || []).map(function (a) { return a.texto; }));
     var nome = p ? (p.preferredName || p.name || "").split(" ")[0] : "O participante", t = [];
     t.push(nome + " realizou " + s.historico.filter(function (h) { return !h.treino; }).length + " tarefas em " + r.areas.filter(function (a) { return a.itens; }).length + " área(s). " +
-      "O desempenho geral estimado ficou na faixa " + r.faixa.toLowerCase() + " (QI estimado " + r.qiEstimado + ", faixa provável " + r.intervalo[0] + "–" + r.intervalo[1] + "), " +
+      "No NeuroTrilha, o desempenho geral ficou " + r.faixa.toLowerCase() + " (índice geral " + r.qiEstimado + ", faixa provável " + r.intervalo[0] + "–" + r.intervalo[1] + "; não é QI), " +
       "com idade de desempenho aproximada de " + numero(r.idadeDesempenho, 1) + " anos para uma idade real de " + numero(s.idadeAnos, 1) + " anos.");
     if (r.fortes && r.fortes.length) t.push("Pontos relativamente fortes: " + r.fortes.join(", ") + ".");
     if (r.fracos && r.fracos.length) t.push("Pontos relativamente frágeis: " + r.fracos.join(", ") + ". Vale investigar com instrumentos específicos e aprovados.");
@@ -560,7 +560,7 @@
       var d = await api("/api/adaptativa?participante=" + encodeURIComponent(s.participantId)), lista = (d.sessoes || []).filter(function (x) { return x.qiEstimado != null && x.modo !== "estimulacao"; }).reverse();
       $("ad-estimulacao").innerHTML = progressoEstimulacao(d.sessoes || []);
       $("ad-evolucao-areas").innerHTML = graficoAreas(d.sessoes || [], s.id);
-      if (lista.length >= 2) $("ad-evolucao").innerHTML = "<h3>Evolução entre avaliações</h3>" + graficoEvolucao(lista) + '<div class="tablewrap"><p class="small muted">Mudança confiável: só é considerada mudança real quando a diferença passa de ' + M.mudancaConfiavel(100, 100).limiar + ' pontos (índice de mudança confiável, fidedignidade assumida 0,80). Diferenças menores podem ser só variação normal de uma aplicação para outra. As tarefas da reavaliação são formas paralelas (não repetem as já vistas).</p><table class="table"><thead><tr><th>Data</th><th>QI estimado (mudança)</th>' +
+      if (lista.length >= 2) $("ad-evolucao").innerHTML = "<h3>Evolução entre avaliações</h3>" + graficoEvolucao(lista) + '<div class="tablewrap"><p class="small muted">Mudança confiável: só é considerada mudança real quando a diferença passa de ' + M.mudancaConfiavel(100, 100).limiar + ' pontos (índice de mudança confiável, fidedignidade assumida 0,80). Diferenças menores podem ser só variação normal de uma aplicação para outra. As tarefas da reavaliação são formas paralelas (não repetem as já vistas).</p><table class="table"><thead><tr><th>Data</th><th>Índice geral (mudança)</th>' +
         M.DOMINIOS.filter(function (dm) { return lista.some(function (x) { return (x.areas || []).some(function (a) { return a.id === dm.id && a.indice != null; }); }); }).map(function (dm) { return "<th>" + esc(dm.curto) + "</th>"; }).join("") + "</tr></thead><tbody>" +
         lista.map(function (x, i) { var mc = i ? M.mudancaConfiavel(lista[i - 1].qiEstimado, x.qiEstimado) : null; return "<tr><td>" + dataHora(x.criadoEm) + (x.id === s.id ? " <b>(esta)</b>" : "") + "</td><td><b>" + x.qiEstimado + "</b>" + (mc ? ' <span class="small">(' + (mc.delta > 0 ? "+" : "") + mc.delta + ": " + (mc.confiavel ? "<b>" + mc.sentido + "</b>" : mc.sentido) + ")</span>" : "") + "</td>" + M.DOMINIOS.filter(function (dm) { return lista.some(function (y) { return (y.areas || []).some(function (a) { return a.id === dm.id && a.indice != null; }); }); }).map(function (dm) { var a = (x.areas || []).filter(function (z) { return z.id === dm.id; })[0]; return "<td>" + (a && a.indice != null ? a.indice : "—") + "</td>"; }).join("") + "</tr>"; }).join("") + "</tbody></table></div>";
     } catch (e) { /* sem evolução */ }
@@ -592,7 +592,7 @@
     var w = 560, h = 160, x = function (i) { return 40 + i * ((w - 60) / Math.max(1, lista.length - 1)); }, y = function (v) { return h - 20 - (Math.max(40, Math.min(160, v)) - 40) * ((h - 40) / 120); };
     var guia = [70, 100, 130].map(function (v) { return '<line x1="34" x2="' + (w - 10) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="' + (v === 100 ? "#2563A8" : "#E3E9F1") + '"/><text x="4" y="' + (y(v) + 4) + '" font-size="11" fill="#6b7b90">' + v + "</text>"; }).join("");
     var linha = lista.map(function (s2, i) { return (i ? "L" : "M") + x(i) + " " + y(s2.qiEstimado); }).join(" ");
-    return '<svg viewBox="0 0 ' + w + " " + h + '" class="ad-barras" role="img" aria-label="Evolução do QI estimado">' + guia + '<path d="' + linha + '" fill="none" stroke="#0F7A6B" stroke-width="3"/>' +
+    return '<svg viewBox="0 0 ' + w + " " + h + '" class="ad-barras" role="img" aria-label="Evolução do índice geral">' + guia + '<path d="' + linha + '" fill="none" stroke="#0F7A6B" stroke-width="3"/>' +
       lista.map(function (s2, i) { return '<circle cx="' + x(i) + '" cy="' + y(s2.qiEstimado) + '" r="5" fill="#0F7A6B"/><text x="' + x(i) + '" y="' + (y(s2.qiEstimado) - 10) + '" font-size="11" text-anchor="middle">' + s2.qiEstimado + '</text><text x="' + x(i) + '" y="' + (h - 4) + '" font-size="10" text-anchor="middle" fill="#6b7b90">' + new Date(s2.criadoEm).toLocaleDateString("pt-BR") + "</text>"; }).join("") + "</svg>";
   }
 
@@ -604,7 +604,7 @@
       barrasIndices(ix.map(function (x) { return { nome: x.sigla + " · " + x.nome, indice: x.valor }; })) +
       '<div class="tablewrap"><table class="table"><thead><tr><th>Índice</th><th>Áreas</th><th>Valor</th><th>Intervalo 95%</th><th>Faixa</th><th>Comparado com a própria pessoa</th></tr></thead><tbody>' +
       ix.map(function (x) { return "<tr><td><b>" + esc(x.sigla) + "</b> " + esc(x.nome) + "</td><td class=\"small\">" + esc(x.areas.join(", ")) + "</td><td><b>" + x.valor + "</b></td><td>" + x.intervalo[0] + "–" + x.intervalo[1] + "</td><td>" + esc(x.faixa) + "</td><td>" + esc(x.relativo || "—") + "</td></tr>"; }).join("") + "</tbody></table></div>";
-    if (r.habilidadeGeral) h += '<p><b>Índice de habilidade geral (IHG): ' + r.habilidadeGeral.valor + "</b> (" + esc(r.habilidadeGeral.faixa) + '). Usa só compreensão verbal, raciocínio e visuoespacial — sem memória de trabalho e velocidade. Quando fica bem acima do QI estimado, sugere que atenção/memória de trabalho/rapidez estão "puxando para baixo" o resultado geral (comum no TDAH).</p>';
+    if (r.habilidadeGeral) h += '<p><b>Índice de habilidade geral (IHG): ' + r.habilidadeGeral.valor + "</b> (" + esc(r.habilidadeGeral.faixa) + '). Usa só compreensão verbal, raciocínio e visuoespacial — sem memória de trabalho e velocidade. Quando fica bem acima do índice geral, indica que atenção, memória de trabalho ou rapidez estão "puxando para baixo" o resultado geral; o profissional interpreta junto com a entrevista e outros instrumentos.</p>';
     var d = r.discrepancias || [];
     h += d.length ? "<p><b>Diferenças significativas entre índices</b> (maiores que o acaso, 95%):</p><ul>" + d.map(function (x) { return "<li>" + esc(x.maior) + " &gt; " + esc(x.menor) + ": diferença de " + x.diferenca + " pontos (mínimo para ser significativa: " + x.critica + ").</li>"; }).join("") + "</ul>"
       : '<p class="small muted">Nenhuma diferença entre índices passou do valor crítico: o perfil é relativamente homogêneo.</p>';
@@ -646,7 +646,7 @@
     return {
       solicitante: "", finalidade: "Avaliação das funções cognitivas para subsidiar " + (s.idadeAnos < 18 ? "orientação escolar e familiar" : "orientação clínica") + ".",
       demanda: a.queixa ? a.queixa : "",
-      procedimento: "Entrevista de anamnese" + (a.queixa ? "" : " (a completar)") + "; aplicação informatizada adaptativa do NeuroTrilha (RMD) em " + (enc > 1 ? enc + " encontros" : "um encontro") + ", com as tarefas: " + areas.join(", ") + "; observação do comportamento durante a aplicação" +
+      procedimento: "Entrevista de anamnese" + (a.queixa ? "" : " (a completar)") + "; como recurso complementar (não é teste psicológico aprovado no SATEPSI), aplicação informatizada adaptativa do NeuroTrilha (RMD, versão " + (s.versaoSistema || "anterior a 2026.10.31") + ") em " + (enc > 1 ? enc + " encontros" : "um encontro") + ", com as tarefas: " + areas.join(", ") + "; observação do comportamento durante a aplicação" +
         "; questionários complementares, quando houver. Instrumentos validados e aprovados no SATEPSI utilizados: (completar).",
       analise: interpretacao(s, r, p).join("\n\n") + (ix.length ? "\n\nÍndices compostos: " + ix.map(function (x) { return x.sigla + " " + x.valor + " (" + x.faixa.toLowerCase() + ")"; }).join("; ") + "." : "") +
         (r.habilidadeGeral ? " Índice de habilidade geral: " + r.habilidadeGeral.valor + "." : "") + ((r.discrepancias || []).length ? " Diferenças significativas: " + r.discrepancias.map(function (d) { return d.maior + " > " + d.menor; }).join("; ") + "." : "") +
@@ -655,10 +655,12 @@
       local: "(cidade), " + new Date().toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" }) + "."
     };
   }
+  // registro profissional (CRP, CRM...) informado pela RMD ao liberar a conta da internet
+  function registroDaConta() { try { return (typeof eu !== "undefined" && eu && eu.registro) || ""; } catch (e) { return ""; } }
   function mostrarLaudo(s) {
     if (st.clinica === undefined) { carregarClinica().then(function () { mostrarLaudo(s); }); return; }
     var p = pessoa(s.participantId), r = s.resultado || {}, base = rascunhoLaudo(s, p, r), salvo = s.laudo || {}, txt = Object.assign({}, base, salvo.secoes || {});
-    var prof = salvo.profissional || (s.parecer && s.parecer.profissional) || "", reg = salvo.registro || (s.parecer && s.parecer.registro) || "";
+    var prof = salvo.profissional || (s.parecer && s.parecer.profissional) || "", reg = salvo.registro || (s.parecer && s.parecer.registro) || registroDaConta();
     var h = '<div class="ad-rel-cab no-print"><button class="quiet" id="ad-laudo-voltar">← Voltar ao relatório</button><div class="actions"><button class="secondary" id="ad-laudo-salvar">Salvar laudo</button><button class="primary" id="ad-laudo-imprimir">Imprimir / salvar PDF</button><a class="secondary" style="padding:9px 12px;border-radius:10px;text-decoration:none" href="https://assinador.iti.br/" target="_blank" rel="noopener">Assinar no gov.br</a></div></div>' +
       '<div class="notice no-print">Rascunho no modelo da <b>Resolução CFP 06/2019</b>. Revise cada parte: só o(a) psicólogo(a) pode concluir e assinar. Para assinar com o gov.br: salve em PDF, abra <b>assinador.iti.br</b>, envie o PDF e baixe o arquivo assinado.</div>' +
       '<div class="panel no-print ad-laudo-editor"><div class="formgrid"><div class="field"><label>Psicólogo(a) responsável</label><input id="ad-laudo-prof" maxlength="120" value="' + esc(prof) + '"></div><div class="field"><label>CRP</label><input id="ad-laudo-reg" maxlength="40" value="' + esc(reg) + '" placeholder="CRP 00/00000"></div></div>' +
@@ -673,7 +675,7 @@
         (v("solicitante") ? "<br><b>Solicitante:</b> " + esc(v("solicitante")) : "") + "<br><b>Finalidade:</b> " + esc(v("finalidade")) + "</p>" +
         ["demanda", "procedimento", "analise", "conclusao", "referencias"].map(function (k) { var t = LAUDO_SECOES.filter(function (x) { return x[0] === k; })[0][1]; return "<h3>" + (++num) + ". " + esc(k === "demanda" ? "Descrição da demanda" : t) + "</h3>" + (v(k) ? par(v(k)) : '<p class="muted">(a completar)</p>'); }).join("") +
         '<p style="margin-top:28px">' + esc(v("local")) + '</p><p style="margin-top:46px;text-align:center">______________________________________<br>' + esc($("ad-laudo-prof").value || "Psicólogo(a)") + "<br>" + esc($("ad-laudo-reg").value || "CRP") + "</p>" +
-        '<p class="small muted" style="margin-top:20px">Documento sigiloso, de uso restrito do interessado e do solicitante. Os resultados do NeuroTrilha são experimentais (sem normas brasileiras e sem aprovação no SATEPSI) e foram usados de forma complementar.</p>';
+        '<p class="small muted" style="margin-top:20px">Documento sigiloso, de uso restrito do interessado e do solicitante. O NeuroTrilha é ferramenta complementar: não faz diagnóstico, não é teste psicológico aprovado no SATEPSI, suas referências por idade são provisórias e o índice geral não é QI. As conclusões deste documento são do(a) profissional que o assina.</p>';
     }
     desenhar();
     $("ad-relatorio").querySelectorAll("textarea,input").forEach(function (x) { x.addEventListener("input", desenhar); });
@@ -695,15 +697,16 @@
     var dur = Math.max(0, Math.round((Date.parse(fimT) - Date.parse(ini)) / 60000));
     var num = 0, sec = function (titulo) { num++; return "<h3>" + num + ". " + titulo + "</h3>"; };
     var h = '<div class="ad-rel-cab no-print"><button class="quiet" id="ad-rel-voltar">← Voltar</button><div class="actions"><button class="secondary" id="ad-rel-csv">Exportar respostas (CSV)</button><button class="secondary" id="ad-rel-laudo">Laudo (modelo CFP)</button><button class="secondary" id="ad-rel-devolutiva">Para família e escola</button><button class="secondary" id="ad-rel-estim">Estimulação em casa</button><button class="primary" id="ad-rel-imprimir">Imprimir / salvar PDF</button></div></div>';
-    h += '<div class="panel ad-rel">' + cabClinica() + '<div class="ad-rel-topo"><div><div class="ad-marca">NeuroTrilha</div><h2>Relatório de avaliação cognitiva adaptativa</h2><p class="muted">Instrumento experimental de apoio ao profissional · desenvolvido por RMD</p></div><div class="ad-rel-id">Sessão ' + esc(s.id.slice(0, 11)) + "<br>" + dataHora(s.criadoEm) + "</div></div>";
+    h += '<div class="panel ad-rel">' + cabClinica() + '<div class="ad-rel-topo"><div><div class="ad-marca">NeuroTrilha</div><h2>Relatório de avaliação cognitiva adaptativa</h2><p class="muted">Ferramenta complementar de apoio ao profissional · desenvolvido por RMD</p></div><div class="ad-rel-id">Sessão ' + esc(s.id.slice(0, 11)) + "<br>" + dataHora(s.criadoEm) + "<br>Versão " + esc(s.versaoSistema || "anterior a 2026.10.31") + "</div></div>" +
+      '<div class="notice ad-finalidade"><b>Ferramenta complementar.</b> Os resultados são informações para a interpretação de um profissional habilitado. O NeuroTrilha não faz diagnóstico, não é teste psicológico aprovado no SATEPSI e as referências por idade ainda são provisórias. O diagnóstico e as conclusões são sempre do profissional.</div>';
     h += sec("Identificação") + '<div class="ad-ficha">' + [["Nome", p ? p.name : "—"], ["Código", p ? p.code : "—"], ["Nascimento", p ? p.birthDate.split("-").reverse().join("/") : "—"], ["Idade na aplicação", idadeTexto(s.idadeAnos)],
       ["Sexo", p && p.sex || "—"], ["Escolaridade", p && p.education || "—"], ["Avaliador", s.avaliador || "—"], ["Duração aproximada", dur + " min"], ["Situação", NOME_STATUS[s.status] || s.status], ["Forma de aplicação", s.leitor ? "instruções escritas e faladas" : "instruções só faladas, respostas por figuras"]]
       .map(function (x) { return "<div><span>" + esc(x[0]) + "</span><b>" + esc(x[1]) + "</b></div>"; }).join("") + "</div>";
     if (p && p.anamnese) h += anamneseHtml(p.anamnese);
-    h += sec("Resultado geral estimado") + '<p class="small muted">O QI estimado usa só as áreas de inteligência (raciocínio, memória, visuoespacial, rapidez, vocabulário, números e categorias). Atenção, emoções, leitura e rimas aparecem em quadros próprios.</p>';
-    h += r.qiEstimado == null ? '<div class="empty">Sem respostas suficientes para estimar.</div>' : '<div class="ad-resumo"><div class="ad-qi grande"><span>QI estimado</span><b>' + r.qiEstimado + "</b><small>faixa provável (95%): " + r.intervalo[0] + "–" + r.intervalo[1] + "</small></div>" +
+    h += sec("Resultado geral no NeuroTrilha") + '<p class="small muted">O índice geral usa só as áreas de raciocínio, memória, visuoespacial, rapidez, vocabulário, números e categorias. Atenção, emoções, leitura e rimas aparecem em quadros próprios. <b>Não é QI.</b></p>';
+    h += r.qiEstimado == null ? '<div class="empty">Sem respostas suficientes para estimar.</div>' : '<div class="ad-resumo"><div class="ad-qi grande"><span>Índice geral (não é QI)</span><b>' + r.qiEstimado + "</b><small>faixa provável (95%): " + r.intervalo[0] + "–" + r.intervalo[1] + "</small></div>" +
       '<div class="ad-fatos"><div><span>Classificação descritiva</span><b>' + esc(r.faixa) + "</b></div><div><span>Idade de desempenho</span><b>≈ " + numero(r.idadeDesempenho, 1) + " anos</b></div><div><span>Nível médio alcançado</span><b>" + numero(r.nivelGeral, 1) + " de 16</b></div><div><span>Nível esperado para a idade</span><b>" + numero(r.nivelEsperado, 1) + "</b></div></div></div>";
-    h += '<div class="notice"><b>Importante:</b> o QI aqui é uma <b>estimativa experimental</b>, calculada pela distância entre o nível alcançado e o nível esperado para a idade (referências aproximadas da literatura, desvio-padrão assumido de 15 pontos). O instrumento <b>não tem normas brasileiras e não é aprovado no SATEPSI</b>; pela Resolução CFP 31/2022, decisões de avaliação psicológica devem se apoiar em testes com parecer favorável, entrevista e observação. Use como informação complementar.</div>';
+    h += '<div class="notice"><b>Importante:</b> o índice geral <b>não é QI</b>. Ele mostra a distância entre o nível alcançado no NeuroTrilha e o nível esperado para a idade (referências aproximadas da literatura, provisórias; desvio-padrão assumido de 15 pontos). O NeuroTrilha <b>não tem normas brasileiras próprias e não é teste psicológico aprovado no SATEPSI</b>; pela Resolução CFP 31/2022, a avaliação psicológica se apoia em testes com parecer favorável, entrevista e observação. Use como <b>fonte complementar</b>.</div>';
     h += validadeHtml(r, sec);
     var comIndice = (r.areas || []).filter(function (a) { return a.indice != null; });
     h += sec("Perfil por área") + barrasIndices(comIndice) +
@@ -729,9 +732,9 @@
     h += sec("Parecer do profissional") + '<div class="no-print-if-empty">' + (s.parecer ? '<div class="ad-parecer-salvo"><b>' + esc(DECISAO[s.parecer.decisao]) + "</b> · " + esc(s.parecer.profissional) + (s.parecer.registro ? " · " + esc(s.parecer.registro) : "") + " · " + dataHora(s.parecer.em) + "<p>" + esc(s.parecer.texto || "").replace(/\n/g, "<br>") + "</p></div>" : "") +
       '<form id="ad-parecer" class="no-print ad-parecer"><div class="ad-dec">' + Object.keys(DECISAO).map(function (k) { return '<label><input type="radio" name="decisao" value="' + k + '"' + (s.parecer && s.parecer.decisao === k ? " checked" : "") + "> " + esc(DECISAO[k]) + "</label>"; }).join("") + "</div>" +
       '<textarea id="ad-par-texto" rows="5" placeholder="Parecer, hipóteses, encaminhamentos e o que foi confirmado com outros instrumentos…">' + esc(s.parecer ? s.parecer.texto : "") + "</textarea>" +
-      '<div class="formgrid"><div class="field"><label>Profissional</label><input id="ad-par-prof" value="' + esc(s.parecer ? s.parecer.profissional : "") + '" placeholder="Nome"></div><div class="field"><label>Registro (CRP/CRM/CRFa)</label><input id="ad-par-reg" value="' + esc(s.parecer ? s.parecer.registro : "") + '" placeholder="Ex.: CRP 19/0000"></div></div>' +
+      '<div class="formgrid"><div class="field"><label>Profissional</label><input id="ad-par-prof" value="' + esc(s.parecer ? s.parecer.profissional : "") + '" placeholder="Nome"></div><div class="field"><label>Registro (CRP/CRM/CRFa)</label><input id="ad-par-reg" value="' + esc(s.parecer ? s.parecer.registro : registroDaConta()) + '" placeholder="Ex.: CRP 19/0000"></div></div>' +
       '<button type="submit" class="primary">Salvar parecer</button> <span id="ad-par-msg" class="small"></span></form></div>';
-    h += sec("Base técnica e limites") + "<ul class=\"ad-base\"><li>Áreas organizadas pelo modelo CHC (Cattell-Horn-Carroll), referência das baterias modernas de inteligência.</li><li>Aplicação adaptativa em escada: todas as áreas começam no nível 1; acerto rápido sobe (de 2 em 2 até o primeiro erro), acerto lento mantém, erro desce. A área termina pelo limite de itens, por estabilizar, no piso ou no teto.</li><li>Primeira tarefa de cada área é treino, com retorno, e não entra no cálculo.</li><li>Tarefas originais geradas pelo programa: padrões e matrizes, quadrados que acendem, rotação de formas, busca visual, vocabulário por figuras, quantidades e números, categorias e analogias, números ouvidos (direta e inversa), memória de figuras com recordação tardia, peixes, toque ou não toque, atenção contínua, troca de regra, torre, ligar os pontos, caminhos, rimas e sons, leitura e emoções.</li><li>O QI estimado usa só as áreas de inteligência; atenção, funções executivas, aprendizagem e cognição social aparecem em quadros próprios, como nas baterias profissionais.</li><li>Idades de referência por nível são aproximadas e servem só para comparação; o resultado não substitui instrumentos padronizados.</li></ul>";
+    h += sec("Base técnica e limites") + "<ul class=\"ad-base\"><li>Áreas organizadas pelo modelo CHC (Cattell-Horn-Carroll), referência das baterias modernas de inteligência.</li><li>Aplicação adaptativa em escada: todas as áreas começam no nível 1; acerto rápido sobe (de 2 em 2 até o primeiro erro), acerto lento mantém, erro desce. A área termina pelo limite de itens, por estabilizar, no piso ou no teto.</li><li>Primeira tarefa de cada área é treino, com retorno, e não entra no cálculo.</li><li>Tarefas originais geradas pelo programa: padrões e matrizes, quadrados que acendem, rotação de formas, busca visual, vocabulário por figuras, quantidades e números, categorias e analogias, números ouvidos (direta e inversa), memória de figuras com recordação tardia, peixes, toque ou não toque, atenção contínua, troca de regra, torre, ligar os pontos, caminhos, rimas e sons, leitura e emoções.</li><li>O índice geral usa só as áreas de raciocínio, memória e conhecimento; atenção, funções executivas, aprendizagem e cognição social aparecem em quadros próprios. Não é QI.</li><li>Idades de referência por nível são aproximadas e provisórias e servem só para comparação; o resultado não substitui instrumentos padronizados.</li><li>Ferramenta complementar: não faz diagnóstico. Detalhes em <a href='fundamentacao.html' target='_blank' rel='noopener'>Fundamentação e limites</a>.</li></ul>";
     h += "<details class=\"ad-itens\"><summary>Respostas item a item (" + itens.length + ")</summary><div class=\"tablewrap\"><table class=\"table\"><thead><tr><th>#</th><th>Área</th><th>Nível</th><th>Instrução</th><th>Resultado</th><th>Tempo</th></tr></thead><tbody>" +
       itens.map(function (x, i) { return "<tr><td>" + (i + 1) + "</td><td>" + esc(M.dominio(x.dominio).curto) + "</td><td>" + x.nivel + "</td><td class=\"small\">" + esc(x.fala || "") + "</td><td>" + (x.correto ? (x.rapido ? "Acerto" : "Acerto lento") : x.esgotado ? "Tempo esgotado" : "Erro") + "</td><td>" + seg(x.tempoMs) + "</td></tr>"; }).join("") + "</tbody></table></div></details></div>";
     $("ad-relatorio").innerHTML = h;

@@ -1,7 +1,7 @@
 {
   "name": "NeuroTrilha",
   "short_name": "NeuroTrilha",
-  "description": "Avaliação cognitiva adaptativa · uma solução RMD",
+  "description": "Ferramenta complementar de avaliação cognitiva · uma solução RMD",
   "lang": "pt-BR",
   "start_url": "./",
   "scope": "./",

@@ -13,7 +13,7 @@
      tipo "flanker") e flexibilidade cognitiva (jogo das cartas, tipo "troca de regra").
    - Nada depende de leitura até a criança mostrar que lê: a instrução é falada (voz do aparelho) e as respostas
      são figuras. As tarefas são ORIGINAIS (geradas pelo programa), não cópias de testes comerciais.
-   - O "QI estimado" é uma ESTIMATIVA EXPERIMENTAL: compara o nível alcançado com o nível esperado para a idade,
+   - O "índice geral" (campo qiEstimado, nome antigo mantido) NÃO é QI; é uma ESTIMATIVA EXPERIMENTAL: compara o nível alcançado com o nível esperado para a idade,
      usando referências aproximadas e um desvio-padrão assumido. Não é um teste aprovado no SATEPSI/CFP e não tem
      normas brasileiras. Serve de informação para o profissional, que aceita ou não no parecer final. */
 (function (raiz, fabrica) {
@@ -27,7 +27,7 @@
   var IDADE_REF = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 17];
   var DP_NIVEIS = 1.5;  // desvio-padrão assumido, em níveis (equivale a 15 pontos)
 
-  // grupo: onde aparece no relatório · qi: entra no QI estimado · idades: faixa em que a tarefa faz sentido
+  // grupo: onde aparece no relatório · qi: entra no índice geral (não é QI) · idades: faixa em que a tarefa faz sentido
   // fixo: bloco de tamanho fixo (não é escada; não dá "nível", dá medidas próprias)
   var DOMINIOS = [
     { id: 'gf', nome: 'Raciocínio fluido', chc: 'Gf', curto: 'Padrões', grupo: 'inteligencia', qi: true, idades: [4, 120], desc: 'Descobrir a regra de uma sequência ou matriz de figuras.' },
@@ -47,7 +47,7 @@
     { id: 'to', nome: 'Planejamento (torre)', chc: 'Funções executivas', curto: 'Torre', grupo: 'executivas', qi: false, idades: [6, 120], desc: 'Mover bolinhas até ficar igual ao modelo com o menor número de jogadas.' },
     { id: 'tl', nome: 'Ligar os pontos', chc: 'Atenção alternada', curto: 'Ligar pontos', grupo: 'executivas', qi: false, idades: [6, 120], desc: 'Tocar em ordem (1, 2, 3...) e depois alternando número e letra (1, A, 2, B...).' },
     { id: 'cm', nome: 'Caminhos', chc: 'Rastreio visual', curto: 'Caminhos', grupo: 'executivas', qi: false, idades: [4, 120], desc: 'Seguir com os olhos o caminho do ratinho até o prêmio.' },
-    { id: 'fo', nome: 'Rimas e sons (consciência fonológica)', chc: 'Pré-leitura', curto: 'Rimas', grupo: 'aprendizagem', qi: false, idades: [4, 10], desc: 'Rimas, sons iniciais, juntar e trocar pedaços de palavras. Base da alfabetização (triagem de dislexia).' },
+    { id: 'fo', nome: 'Rimas e sons (consciência fonológica)', chc: 'Pré-leitura', curto: 'Rimas', grupo: 'aprendizagem', qi: false, idades: [4, 10], desc: 'Rimas, sons iniciais, juntar e trocar pedaços de palavras. Base da alfabetização.' },
     { id: 'le', nome: 'Leitura', chc: 'Leitura', curto: 'Leitura', grupo: 'aprendizagem', qi: false, idades: [6, 120], desc: 'Ler palavras e frases e tocar na figura certa (decodificação e compreensão).' },
     { id: 'em', nome: 'Emoções e situações sociais', chc: 'Cognição social', curto: 'Emoções', grupo: 'social', qi: false, idades: [4, 120], desc: 'Reconhecer emoções em rostos e situações e entender o que o outro pensa.' },
     // ampliação (30/10/2026) — avaliador: true = o avaliador pontua no celular (o paciente fala ou desenha)
@@ -56,21 +56,21 @@
     { id: 'lx', nome: 'Leitura de texto (fluência e compreensão)', chc: 'Leitura', curto: 'Ler o texto', grupo: 'aprendizagem', qi: false, fixo: true, fixoItens: 4, semTreino: true, avaliador: true, idades: [7, 120], desc: 'Ler um texto em voz alta (o avaliador marca os erros; o sistema calcula palavras por minuto) e responder 3 perguntas sobre ele.' },
     { id: 'dt', nome: 'Ditado (escrita de palavras)', chc: 'Escrita', curto: 'Escrever', grupo: 'aprendizagem', qi: false, idades: [7, 120], desc: 'Ouvir uma palavra e escrever no teclado da tela. Separa erros de som (fonológicos) de erros de regra (ortográficos).' },
     { id: 'mt', nome: 'Matemática escolar', chc: 'Gq escolar', curto: 'Contas', grupo: 'aprendizagem', qi: false, idades: [6, 120], desc: 'Contas e problemas: somar, subtrair, tabuada, divisão, frações, porcentagem e equação.' },
-    { id: 'cs', nome: 'Entender o outro (teoria da mente)', chc: 'Cognição social', curto: 'O que ele pensa?', grupo: 'social', qi: false, idades: [4, 120], desc: 'Histórias curtas: o que a pessoa quer, pensa e sabe; crença falsa, ironia e gafes. Apoio na hipótese de TEA.' },
+    { id: 'cs', nome: 'Entender o outro (teoria da mente)', chc: 'Cognição social', curto: 'O que ele pensa?', grupo: 'social', qi: false, idades: [4, 120], desc: 'Histórias curtas: o que a pessoa quer, pensa e sabe; crença falsa, ironia e gafes.' },
     { id: 'dc', nome: 'Cópia de figura', chc: 'Visuoconstrução', curto: 'Copiar desenho', grupo: 'motor', qi: false, fixo: true, fixoItens: function (idade) { return idade < 7 ? 2 : 3; }, semTreino: true, avaliador: true, idades: [4, 120], desc: 'Copiar desenhos no tablet com o dedo ou caneta. O avaliador pontua cada elemento.' },
     { id: 'rl', nome: 'Desenho do relógio', chc: 'Visuoconstrução e planejamento', curto: 'Relógio', grupo: 'motor', qi: false, fixo: true, fixoItens: 1, semTreino: true, avaliador: true, idades: [8, 120], desc: 'Desenhar um relógio marcando 11h10. Também usado no rastreio de idosos. O avaliador pontua.' },
     { id: 'tp', nome: 'Toque rápido (coordenação fina)', chc: 'Motor fino', curto: 'Toque rápido', grupo: 'motor', qi: false, fixo: true, fixoItens: 4, semTreino: true, idades: [4, 120], desc: 'Tocar o mais rápido possível por 10 segundos com cada mão (duas vezes).' },
     { id: 'tr', nome: 'Tempo de reação', chc: 'Velocidade de reação', curto: 'Reação', grupo: 'motor', qi: false, fixo: true, fixoItens: 20, idades: [5, 120], desc: 'Reagir rápido a uma estrela (reação simples) e tocar o lado da seta (reação de escolha).' },
     { id: 'or', nome: 'Orientação (tempo e lugar)', chc: 'Rastreio cognitivo', curto: 'Perguntas', grupo: 'rastreio', qi: false, fixo: true, fixoItens: 7, semTreino: true, avaliador: true, idades: [10, 120], desc: 'Perguntas sobre data, hora e lugar. Rastreio de memória em adultos e idosos. O avaliador marca certo ou errado.' }
   ];
-  var GRUPOS = { inteligencia: 'Inteligência (entra no QI estimado)', executivas: 'Atenção e funções executivas', memoria: 'Memória verbal e linguagem', aprendizagem: 'Aprendizagem escolar (sons, leitura, escrita e matemática)',
+  var GRUPOS = { inteligencia: 'Raciocínio, memória e conhecimento (entram no índice geral)', executivas: 'Atenção e funções executivas', memoria: 'Memória verbal e linguagem', aprendizagem: 'Aprendizagem escolar (sons, leitura, escrita e matemática)',
     social: 'Cognição social', motor: 'Desenho, coordenação e reação', rastreio: 'Rastreio cognitivo (adultos e idosos)' };
   // conjuntos prontos de tarefas (o profissional pode mudar). rapida: cerca de 15 minutos, com menos tarefas por área
   var PROTOCOLOS = {
     rapida: { nome: 'Avaliação rápida (≈15 min)', itens: 6, curta: true, areas: function (i) { return i >= 60 ? ['or', 'mp', 'rl', 'fv', 'gc'] : i < 7 ? ['gf', 'gwm', 'gc', 'gq', 'gn', 'fo'] : i < 13 ? ['gf', 'gwm', 'gc', 'gq', 'gn', 'le', 'dt'] : ['gf', 'gwm', 'gc', 'gq', 'gn', 'mp']; } },
     escolar: { nome: 'Dificuldade escolar', itens: 10, areas: function () { return ['fo', 'le', 'lx', 'dt', 'mt', 'dg', 'gwm', 'ac', 'mp']; } },
-    tdah: { nome: 'Atenção e TDAH', itens: 10, areas: function () { return ['gn', 'ac', 'at', 'fx', 'gwm', 'di', 'tr', 'to', 'mp']; } },
-    tea: { nome: 'Cognição social e TEA', itens: 10, areas: function () { return ['em', 'cs', 'rv', 'gc', 'fx', 'gf', 'gwm']; } },
+    tdah: { nome: 'Queixa de atenção e agitação', itens: 10, areas: function () { return ['gn', 'ac', 'at', 'fx', 'gwm', 'di', 'tr', 'to', 'mp']; } },
+    tea: { nome: 'Queixa de comunicação e interação social', itens: 10, areas: function () { return ['em', 'cs', 'rv', 'gc', 'fx', 'gf', 'gwm']; } },
     idoso: { nome: 'Rastreio de memória (adultos e idosos)', itens: 8, curta: true, areas: function () { return ['or', 'mp', 'rl', 'fv', 'dc', 'tr', 'gc', 'gf']; } }
   };
   function protocolo(id, idade) {
@@ -928,7 +928,7 @@
         if (m.retencao != null && m.retencao < 60) a.push({ tipo: 'esquecimento', texto: 'Memória de palavras: no fim da sessão lembrou só ' + m.retencao + '% do que lembrava na última rodada (esquecimento rápido). Se o reconhecimento foi bom, a dificuldade é mais de busca/acesso do que de armazenamento.' });
       }
       if (x.id === 'fv') m.categorias.forEach(function (c) { if (c.validas != null && c.validas < c.referencia - 4) a.push({ tipo: 'fluencia', texto: 'Fluência verbal (' + c.categoria + '): ' + c.validas + ' palavras, abaixo da referência aproximada (cerca de ' + c.referencia + ' para a idade). Investigar linguagem e funções executivas.' }); });
-      if (x.id === 'lx' && m.ppm != null && m.ppm < m.referenciaPpm * 0.7) a.push({ tipo: 'leitura', texto: 'Leitura em voz alta: ' + m.ppm + ' palavras corretas por minuto, bem abaixo da referência aproximada para a idade (' + m.referenciaPpm + '). Investigar fluência de leitura (hipótese de dislexia), junto com a consciência fonológica.' });
+      if (x.id === 'lx' && m.ppm != null && m.ppm < m.referenciaPpm * 0.7) a.push({ tipo: 'leitura', texto: 'Leitura em voz alta: ' + m.ppm + ' palavras corretas por minuto, bem abaixo da referência aproximada para a idade (' + m.referenciaPpm + '). Vale investigar a fluência de leitura com instrumentos específicos, junto com a consciência fonológica.' });
       if (x.id === 'rl' && m.figuras[0] && m.figuras[0].pontos != null && m.figuras[0].pontos <= 4 && sessao.idadeAnos >= 9) a.push({ tipo: 'relogio', texto: 'Desenho do relógio com ' + m.figuras[0].pontos + ' de 7 pontos: avaliar planejamento, visuoconstrução e, em idosos, rastreio de declínio cognitivo.' });
       if (x.id === 'or' && m.total >= 5 && m.total - m.acertos >= 2) a.push({ tipo: 'orientacao', texto: 'Orientação: errou ' + (m.total - m.acertos) + ' de ' + m.total + ' perguntas (' + m.erradas.join(', ') + '). Em adultos e idosos, sinal de alerta para avaliação de memória e cognição.' });
       if (x.id === 'tp' && m.diferenca != null && Math.abs(m.diferenca) >= 35) a.push({ tipo: 'motor', texto: 'Toque rápido: diferença grande entre as mãos (' + m.diferenca + '%). Considerar avaliação neurológica/motora.' });
@@ -1058,7 +1058,7 @@
     return Math.round((maxCerto + (ultimo.correto && ultimo.nivel === maxCerto ? 0.5 : 0)) * 10) / 10;
   }
 
-  // ------------------------------------------------------------------ idade, nível esperado e QI estimado
+  // ------------------------------------------------------------------ idade, nível esperado e índice geral (campo qiEstimado)
   function idadeDoNivel(n) {
     if (n == null) return null;
     if (n <= 1) return IDADE_REF[0] - (1 - n);
@@ -1081,13 +1081,14 @@
   }
   function faixa(qi) {
     if (qi == null) return '—';
-    if (qi >= 130) return 'Muito superior';
-    if (qi >= 120) return 'Superior';
-    if (qi >= 110) return 'Média superior';
-    if (qi >= 90) return 'Média';
-    if (qi >= 80) return 'Média inferior';
-    if (qi >= 70) return 'Limítrofe';
-    return 'Extremamente baixo';
+    // faixas descritivas em relação ao esperado para a idade (ferramenta complementar: sem rótulos de classificação de QI)
+    if (qi >= 130) return 'Muito acima do esperado para a idade';
+    if (qi >= 120) return 'Acima do esperado para a idade';
+    if (qi >= 110) return 'Um pouco acima do esperado para a idade';
+    if (qi >= 90) return 'Dentro do esperado para a idade';
+    if (qi >= 80) return 'Um pouco abaixo do esperado para a idade';
+    if (qi >= 70) return 'Abaixo do esperado para a idade';
+    return 'Muito abaixo do esperado para a idade';
   }
   function mediana(v) { if (!v.length) return null; var s = v.slice().sort(function (a, b) { return a - b; }), m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
 
@@ -1165,7 +1166,7 @@
       if (pIni - pFim >= 0.3) a.push({ tipo: 'fadiga', texto: 'O aproveitamento caiu bastante no final da sessão: considerar cansaço ou queda de motivação.' });
     }
     var idx = areas.filter(function (x) { return x.indice != null; }).map(function (x) { return x.indice; });
-    if (idx.length >= 3 && Math.max.apply(null, idx) - Math.min.apply(null, idx) >= 30) a.push({ tipo: 'heterogeneo', texto: 'Diferença grande entre as áreas (30 pontos ou mais): o QI global pode não representar bem o perfil; dê mais peso aos índices por área.' });
+    if (idx.length >= 3 && Math.max.apply(null, idx) - Math.min.apply(null, idx) >= 30) a.push({ tipo: 'heterogeneo', texto: 'Diferença grande entre as áreas (30 pontos ou mais): o índice geral pode não representar bem o perfil; dê mais peso aos índices por área.' });
     areas.forEach(function (x) {
       if (x.motivoFim === 'piso') a.push({ tipo: 'piso', texto: x.nome + ': não alcançou o nível inicial. Verificar compreensão da instrução, visão/audição, motivação ou necessidade de outra forma de aplicação.' });
       if (x.motivoFim === 'teto') a.push({ tipo: 'teto', texto: x.nome + ': atingiu o nível máximo; o índice pode estar subestimado.' });
@@ -1181,9 +1182,9 @@
         if (m.queda >= 20) a.push({ tipo: 'queda', texto: 'Atenção contínua: o aproveitamento caiu ' + m.queda + ' pontos da primeira para a segunda metade (queda da atenção com o tempo).' });
         if (m.trVariabilidadeMs >= 250) a.push({ tipo: 'oscilacao', texto: 'Tempo de reação muito irregular (variação de ' + m.trVariabilidadeMs + ' ms): a atenção oscila.' });
       }
-      if (x.id === 'fo' && x.indice != null && x.indice < 80) a.push({ tipo: 'fonologia', texto: 'Rimas e sons abaixo do esperado para a idade: considerar avaliação de pré-requisitos da alfabetização (triagem para dislexia), audição e estimulação.' });
+      if (x.id === 'fo' && x.indice != null && x.indice < 80) a.push({ tipo: 'fonologia', texto: 'Rimas e sons abaixo do esperado para a idade: considerar avaliação dos pré-requisitos da alfabetização, da audição e estimulação.' });
       if (x.id === 'le' && x.indice != null && x.indice < 80) a.push({ tipo: 'leitura', texto: 'Leitura abaixo do esperado para a idade: investigar decodificação e compreensão com instrumentos específicos.' });
-      if (x.id === 'em' && x.indice != null && x.indice < 80) a.push({ tipo: 'social', texto: 'Reconhecimento de emoções e situações sociais abaixo do esperado: considerar avaliação da cognição social (ex.: hipótese de TEA), sempre junto com a observação clínica.' });
+      if (x.id === 'em' && x.indice != null && x.indice < 80) a.push({ tipo: 'social', texto: 'Reconhecimento de emoções e situações sociais abaixo do esperado: considerar avaliação da cognição social com instrumentos específicos, sempre junto com a observação clínica.' });
     });
     if (sessao.tardia && sessao.tardia.total) {
       var ret = sessao.tardia.acertos / sessao.tardia.total;
@@ -1260,7 +1261,7 @@
     return it.subtipo ? 'erro em ' + it.subtipo : 'resposta errada';
   }
   var DICA_ERRO = {
-    'espelhamento (inverteu a forma)': 'Espelhamentos frequentes são comuns em dificuldades visuoespaciais e na dislexia; observar também na escrita (b/d, p/q).',
+    'espelhamento (inverteu a forma)': 'Espelhamentos frequentes podem aparecer em dificuldades visuoespaciais e de leitura e escrita; observar também na escrita (b/d, p/q) e investigar com instrumentos específicos.',
     'interferência (peixes do lado contrário)': 'Erros só com peixes contrários indicam dificuldade de filtrar distrações (controle de interferência).',
     'seguiu a regra errada (perseveração)': 'Continuar na regra antiga indica rigidez cognitiva (dificuldade de trocar de estratégia).',
     'repetiu na ordem direta (não inverteu)': 'Não conseguir inverter indica sobrecarga da memória de trabalho (manipular, não só guardar).',
@@ -1269,7 +1270,7 @@
     'deixou passar (omissão)': 'Omissões frequentes indicam desatenção.',
     'marcou figuras que não viu': 'Falsos reconhecimentos sugerem impulsividade ou memória pouco precisa.',
     'erro ao alternar número e letra': 'Errar só ao alternar indica dificuldade de flexibilidade/atenção alternada.',
-    'erro de som (troca, falta ou sobra de letras)': 'Erros de som na escrita (trocar f/v, p/b, omitir letras) indicam dificuldade fonológica, comum na dislexia/disortografia.',
+    'erro de som (troca, falta ou sobra de letras)': 'Erros de som na escrita (trocar f/v, p/b, omitir letras) sugerem dificuldade fonológica; investigar com instrumentos específicos de leitura e escrita.',
     'erro de regra ortográfica (escreveu como se fala)': 'Escrever como se fala (cassa, exeção) indica regras ortográficas ainda não consolidadas; esperado nos primeiros anos, sinal de alerta depois.'
   };
   // agrupa os erros da sessão por área e por tipo
@@ -1314,7 +1315,7 @@
     // pontos fortes e fracos pessoais: índice longe da média dos próprios índices
     var media = lista.length ? lista.reduce(function (s, x) { return s + x.valor; }, 0) / lista.length : null;
     lista.forEach(function (x) { if (lista.length >= 3) { var d = x.valor - media; x.relativo = Math.abs(d) >= 1.96 * x.sem ? (d > 0 ? 'ponto forte' : 'ponto fraco') : null; } });
-    // índice de habilidade geral (sem memória de trabalho e velocidade): útil quando elas puxam o QI para baixo (ex.: TDAH)
+    // índice de habilidade geral (sem memória de trabalho e velocidade): útil quando elas puxam o índice geral para baixo
     var gaiComp = lista.filter(function (x) { return ['icv', 'irf', 'ive'].indexOf(x.id) >= 0; }), gai = null;
     if (gaiComp.length >= 2) {
       var niv = areas.filter(function (a) { return ['gc', 'rv', 'gf', 'gq', 'gv'].indexOf(a.id) >= 0 && a.nivel != null; });
@@ -1350,7 +1351,7 @@
   }
 
   // ---------------------------------------------------------------- mudança confiável entre duas avaliações (índice de mudança confiável)
-  // Fidedignidade assumida 0,80 para o QI estimado (sem estudo próprio): mudança só é "confiável" se passar do limiar.
+  // Fidedignidade assumida 0,80 para o índice geral (sem estudo próprio): mudança só é "confiável" se passar do limiar.
   function mudancaConfiavel(antes, depois, fidedignidade) {
     var r = fidedignidade || 0.8, sdif = Math.sqrt(2) * 15 * Math.sqrt(1 - r), limiar = Math.round(1.96 * sdif), delta = depois - antes;
     return { delta: delta, limiar: limiar, confiavel: Math.abs(delta) >= limiar, sentido: Math.abs(delta) < limiar ? 'dentro da variação normal' : delta > 0 ? 'melhora confiável' : 'piora confiável' };

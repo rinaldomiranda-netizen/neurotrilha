@@ -15,8 +15,10 @@
     function escada(s) { return s.escadas[s.atual] || null; }
 
     // nova sessão (todas as áreas começam no nível 1)
+    // versão do NeuroTrilha gravada em cada aplicação: sempre dá para saber com que regras aquele resultado foi calculado
+    var VERSAO_SISTEMA = '2026.10.31';
     function criar(d) {
-      var s = { id: d.id, token: d.token, participantId: d.participantId, owner: d.owner, avaliador: d.avaliador, status: 'aguardando', criadoEm: iso(), atualizadoEm: iso(),
+      var s = { id: d.id, token: d.token, participantId: d.participantId, owner: d.owner, avaliador: d.avaliador, status: 'aguardando', criadoEm: iso(), atualizadoEm: iso(), versaoSistema: VERSAO_SISTEMA,
         idadeAnos: d.idadeAnos, nomeChamado: d.nomeChamado, leitor: d.leitor, dominios: d.dominios, maxItens: d.maxItens,
         escadas: d.dominios.map(function (id) { return Motor.novaEscada(id, { maxItens: d.maxItens, idade: d.idadeAnos, curta: !!d.curta, inicio: (d.inicios || {})[id] }); }), atual: 0, item: null, versao: 1, falar: 0, historico: [], observacoes: [], parecer: null,
         evitar: (d.evitar || []).slice(-3000), encontros: [{ inicio: iso() }], comportamento: null,
@@ -61,7 +63,7 @@
 
     function paraAvaliador(s) {
       var e = escada(s);
-      return { id: s.id, token: s.token, status: s.status, participantId: s.participantId, avaliador: s.avaliador, criadoEm: s.criadoEm, atualizadoEm: s.atualizadoEm,
+      return { id: s.id, token: s.token, status: s.status, participantId: s.participantId, avaliador: s.avaliador, criadoEm: s.criadoEm, atualizadoEm: s.atualizadoEm, versaoSistema: s.versaoSistema || 'anterior a 2026.10.31',
         idadeAnos: s.idadeAnos, leitor: s.leitor, dominios: s.dominios, maxItens: s.maxItens, atual: s.atual, nivelAtual: e ? e.nivel : null, item: s.item, versao: s.versao,
         historico: s.historico.slice(-400), observacoes: s.observacoes, parecer: s.parecer, escadas: s.escadas, tardia: s.tardia || null,
         comportamento: s.comportamento || null, laudo: s.laudo || null, devolutiva: s.devolutiva || null, devolutivaLink: s.devolutivaLink || null, plano: s.plano || null, modo: s.modo || 'avaliacao', curta: !!s.curta, mpTardia: s.mpTardia || null,
