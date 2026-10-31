@@ -49,6 +49,23 @@ html,body{max-width:100%;overflow-x:hidden}
 .nt-tut-cartao b{display:block;font-size:19px;margin-bottom:6px}.nt-tut-cartao p{margin:0 0 14px;color:#4A5B72;line-height:1.5}
 .nt-tut-acoes{display:flex;align-items:center;gap:8px}.nt-tut-acoes span{margin-right:auto}
 @media (prefers-reduced-motion:reduce){.nt-tut-foco{transition:none}}
+/* CELULAR (31/10/2026, pedido do Rinaldo): nada de arrastar para o lado. O menu quebra em linhas, os botões dos cartões
+   descem para baixo do nome e as tabelas viram fichas, uma linha embaixo da outra, com o nome de cada coluna. */
+@media screen and (max-width:700px){
+ .nt-menu{flex-wrap:wrap;overflow:visible}.nt-menu button{flex:1 1 auto;padding:9px 10px;text-align:center}
+ .nt-cartao{flex-wrap:wrap}.nt-cartao>div{flex:1 1 calc(100% - 60px)}.nt-cartao>button,.nt-cartao>a{flex:1 1 auto}
+ #ad-areas,.tablewrap,.ad-vivo>.panel,.ad-prep>.panel{overflow-x:visible}
+ .table,.dev-tabela{min-width:0!important;display:block;width:100%}
+ .table thead,.dev-tabela thead{display:none}
+ .table tbody,.table tr,.table td,.dev-tabela tbody,.dev-tabela tr,.dev-tabela td{display:block;width:auto}
+ .table tr,.dev-tabela tr{background:#fff;border:1px solid var(--line);border-radius:14px;margin:0 0 8px;padding:8px 12px}
+ .table td,.dev-tabela td{border:0!important;padding:3px 0!important;text-align:left!important;white-space:normal!important}
+ .table td[data-rotulo]::before,.dev-tabela td[data-rotulo]::before{content:attr(data-rotulo) ": ";font-weight:700;color:var(--muted)}
+ .table td button,.table td a{margin:4px 6px 0 0}
+ svg{max-width:100%;height:auto}img{max-width:100%}
+ .ad-rel,.panel{overflow-wrap:anywhere}
+ .ad-rel-topo{flex-wrap:wrap}.ad-rel-id{text-align:left!important;width:100%;margin-top:6px}
+}
 /* painel do desenvolvedor (RMD) */
 .dev-etiqueta{display:inline-block;border-radius:99px;padding:2px 9px;font-size:11px;font-weight:800;background:#eaf2ff;color:#24558e;margin-right:4px}
 .dev-etiqueta.alerta{background:#fde8e6;color:#b42318}.dev-etiqueta.ok{background:#e3f6ef;color:#087764}
@@ -368,6 +385,14 @@ $id("nt-form-entrar").addEventListener("submit", async (ev) => {
 });
 $id("nt-sair").addEventListener("click", () => { if (!confirm("Sair do NeuroTrilha neste aparelho?")) return; gravarSessao(null); location.reload(); });
 
+// ---- celular: cada célula das tabelas ganha o nome da coluna (no celular a tabela vira ficha; ver o CSS "CELULAR")
+function rotularTabelas(raiz) {
+  (raiz || document).querySelectorAll("table").forEach((t) => {
+    const nomes = [...t.querySelectorAll("thead th")].map((th) => th.textContent.trim()); if (!nomes.length) return;
+    t.querySelectorAll("tbody tr").forEach((tr) => { let col = 0; [...tr.children].forEach((td) => { const n = nomes[col]; if (n && td.colSpan === 1 && !td.hasAttribute("data-rotulo")) td.setAttribute("data-rotulo", n); col += td.colSpan || 1; }); });
+  });
+}
+new MutationObserver(() => { clearTimeout(window.__rotular); window.__rotular = setTimeout(() => rotularTabelas($id("nt-app")), 60); }).observe(document.getElementById("nt-app"), { childList: true, subtree: true });
 // ---- telas
 // ---- tutorial guiado: aparece depois de criar a senha no primeiro acesso; depois, em Conta → "Ver o tutorial"
 const PASSOS_TUTORIAL = [

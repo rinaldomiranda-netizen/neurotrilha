@@ -163,6 +163,20 @@ body{font-size:20px}
 .sem-rede{font-size:clamp(17px,2.3vw,22px)}
 .tela .grande svg{width:clamp(110px,16vw,170px)}
 .emo{width:1.2em;height:1.2em}
+/* celular deitado ou tela baixa: pouca altura, então tudo encolhe um pouco para caber sem rolar */
+@media (max-height:520px){
+ .palco{inset:52px 0 0 0;gap:8px;padding:6px 12px 10px}.topo{padding:6px 12px}
+ .instrucao{font-size:clamp(16px,4.4vh,24px)}.aviso{font-size:clamp(16px,5vh,24px)}
+ .casa,.matriz .casa,.peixes .casa{width:clamp(44px,15vh,120px)}.modelo,.carta{width:clamp(60px,22vh,150px);padding:6px}
+ .opcao{width:clamp(56px,min(15vw,24vh),160px);padding:8px}.opcoes.busca .opcao{width:clamp(40px,11vh,90px)}
+ .corsi{padding:8px;gap:6px}.corsi button{width:clamp(40px,min(14vw,16vh),110px)}
+ .letras{grid-template-columns:repeat(10,clamp(26px,min(8vw,9vh),60px))}.letras button{height:clamp(28px,8vh,46px)}
+ .opcao-texto{padding:8px 16px;font-size:clamp(15px,4vh,22px)}
+ .quadro{height:min(34vh,280px)}.desenho-modelo{width:clamp(80px,26vh,160px)}.acoes .limpar,.acoes .pronto{padding:8px 20px;font-size:18px}
+ .emo{width:1em;height:1em}
+}
+/* celular em pé (tela estreita): botões de ação mais baixos, para não ocupar meia tela */
+@media (max-width:500px){.pronto{font-size:20px;padding:12px 26px}.limpar{font-size:18px;padding:12px 18px}.quadro{height:min(50vh,460px)}}
 </style>
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icones/icone-apple-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script><script>(function(){var n=0;function av(m,d){try{var c=window.NT_CONFIG;if(!c||!c.FUNCOES||/fetch|network|load failed|internet/i.test(m)||++n>5)return;fetch(c.FUNCOES+"/api/erro",{method:"POST",headers:{"Content-Type":"application/json"},keepalive:true,body:JSON.stringify({mensagem:String(m||"").slice(0,200),detalhe:String(d||"").slice(0,200),pagina:location.pathname.split("/").pop()})}).catch(function(){});}catch(e){}}addEventListener("error",function(e){if(e&&e.message)av(e.message,(e.filename||"").split("/").pop()+":"+(e.lineno||""));});addEventListener("unhandledrejection",function(e){var r=e&&e.reason;if(r&&r.status)return;av(r&&r.message||r,"promessa");});})();</script>
 </head>
