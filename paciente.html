@@ -115,6 +115,8 @@ body.calmo .alvo-toque{background:#7C9CC0;box-shadow:none}body.calmo .peixes{bac
 body.calmo .gonogo.vazio{background:#EEE8DC}
 body.calmo *,body.calmo *::before,body.calmo *::after{transition:none!important;animation:none!important}
 body.calmo .opcao:active{transform:none}
+.emo{width:1.15em;height:1.15em;vertical-align:-.2em;display:inline-block}
+.sem-rede{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:12;background:var(--cartao);color:var(--tinta);border-radius:999px;padding:12px 22px;font-weight:800;font-size:clamp(15px,2vw,19px);box-shadow:var(--sombra);border:2px solid var(--sol);max-width:94vw;text-align:center}
 </style>
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icones/icone-apple-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>
 </head>
@@ -122,6 +124,7 @@ body.calmo .opcao:active{transform:none}
 <div class="topo"><div class="marca"><i><svg viewBox="0 0 96 96" aria-hidden="true"><rect width="96" height="96" rx="26" fill="#2563A8"/><circle cx="22" cy="74" r="4" fill="#fff" opacity=".55"/><circle cx="34" cy="66" r="5" fill="#fff" opacity=".7"/><circle cx="44" cy="55" r="6" fill="#fff" opacity=".85"/><circle cx="50" cy="42" r="7" fill="#fff"/><path d="M72 14 L76.7 24.2 L87.8 25.4 L79.5 32.9 L81.8 43.8 L72 38.2 L62.2 43.8 L64.5 32.9 L56.2 25.4 L67.3 24.2 Z" fill="#F6C453"/></svg></i>NeuroTrilha</div><div class="estrelas" id="estrelas" aria-label="Progresso"></div><div class="botoes-topo"><button class="ouvir calmo-bt" id="calmo" type="button" aria-pressed="false" title="Cores suaves e sem movimento"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg>Calmo</button><button class="ouvir" id="ouvir" type="button" aria-label="Ouvir a instrução de novo">🔊 Ouvir</button></div></div>
 <main class="palco" id="palco" aria-live="polite"></main>
 <div class="retorno hidden" id="retorno" role="status"></div>
+<div class="sem-rede hidden" id="sem-rede" role="status">📶 Sem internet agora. A resposta fica guardada e o jogo continua sozinho quando a internet voltar.</div>
 <section class="tela" id="tela-inicio">
   <div><div class="grande"><svg viewBox="0 0 96 96" aria-hidden="true"><rect width="96" height="96" rx="26" fill="#2563A8"/><circle cx="22" cy="74" r="4" fill="#fff" opacity=".55"/><circle cx="34" cy="66" r="5" fill="#fff" opacity=".7"/><circle cx="44" cy="55" r="6" fill="#fff" opacity=".85"/><circle cx="50" cy="42" r="7" fill="#fff"/><path d="M72 14 L76.7 24.2 L87.8 25.4 L79.5 32.9 L81.8 43.8 L72 38.2 L62.2 43.8 L64.5 32.9 L56.2 25.4 L67.3 24.2 Z" fill="#F6C453"/></svg></div><h1 id="ola">Olá!</h1><p>Vamos fazer uns desafios divertidos. Escute com atenção e toque na resposta. Se não souber, tudo bem: faça o seu melhor!</p><button class="botao" id="comecar" type="button">Começar ▶</button></div>
 </section>
@@ -130,6 +133,7 @@ body.calmo .opcao:active{transform:none}
 <section class="tela hidden" id="tela-area"><div><div class="grande" id="area-icone">⭐</div><h1 id="area-nome"></h1></div></section>
 <section class="tela hidden" id="tela-estacao"><div><div class="grande">📲</div><h1>Tablet pronto</h1><p>Código deste tablet:</p><div class="codigo" id="codigo-estacao">······</div><p>O avaliador digita este código no celular para enviar o teste. Deixe esta tela aberta.</p></div></section>
 <section class="tela hidden" id="tela-erro"><div><div class="grande">🔌</div><h1>Sem conexão</h1><p id="erro-texto">Esta tela não encontrou a sessão. Peça ao avaliador um novo endereço.</p></div></section>
+<script src="figuras.js"></script>
 <script src="config.js"></script>
 <script src="motor-cognitivo.js"></script>
 <script>
@@ -193,13 +197,17 @@ function falar(texto) {
 }
 function mostrarTela(id) { ["tela-inicio", "tela-pausa", "tela-fim", "tela-area", "tela-estacao", "tela-erro"].forEach((t) => $(t).classList.toggle("hidden", t !== id)); }
 
+// Queda de internet: o tablet não troca de tela nem perde a resposta; mostra um aviso calmo e tenta de novo sozinho.
+function semRede(ligado) { $("sem-rede").classList.toggle("hidden", !ligado); }
 async function buscar() {
+  let r;
+  try { r = await fetch(API + "/api/p/" + TOKEN + "/estado", { cache: "no-store" }); } catch (e) { semRede(true); return; }
   try {
-    const r = await fetch(API + "/api/p/" + TOKEN + "/estado", { cache: "no-store" });
     if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "Sessão não encontrada.");
-    aplicar(await r.json());
-  } catch (e) { if (ESTACAO) { voltarParaCodigo(); return; } $("erro-texto").textContent = e.message; mostrarTela("tela-erro"); }
+    const s = await r.json(); semRede(false); aplicar(s);
+  } catch (e) { semRede(false); if (ESTACAO) { voltarParaCodigo(); return; } $("erro-texto").textContent = e.message; mostrarTela("tela-erro"); }
 }
+addEventListener("online", () => { if (TOKEN) buscar(); });
 function aplicar(s) {
   if (segurar) return;  // mostrando o retorno da resposta: espera terminar
   estado = s;
@@ -377,13 +385,13 @@ function mostrarReconhecer(item) {
 }
 // ------------------------------------------------------------ tarefas da ampliação (30/10/2026)
 let timerContagem = null;
-function entregar(entrega) {
+function entregar(entrega, tentativa) {
   // tarefas que o avaliador pontua: avisa que terminou (desenho, tempo de leitura, fim do minuto)
-  if (enviando || !itemAtual) return; enviando = true;
+  if (!tentativa && (enviando || !itemAtual)) return; enviando = true;
   const item = itemAtual;
   fetch(API + "/api/p/" + TOKEN + "/resposta", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ itemId: item.id, entrega }) })
-    .then((r) => r.json().catch(() => ({}))).then(() => { if (itemAtual === item) $("palco").innerHTML = ESPERA; })
-    .catch(() => { enviando = false; mostrarRetorno("Sem conexão… tentando de novo", false); setTimeout(() => entregar(entrega), 1500); });
+    .then((r) => r.json().catch(() => ({}))).then(() => { semRede(false); if (itemAtual === item) $("palco").innerHTML = ESPERA; })
+    .catch(() => { semRede(true); setTimeout(() => { if (itemAtual === item) entregar(entrega, (tentativa || 0) + 1); else enviando = false; }, Math.min(5000, 1500 + 500 * (tentativa || 0))); });
 }
 function contagem(ms, fim) {
   const barra = document.querySelector(".relogio-barra span"), t0 = Date.now();
@@ -475,12 +483,14 @@ const NOVOS = {
 };
 function escapar(t) { return String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
-async function responder(resposta) {
-  if (enviando || !itemAtual) return; enviando = true; clearTimeout(timerLimite);
-  const item = itemAtual, tempoMs = Math.round(performance.now() - inicio);
+async function responder(resposta, tempoGuardado, tentativa) {
+  if (!tentativa && (enviando || !itemAtual)) return; enviando = true; clearTimeout(timerLimite);
+  // o tempo da resposta é o do primeiro toque: esperar a internet voltar não aumenta o tempo
+  const item = itemAtual, tempoMs = tempoGuardado != null ? tempoGuardado : Math.round(performance.now() - inicio);
   try {
     const r = await fetch(API + "/api/p/" + TOKEN + "/resposta", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ itemId: item.id, resposta, tempoMs }) });
     const s = await r.json();
+    semRede(false);
     if (!r.ok) { enviando = false; buscar(); return; }
     if (s.retorno && (item.treino || estado.modo === "estimulacao")) {
       const certa = document.querySelector('[data-op="' + s.retorno.certo + '"]'); if (certa) certa.classList.add("certa");
@@ -489,7 +499,7 @@ async function responder(resposta) {
       falar(s.retorno.correto ? "Isso mesmo! Agora vamos de verdade." : "Quase! Agora vamos de verdade.");
       segurar = true; setTimeout(() => { segurar = false; aplicar(s); }, 1800);
     } else { mostrarRetorno("👍", true); segurar = true; setTimeout(() => { segurar = false; aplicar(s); }, 450); }
-  } catch (e) { enviando = false; mostrarRetorno("Sem conexão… tentando de novo", false); setTimeout(() => { enviando = false; responder(resposta); }, 1500); }
+  } catch (e) { semRede(true); setTimeout(() => { if (itemAtual === item) responder(resposta, tempoMs, (tentativa || 0) + 1); else enviando = false; }, Math.min(5000, 1500 + 500 * (tentativa || 0))); }
 }
 function mostrarRetorno(texto, ok) { const el = $("retorno"); el.textContent = texto; el.className = "retorno " + (ok ? "ok" : "nao"); setTimeout(() => el.classList.add("hidden"), 1300); }
 

@@ -170,9 +170,17 @@
     }
 
     // o que a família vê pelo link (só a devolutiva em linguagem simples; nada de QI nem respostas)
-    function paraFamilia(s) { return s && s.devolutiva ? { nome: s.nomeChamado, data: s.criadoEm, secoes: s.devolutiva.secoes, profissional: s.devolutiva.profissional, registro: s.devolutiva.registro } : null; }
+    function paraFamilia(s, clinica) { return s && s.devolutiva ? { nome: s.nomeChamado, data: s.criadoEm, secoes: s.devolutiva.secoes, profissional: s.devolutiva.profissional, registro: s.devolutiva.registro, clinica: clinica ? { nome: clinica.nome || '', contato: clinica.contato || '', logo: clinica.logo || '' } : null } : null; }
 
-    return { paraFamilia: paraFamilia, iniciosEstimulacao: iniciosEstimulacao, criar: criar, novoItem: novoItem, paraPaciente: paraPaciente, paraAvaliador: paraAvaliador, responder: responder, controle: controle };
+    // dados da clínica (aparecem no laudo, na devolutiva e na página da família): só texto curto e uma imagem pequena
+    function limparClinica(b) {
+      b = b || {};
+      var logo = String(b.logo || '');
+      if (logo && (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+\/=]+$/.test(logo) || logo.length > 200000)) return { erro: 'O logo precisa ser uma imagem PNG, JPG ou WEBP pequena (até uns 150 KB).' };
+      return { clinica: { nome: String(b.nome || '').trim().slice(0, 120), endereco: String(b.endereco || '').trim().slice(0, 200), contato: String(b.contato || '').trim().slice(0, 120), logo: logo } };
+    }
+
+    return { limparClinica: limparClinica, paraFamilia: paraFamilia, iniciosEstimulacao: iniciosEstimulacao, criar: criar, novoItem: novoItem, paraPaciente: paraPaciente, paraAvaliador: paraAvaliador, responder: responder, controle: controle };
   }
 
   return { criarGestor: criarGestor };

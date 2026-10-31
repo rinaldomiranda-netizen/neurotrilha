@@ -39,6 +39,14 @@ html,body{max-width:100%;overflow-x:hidden}
 @media(min-width:1300px){.nt-conteudo{max-width:1500px}}
 @media(min-width:1600px){#nt-app,#nt-entrar{zoom:1.12}}
 @media(min-width:1850px){#nt-app,#nt-entrar{zoom:1.25}}
+/* tutorial guiado */
+#nt-tutorial{position:fixed;inset:0;z-index:2000}
+#nt-tutorial.sem-foco{background:rgba(10,25,45,.6)}
+.nt-tut-foco{position:fixed;border-radius:14px;box-shadow:0 0 0 9999px rgba(10,25,45,.6);outline:3px solid #F6C453;pointer-events:none;transition:all .25s ease}
+.nt-tut-cartao{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);width:min(92vw,470px);background:#fff;border-radius:22px;padding:20px 22px;box-shadow:0 24px 60px rgba(5,15,30,.35)}
+.nt-tut-cartao b{display:block;font-size:19px;margin-bottom:6px}.nt-tut-cartao p{margin:0 0 14px;color:#4A5B72;line-height:1.5}
+.nt-tut-acoes{display:flex;align-items:center;gap:8px}.nt-tut-acoes span{margin-right:auto}
+@media (prefers-reduced-motion:reduce){.nt-tut-foco{transition:none}}
 @media(max-width:600px){.nt-dois{grid-template-columns:1fr}.ad-controles button{flex:1 1 45%}.ad-qi b{font-size:38px}}
 </style>
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icones/icone-apple-180.png"><meta name="apple-mobile-web-app-capable" content="yes"><script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>
@@ -51,10 +59,11 @@ html,body{max-width:100%;overflow-x:hidden}
   <label class="auth-field"><span>Usuário</span><input id="nt-usuario" autocomplete="username" required autocapitalize="none" spellcheck="false"></label>
   <label class="auth-field"><span id="nt-senha-rotulo">Senha</span><input id="nt-senha" type="password" autocomplete="current-password"></label>
   <label class="auth-field hidden" id="nt-senha2-wrap"><span>Repita a senha nova</span><input id="nt-senha2" type="password" autocomplete="new-password"></label>
+  <label class="nt-check hidden" id="nt-aceite-wrap" style="margin:4px 0 10px"><input type="checkbox" id="nt-aceite"><span>Li e aceito os <a href="termos.html" target="_blank" rel="noopener">Termos de uso</a> e a <a href="privacidade.html" target="_blank" rel="noopener">Política de privacidade</a>.</span></label>
   <label class="auth-field hidden" id="nt-codigo-wrap"><span>Código de 6 números do aplicativo autenticador</span><input id="nt-codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>
   <div class="auth-error" id="nt-erro-entrar" role="alert"></div>
   <button class="primary" type="submit" id="nt-botao-entrar">Entrar</button>
-  <div class="auth-safe">Desenvolvido por RMD. Os dados dos pacientes ficam protegidos: cada profissional vê só os próprios.</div>
+  <div class="auth-safe">Uma solução RMD. Os dados dos pacientes ficam protegidos: cada profissional vê só os próprios. <a href="termos.html" target="_blank" rel="noopener">Termos de uso</a> · <a href="privacidade.html" target="_blank" rel="noopener">Privacidade</a></div>
  </form>
 </section>
 
@@ -167,6 +176,8 @@ html,body{max-width:100%;overflow-x:hidden}
     <div style="margin-top:14px"><b>Registro de acessos (LGPD)</b><p class="small muted">Quem entrou, abriu, criou, alterou, exportou ou apagou fichas e avaliações. Mostra os 1000 mais recentes.</p><button class="secondary" type="button" id="nt-auditoria">Ver registro</button> <button class="quiet hidden" type="button" id="nt-auditoria-csv">Baixar (CSV)</button><div class="tablewrap" id="nt-auditoria-tabela" style="margin-top:8px"></div></div>
     <div style="margin-top:14px"><b>Pesquisa e normas</b><p class="small muted">Exporta, sem nome nem código, os resultados de quem autorizou o uso anônimo.</p><button class="secondary" type="button" id="nt-normas">Exportar dados anônimos (CSV)</button></div>
    </div>
+   <div class="panel" id="nt-clinica" style="margin-top:14px"></div>
+   <div class="panel" style="margin-top:14px"><h3>Tutorial</h3><p class="small muted">Mostra de novo, em 5 passos, onde fica cada coisa.</p><button type="button" class="secondary" id="nt-ver-tutorial">Ver o tutorial</button></div>
   </section>
  </main>
 </div>
@@ -233,11 +244,11 @@ async function chamarPrimeiroAcesso(corpo) {
 }
 function entrarPrimeiroAcesso() {
   modoPrimeiro = true; $id("nt-senha-rotulo").textContent = "Crie a sua senha (pelo menos 6 letras ou números)"; $id("nt-senha").autocomplete = "new-password"; $id("nt-senha").value = "";
-  $id("nt-senha2-wrap").classList.remove("hidden"); $id("nt-botao-entrar").textContent = "Criar minha senha e entrar";
+  $id("nt-senha2-wrap").classList.remove("hidden"); $id("nt-aceite-wrap").classList.remove("hidden"); $id("nt-botao-entrar").textContent = "Criar minha senha e entrar";
   $id("nt-erro-entrar").style.color = "#087764"; $id("nt-erro-entrar").textContent = "Primeiro acesso: o seu acesso foi liberado pela RMD. Crie agora a sua senha particular."; $id("nt-senha").focus();
 }
 function sairPrimeiroAcesso() {
-  modoPrimeiro = false; $id("nt-senha-rotulo").textContent = "Senha"; $id("nt-senha").autocomplete = "current-password"; $id("nt-senha2-wrap").classList.add("hidden");
+  modoPrimeiro = false; $id("nt-senha-rotulo").textContent = "Senha"; $id("nt-senha").autocomplete = "current-password"; $id("nt-senha2-wrap").classList.add("hidden"); $id("nt-aceite-wrap").classList.add("hidden");
   $id("nt-botao-entrar").textContent = "Entrar"; $id("nt-erro-entrar").style.color = "";
 }
 function mostrarEntrar() { $id("nt-app").classList.add("hidden"); $id("nt-entrar").classList.remove("hidden"); }
@@ -285,10 +296,11 @@ $id("nt-form-entrar").addEventListener("submit", async (ev) => {
       const s1 = $id("nt-senha").value, s2 = $id("nt-senha2").value;
       if (s1.length < 6) throw new Error("A senha precisa ter pelo menos 6 caracteres (letras ou números).");
       if (s1 !== s2) throw new Error("As duas senhas não são iguais.");
-      await chamarPrimeiroAcesso({ usuario, senha: s1 });
+      if (!$id("nt-aceite").checked) throw new Error("Para continuar, leia e marque que aceita os Termos de uso e a Política de privacidade.");
+      await chamarPrimeiroAcesso({ usuario, senha: s1, aceiteTermos: true });
       sairPrimeiroAcesso(); toast("Senha criada. Entrando…");
       gravarSessao(await pedirToken("password", { email: usuario + "@" + DOMINIO_EMAIL, password: s1 }));
-      $id("nt-senha").value = ""; $id("nt-senha2").value = ""; await iniciar(); return;
+      $id("nt-senha").value = ""; $id("nt-senha2").value = ""; await iniciar(); tutorial(0); return;
     }
     const pendente = (await chamarPrimeiroAcesso({ usuario }).catch(() => ({}))).pendente;
     if (pendente) { entrarPrimeiroAcesso(); return; }
@@ -302,9 +314,39 @@ $id("nt-form-entrar").addEventListener("submit", async (ev) => {
 $id("nt-sair").addEventListener("click", () => { if (!confirm("Sair do NeuroTrilha neste aparelho?")) return; gravarSessao(null); location.reload(); });
 
 // ---- telas
+// ---- tutorial guiado: aparece depois de criar a senha no primeiro acesso; depois, em Conta → "Ver o tutorial"
+const PASSOS_TUTORIAL = [
+  { titulo: "Bem-vindo(a) ao NeuroTrilha!", texto: "Em 5 passos rápidos, veja onde fica cada coisa. Pode pular quando quiser." },
+  { alvo: '.nt-menu [data-view="pacientes"]', vista: "pacientes", titulo: "1. Pacientes", texto: "Comece cadastrando a ficha do paciente. O termo de consentimento é assinado na própria tela." },
+  { alvo: '.nt-menu [data-view="adaptive"]', vista: "adaptive", titulo: "2. Avaliar", texto: "Escolha a ficha, um conjunto pronto (ou as áreas que quiser) e toque em Começar." },
+  { alvo: "#ad-setup", vista: "adaptive", titulo: "3. Tablet do paciente", texto: "No tablet, abra o NeuroTrilha: aparece um código. Digite o código aqui para enviar o teste e acompanhe tudo ao vivo." },
+  { alvo: "#ad-lista-painel", vista: "adaptive", titulo: "4. Relatório, laudo e devolutiva", texto: "No fim, abra o Relatório. Dali saem o laudo, a devolutiva para a família pelo WhatsApp e os exercícios em casa." },
+  { alvo: '.nt-menu [data-view="conta"]', vista: "conta", titulo: "5. Conta", texto: "Coloque o logo da sua clínica (sai no laudo) e ligue a verificação em duas etapas para mais segurança." }
+];
+function tutorial(i) {
+  const passo = PASSOS_TUTORIAL[i]; if (!passo) return fecharTutorial();
+  let cx = $id("nt-tutorial");
+  if (!cx) {
+    document.body.insertAdjacentHTML("beforeend", '<div id="nt-tutorial" role="dialog" aria-modal="true" aria-labelledby="nt-tut-titulo"><div class="nt-tut-foco"></div><div class="nt-tut-cartao"><b id="nt-tut-titulo"></b><p id="nt-tut-texto"></p><div class="nt-tut-acoes"><span id="nt-tut-n" class="small muted"></span><button type="button" class="quiet" id="nt-tut-pular">Pular</button><button type="button" class="primary" id="nt-tut-prox">Próximo</button></div></div></div>');
+    cx = $id("nt-tutorial"); $id("nt-tut-pular").onclick = fecharTutorial;
+  }
+  if (passo.vista) switchView(passo.vista);
+  $id("nt-tut-titulo").textContent = passo.titulo; $id("nt-tut-texto").textContent = passo.texto; $id("nt-tut-n").textContent = (i + 1) + " de " + PASSOS_TUTORIAL.length;
+  $id("nt-tut-prox").textContent = i === PASSOS_TUTORIAL.length - 1 ? "Começar a usar" : "Próximo"; $id("nt-tut-prox").onclick = () => tutorial(i + 1);
+  const foco = cx.querySelector(".nt-tut-foco"), el = passo.alvo && document.querySelector(passo.alvo);
+  cx.classList.toggle("sem-foco", !el);
+  if (el) {
+    el.scrollIntoView({ block: "center" }); const r = el.getBoundingClientRect();
+    Object.assign(foco.style, { display: "block", left: (r.left - 6) + "px", top: (r.top - 6) + "px", width: (r.width + 12) + "px", height: (Math.min(r.height, innerHeight * 0.55) + 12) + "px" });
+  } else foco.style.display = "none";
+  $id("nt-tut-prox").focus();
+}
+function fecharTutorial() { const cx = $id("nt-tutorial"); if (cx) cx.remove(); switchView("adaptive"); window.scrollTo(0, 0); }
+document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && $id("nt-tutorial")) fecharTutorial(); });
 function switchView(v) {
   document.querySelectorAll(".view").forEach((el) => el.classList.toggle("active", el.id === "view-" + v));
   document.querySelectorAll(".nt-menu [data-view]").forEach((b) => b.classList.toggle("active", b.dataset.view === v));
+  if (v === "conta" && window.NeuroTrilhaClinica) window.NeuroTrilhaClinica($id("nt-clinica"));
   window.scrollTo(0, 0);
   if (v === "pacientes") desenharPacientes();
   if (v === "conta" && eu && eu.papel === "admin") desenharContas();
@@ -392,6 +434,7 @@ $id("nt-normas").addEventListener("click", async () => {
   catch (e) { toast(e.message); }
 });
 $id("c-usuario").addEventListener("input", () => { const v = normUsuario($id("c-usuario").value); $id("c-usuario-vira").textContent = v && v !== $id("c-usuario").value ? "Vai ficar: " + v : ""; });
+$id("nt-ver-tutorial").addEventListener("click", () => tutorial(0));
 $id("nt-form-conta").addEventListener("submit", async (ev) => {
   ev.preventDefault(); const msg = $id("nt-conta-msg"); msg.style.color = "#b42318";
   const usuario = normUsuario($id("c-usuario").value);
@@ -433,5 +476,6 @@ $id("nt-auditoria-csv").addEventListener("click", () => downloadCSV([["Data e ho
 <script>
 if (lerSessao()) iniciar(); else mostrarEntrar();
 </script>
+<script src="figuras.js"></script>
 </body>
 </html>

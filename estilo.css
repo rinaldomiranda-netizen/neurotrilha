@@ -94,4 +94,7 @@ body{font-family:"Plus Jakarta Sans",Inter,"Segoe UI",Arial,sans-serif;backgroun
 .choice{border-radius:14px}.choice.selected .letter{background:var(--blue)}
 .view.active{animation:nt-surge .3s ease}
 @keyframes nt-surge{from{opacity:0}to{opacity:1}}
+.ad-clinica-cab{display:flex;align-items:center;gap:14px;padding-bottom:12px;margin-bottom:14px;border-bottom:2px solid var(--line)}.ad-clinica-cab img{max-height:64px;max-width:220px;object-fit:contain}.ad-clinica-cab b{display:block;font-size:17px}.ad-clinica-cab small{color:var(--muted);font-size:12px}.ad-rodape-marca{margin-top:28px;padding-top:10px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);text-align:center}.ad-clinica-logo{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:12px 0}.ad-clinica-previa{width:220px;height:90px;border:1px dashed #c2cfdd;border-radius:12px;display:grid;place-items:center;background:#fafcff;overflow:hidden}.ad-clinica-previa img{max-width:100%;max-height:100%;object-fit:contain}
+.emo{width:1.15em;height:1.15em;vertical-align:-.2em;display:inline-block}
+.ad-legenda{display:flex;flex-wrap:wrap;gap:8px 16px;margin:6px 0 14px}.ad-leg{display:inline-flex;align-items:center;gap:6px;font-size:12px}.ad-leg i{width:14px;height:4px;border-radius:2px;display:inline-block}
 @media (prefers-reduced-motion:reduce){.view.active{animation:none}.stat,.panel{transition:none}.stat:hover{transform:none}}

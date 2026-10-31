@@ -12,6 +12,7 @@
 main{max-width:780px;margin:auto;padding:18px}
 .cartao{background:#fff;border-radius:22px;box-shadow:0 8px 24px rgba(20,48,79,.08);padding:22px 24px;margin-bottom:14px}
 h1{font-size:26px;margin:0 0 4px}h2{font-size:20px;color:#0f6f64;margin:0 0 6px}.muted{color:#5d6f86;font-size:15px}
+.clinica{display:flex;align-items:center;gap:14px}.clinica img{max-height:60px;max-width:200px;object-fit:contain}.clinica b{display:block;font-size:18px}.clinica small{color:#4A5B72;font-size:14px}
 ul{margin:6px 0 0;padding-left:22px}li{margin:4px 0}
 .imprimir{border:0;border-radius:999px;padding:12px 22px;font:inherit;font-weight:700;color:#fff;background:#2563A8;cursor:pointer}
 .aviso{font-size:14px;color:#5d6f86;text-align:center;margin:18px 0}
@@ -35,9 +36,10 @@ async function carregar() {
     const r = await fetch(API + "/api/familia/" + TOKEN, { cache: "no-store" }), d = await r.json();
     if (!r.ok) throw new Error(d.error || "Link inválido.");
     document.getElementById("principal").innerHTML =
+      (d.clinica && (d.clinica.logo || d.clinica.nome) ? '<div class="cartao clinica">' + (d.clinica.logo && /^data:image\/(png|jpeg|webp);base64,/.test(d.clinica.logo) ? '<img src="' + esc(d.clinica.logo) + '" alt="Logo da clínica">' : "") + "<div>" + (d.clinica.nome ? "<b>" + esc(d.clinica.nome) + "</b>" : "") + (d.clinica.contato ? "<small>" + esc(d.clinica.contato) + "</small>" : "") + "</div></div>" : "") +
       '<div class="cartao"><h1>Devolutiva da avaliação' + (d.nome ? " de " + esc(d.nome) : "") + '</h1><p class="muted">Avaliação feita em ' + new Date(d.data).toLocaleDateString("pt-BR") + (d.profissional ? " · " + esc(d.profissional) + (d.registro ? " (" + esc(d.registro) + ")" : "") : "") + "</p></div>" +
       TITULOS.filter((k) => (d.secoes[k[0]] || "").trim()).map((k) => '<div class="cartao"><h2>' + esc(k[1]) + "</h2>" + bloco(d.secoes[k[0]]) + "</div>").join("") +
-      '<p style="text-align:center"><button class="imprimir" onclick="window.print()">Imprimir ou salvar em PDF</button></p><p class="aviso">Documento sigiloso, enviado pelo(a) profissional responsável. Em caso de dúvida, converse com ele(a).</p>';
+      '<p style="text-align:center"><button class="imprimir" onclick="window.print()">Imprimir ou salvar em PDF</button></p><p class="aviso">Documento sigiloso, enviado pelo(a) profissional responsável. Em caso de dúvida, converse com ele(a). <a href="privacidade.html">Política de privacidade</a></p>';
   } catch (e) { document.getElementById("principal").innerHTML = '<div class="cartao"><h1>Não foi possível abrir</h1><p>' + esc(e.message) + "</p><p>Peça um novo link ao profissional.</p></div>"; }
 }
 if (TOKEN) carregar(); else document.getElementById("principal").innerHTML = '<div class="cartao"><h1>Link incompleto</h1><p>Peça o link ao profissional.</p></div>';

@@ -108,7 +108,10 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
       }
       // ---- devolutiva para a família (link do WhatsApp, sem login): só o texto em linguagem simples
       m = caminho.match(/^\/api\/familia\/([A-Za-z0-9_-]{20,64})$/);
-      if (m && req.method === 'GET') { const d = G.paraFamilia(await armazem.sessaoPorDevolutiva(m[1])); return d ? json(200, d) : erro(404, 'Link inválido ou desativado pelo profissional.'); }
+      if (m && req.method === 'GET') {
+        const sf = await armazem.sessaoPorDevolutiva(m[1]), dono = sf && sf.owner ? await armazem.conta(sf.owner) : null;
+        const d = G.paraFamilia(sf, dono && dono.clinica); return d ? json(200, d) : erro(404, 'Link inválido ou desativado pelo profissional.');
+      }
       // ---- exercícios em casa: um link fixo; cada vez que a família abre, monta os exercícios do dia (sem login)
       m = caminho.match(/^\/api\/plano\/([A-Za-z0-9_-]{20,64})$/);
       if (m && req.method === 'GET') {
@@ -163,8 +166,9 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
         if (!pendente) return erro(409, 'Este usuário já tem senha. Entre com ela, ou peça à RMD um novo primeiro acesso.');
         const senha = String(b.senha);
         if (senha.length < 6 || senha.length > 128) return erro(400, 'A senha precisa ter pelo menos 6 caracteres.');
+        if (b.aceiteTermos !== true) return erro(400, 'Para continuar, aceite os Termos de uso e a Política de privacidade.');
         await armazem.trocarSenha(c.user_id, senha); await armazem.atualizarConta(c.user_id, { primeiro_acesso: false, senha_provisoria: false });
-        await armazem.registrar({ user_id: c.user_id, usuario: c.usuario, acao: 'criou_propria_senha', alvo: '', detalhe: '', ip: String(req.headers.get('x-forwarded-for') || '').split(',')[0].trim().slice(0, 60) });
+        await armazem.registrar({ user_id: c.user_id, usuario: c.usuario, acao: 'criou_propria_senha', alvo: '', detalhe: 'aceitou termos e privacidade v1.0', ip: String(req.headers.get('x-forwarded-for') || '').split(',')[0].trim().slice(0, 60) });
         return json(200, { ok: true });
       }
 
@@ -180,6 +184,13 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
       const registrarLeitura = (acao, alvo = '') => { const k = userId + '|' + acao + '|' + alvo, t = agora(); if (t - (leituras.get(k) || 0) < 30 * 60 * 1000) return; leituras.set(k, t); if (leituras.size > 5000) leituras.clear(); return registrar(acao, alvo); };
 
       if (caminho === '/api/eu' && req.method === 'GET') { await registrarLeitura('entrou'); return json(200, { usuario: conta.usuario, nome: conta.nome, papel: conta.papel, senhaProvisoria: conta.senha_provisoria, mfa: !!conta.mfa, aal }); }
+      // dados da clínica deste profissional (logo, nome, endereço e contato no laudo e na devolutiva)
+      if (caminho === '/api/eu/clinica' && req.method === 'GET') return json(200, { clinica: conta.clinica || null });
+      if (caminho === '/api/eu/clinica' && req.method === 'PUT') {
+        const r = G.limparClinica(await corpo(req)); if (r.erro) return erro(400, r.erro);
+        await armazem.atualizarConta(userId, { clinica: r.clinica }); await registrar('dados_clinica', '', r.clinica.nome);
+        return json(200, { clinica: r.clinica });
+      }
       if (caminho === '/api/eu/2fa' && req.method === 'POST') {
         const b = await corpo(req) || {};
         if (aal !== 'aal2') return erro(400, 'Confirme primeiro o código do aplicativo autenticador.');

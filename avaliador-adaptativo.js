@@ -16,6 +16,56 @@
   TITLES.adaptive = ["Aplicação adaptativa", "Do mais fácil ao mais difícil, ajustado pela resposta e pelo tempo — acompanhe ao vivo."];
 
   function pessoa(pid) { return (db.participants || []).filter(function (p) { return p.id === pid; })[0] || null; }
+  // ---- dados da clínica: logo, nome, endereço e contato no topo do relatório, do laudo e da devolutiva
+  function carregarClinica() {
+    return api("/api/eu/clinica").then(function (d) { st.clinica = d.clinica || null; }).catch(function () { st.clinica = null; });
+  }
+  function cabClinica() {
+    var c = st.clinica; if (!c || (!c.nome && !c.logo)) return "";
+    var sub = [c.endereco, c.contato].filter(Boolean).map(esc).join(" · ");
+    return '<div class="ad-clinica-cab">' + (c.logo ? '<img src="' + esc(c.logo) + '" alt="Logo da clínica">' : "") + "<div>" + (c.nome ? "<b>" + esc(c.nome) + "</b>" : "") + (sub ? "<small>" + sub + "</small>" : "") + "</div></div>";
+  }
+  var RODAPE_MARCA = '<p class="ad-rodape-marca">NeuroTrilha · uma solução RMD</p>';
+  // formulário em Conta / Configurações (mesmo nos dois programas)
+  window.NeuroTrilhaClinica = function (host) {
+    if (!host) return;
+    carregarClinica().then(function () {
+      var c = st.clinica || {}, logo = c.logo || "";
+      host.innerHTML = '<h3>Dados da clínica (aparecem no laudo e na devolutiva)</h3><p class="small muted">O logo e o nome ficam no topo dos documentos; embaixo vai "NeuroTrilha · uma solução RMD".</p>' +
+        '<div class="formgrid"><div class="field"><label for="cl-nome">Nome da clínica ou do consultório</label><input id="cl-nome" maxlength="120" value="' + esc(c.nome || "") + '"></div>' +
+        '<div class="field"><label for="cl-end">Endereço</label><input id="cl-end" maxlength="200" value="' + esc(c.endereco || "") + '"></div>' +
+        '<div class="field"><label for="cl-cont">Telefone, e-mail ou site</label><input id="cl-cont" maxlength="120" value="' + esc(c.contato || "") + '"></div></div>' +
+        '<div class="ad-clinica-logo"><div id="cl-previa" class="ad-clinica-previa"></div><div><label class="secondary" style="display:inline-block;padding:9px 14px;border-radius:10px;cursor:pointer">Escolher logo<input id="cl-arquivo" type="file" accept="image/png,image/jpeg,image/webp" style="display:none"></label> <button type="button" class="quiet" id="cl-tirar">Tirar logo</button><p class="small muted" style="margin:6px 0 0">PNG ou JPG. O sistema diminui a imagem sozinho.</p></div></div>' +
+        '<button type="button" class="primary" id="cl-salvar">Salvar dados da clínica</button> <span id="cl-msg" class="small" role="status"></span>';
+      function previa() { $("cl-previa").innerHTML = logo ? '<img src="' + esc(logo) + '" alt="Logo da clínica">' : '<span class="small muted">sem logo</span>'; }
+      previa();
+      $("cl-arquivo").onchange = function () {
+        var f = this.files && this.files[0]; if (!f) return;
+        var leitor = new FileReader();
+        leitor.onload = function () {
+          var img = new Image();
+          img.onload = function () {
+            // diminui para caber em 480x200 e guarda como PNG (ou JPG se ficar grande demais)
+            var k = Math.min(1, 480 / img.width, 200 / img.height), cv = document.createElement("canvas");
+            cv.width = Math.max(1, Math.round(img.width * k)); cv.height = Math.max(1, Math.round(img.height * k));
+            cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+            var u = cv.toDataURL("image/png"); if (u.length > 190000) u = cv.toDataURL("image/jpeg", 0.85);
+            if (u.length > 190000) { $("cl-msg").textContent = "Imagem muito grande. Tente outra."; return; }
+            logo = u; previa(); $("cl-msg").textContent = "Logo pronto. Toque em Salvar.";
+          };
+          img.src = leitor.result;
+        };
+        leitor.readAsDataURL(f);
+      };
+      $("cl-tirar").onclick = function () { logo = ""; previa(); };
+      $("cl-salvar").onclick = async function () {
+        try {
+          var d = await api("/api/eu/clinica", { method: "PUT", body: JSON.stringify({ nome: $("cl-nome").value, endereco: $("cl-end").value, contato: $("cl-cont").value, logo: logo }) });
+          st.clinica = d.clinica; $("cl-msg").style.color = "#087764"; $("cl-msg").textContent = "Salvo. Já aparece no laudo e na devolutiva.";
+        } catch (e) { $("cl-msg").style.color = "#b42318"; $("cl-msg").textContent = e.message; }
+      };
+    });
+  };
   function idadeTexto(anos) { if (anos == null) return "—"; var a = Math.floor(anos), m = Math.floor((anos - a) * 12); return a + " anos e " + m + " meses"; }
   function numero(v, casas) { return v == null ? "—" : String(Math.round(v * Math.pow(10, casas || 0)) / Math.pow(10, casas || 0)).replace(".", ","); }
   function seg(ms) { return ms == null ? "—" : numero(ms / 1000, 1) + " s"; }
@@ -204,10 +254,11 @@
       var d = await api("/api/adaptativa"); st.lista = d.sessoes || [];
       // retorno automático: exercícios que as famílias fizeram em casa (os mais recentes primeiro)
       var casa = st.lista.filter(function (x) { return x.modo === "estimulacao" && x.historico !== 0; }).slice(0, 8);
-      var hostCasa = $("ad-casa"); if (!hostCasa) { host.insertAdjacentHTML("beforebegin", '<div id="ad-casa"></div>'); hostCasa = $("ad-casa"); hostCasa.addEventListener("click", function (ev) { var b = ev.target.closest("[data-ad-abrir]"); if (b) abrirPorId(b.dataset.adAbrir, b.dataset.fim === "1"); }); }
+      var hostCasa = $("ad-casa"); if (!hostCasa) { host.insertAdjacentHTML("beforebegin", '<div id="ad-casa"></div>'); hostCasa = $("ad-casa"); hostCasa.addEventListener("click", function (ev) { var b = ev.target.closest("[data-ad-abrir]"); if (b) abrirPorId(b.dataset.adAbrir, b.dataset.fim === "1"); var l = ev.target.closest("[data-ad-lembrar]"); if (l) lembrarFamilia(l.dataset.adLembrar); }); }
       hostCasa.innerHTML = casa.length ? '<h3 style="margin-top:0">Exercícios feitos em casa</h3><div class="tablewrap"><table class="table"><thead><tr><th>Paciente</th><th>Quando</th><th>Situação</th><th>Nível alcançado</th><th></th></tr></thead><tbody>' + casa.map(function (x) {
         var p = pessoa(x.participantId), fim = ["concluida", "encerrada"].indexOf(x.status) >= 0, niv = (x.areas || []).filter(function (a) { return a.nivel != null; }).map(function (a) { return esc(M.dominio(a.id).curto) + " " + numero(a.nivel, 1); }).join(" · ");
         return "<tr><td><b>" + esc(p ? p.name : "—") + "</b></td><td>" + dataHora(x.atualizadoEm || x.criadoEm) + "</td><td>" + (fim ? '<span class="pill">feito ✔</span>' : '<span class="small muted">começou, não terminou</span>') + "</td><td class=\"small\">" + (niv || "—") + '</td><td><button class="secondary" data-ad-abrir="' + esc(x.id) + '" data-fim="' + (fim ? 1 : 0) + '">Ver</button></td></tr>'; }).join("") + "</tbody></table></div>" : "";
+      hostCasa.innerHTML += lembretesHtml(st.lista);
       host.innerHTML = st.lista.length ? '<table class="table"><thead><tr><th>Participante</th><th>Data</th><th>Situação</th><th>Áreas</th><th>QI estimado</th><th>Parecer</th><th></th></tr></thead><tbody>' + st.lista.map(function (x) {
         var p = pessoa(x.participantId), fim = ["concluida", "encerrada"].indexOf(x.status) >= 0;
         return "<tr><td><b>" + esc(p ? p.name : "—") + '</b><br><span class="small muted">' + esc(p ? p.code : "") + "</span></td><td>" + dataHora(x.criadoEm) + "</td><td>" + esc(NOME_STATUS[x.status] || x.status) + (x.modo === "estimulacao" ? ' <span class="pill">estimulação</span>' : "") + "</td><td>" + (x.dominios || []).length +
@@ -222,6 +273,25 @@
     var p = pessoa(x.participantId), nome = p ? p.name : "esta pessoa";
     if (!confirm("Excluir a aplicação de " + nome + " (" + dataHora(x.criadoEm) + ", " + (NOME_STATUS[x.status] || x.status) + ")?\n\nAs respostas e o relatório desta aplicação serão apagados e NÃO dá para desfazer. A ficha da pessoa e as outras aplicações continuam.")) return;
     try { await api("/api/adaptativa/" + encodeURIComponent(id), { method: "DELETE" }); toast("Aplicação excluída."); listar(); } catch (e) { toast(e.message); }
+  }
+  // ---- lembrete à família pelo WhatsApp: quem tem exercícios em casa ativos (link fixo) e quando fez pela última vez
+  function planoAtivo(p) { return (p.planos || []).filter(function (x) { return x.ativo; }).slice(-1)[0] || null; }
+  function lembretesHtml(lista) {
+    var com = (db.participants || []).filter(planoAtivo); if (!com.length) return "";
+    return '<h3>Lembrar a família dos exercícios</h3><p class="small muted">Abre o WhatsApp com a mensagem pronta e o link dos exercícios. Sem custo.</p><div class="tablewrap"><table class="table"><thead><tr><th>Paciente</th><th>Último exercício em casa</th><th></th></tr></thead><tbody>' +
+      com.map(function (p) {
+        var ult = lista.filter(function (x) { return x.participantId === p.id && x.modo === "estimulacao" && x.historico !== 0; })[0];
+        var dias = ult ? Math.floor((Date.now() - Date.parse(ult.atualizadoEm || ult.criadoEm)) / 86400000) : null;
+        return "<tr><td><b>" + esc(p.name) + "</b></td><td>" + (ult ? dataHora(ult.atualizadoEm || ult.criadoEm) + (dias >= 3 ? ' <span class="pill wait">há ' + dias + " dias</span>" : "") : '<span class="small muted">ainda não fez</span>') +
+          '</td><td><button type="button" class="secondary" data-ad-lembrar="' + esc(p.id) + '">Lembrar pelo WhatsApp</button></td></tr>';
+      }).join("") + "</tbody></table></div>";
+  }
+  function lembrarFamilia(pid) {
+    var p = pessoa(pid), pl = p && planoAtivo(p); if (!pl) return;
+    var link = location.href.replace(/[?#].*$/, "").replace(/[^/]*$/, "") + "paciente.html?plano=" + encodeURIComponent(pl.token), nome = (p.preferredName || p.name || "").split(" ")[0];
+    var texto = "Olá! Lembrete do NeuroTrilha: hoje tem exercício" + (nome ? " de " + nome : "") + " (uns 10 minutinhos, em um lugar calmo). É só abrir este link: " + link;
+    var tel = String(p.guardianPhone || p.phone || "").replace(/\D/g, ""); if (tel.length === 10 || tel.length === 11) tel = "55" + tel;
+    window.open("https://wa.me/" + (tel.length >= 12 ? tel : "") + "?text=" + encodeURIComponent(texto), "_blank", "noopener");
   }
   async function abrirPorId(id, relatorio) {
     try { var s = await api("/api/adaptativa/" + encodeURIComponent(id)); if (relatorio) mostrarRelatorio(s); else abrirSessao(s); } catch (e) { toast(e.message); }
@@ -300,7 +370,7 @@
     var n = Math.max(vals.length, 2), x = function (i) { return 30 + i * ((w - 50) / (n - 1)); }, y = function (v) { return h - 22 - v * ((h - 36) / Math.max(1, max)); };
     return '<svg viewBox="0 0 ' + w + " " + h + '" class="ad-curva" role="img" aria-label="Palavras lembradas por rodada"><line x1="26" x2="' + (w - 10) + '" y1="' + y(0) + '" y2="' + y(0) + '" stroke="#e4ebf3"/>' +
       '<path d="' + vals.map(function (v, i) { return (i ? "L" : "M") + x(i) + " " + y(v); }).join(" ") + '" fill="none" stroke="#2f6fe4" stroke-width="2"/>' +
-      vals.map(function (v, i) { return '<circle cx="' + x(i) + '" cy="' + y(v) + '" r="5" fill="#17a895"/><text x="' + x(i) + '" y="' + (y(v) - 9) + '" font-size="11" text-anchor="middle">' + v + '</text><text x="' + x(i) + '" y="' + (h - 6) + '" font-size="10" text-anchor="middle" fill="#6b7b90">' + (i + 1) + "ª</text>"; }).join("") + "</svg>";
+      vals.map(function (v, i) { return '<circle cx="' + x(i) + '" cy="' + y(v) + '" r="5" fill="#0F7A6B"/><text x="' + x(i) + '" y="' + (y(v) - 9) + '" font-size="11" text-anchor="middle">' + v + '</text><text x="' + x(i) + '" y="' + (h - 6) + '" font-size="10" text-anchor="middle" fill="#6b7b90">' + (i + 1) + "ª</text>"; }).join("") + "</svg>";
   }
   function medidasNovasHtml(r, s, sec) {
     var por = function (id) { return (r.areas || []).filter(function (a) { return a.id === id && a.metricas; })[0]; }, h = "", m;
@@ -352,6 +422,7 @@
     };
   }
   function mostrarDevolutiva(s) {
+    if (st.clinica === undefined) { carregarClinica().then(function () { mostrarDevolutiva(s); }); return; }
     var p = pessoa(s.participantId), r = s.resultado || {}, base = rascunhoDevolutiva(s, p, r), salvo = s.devolutiva || {}, txt = Object.assign({}, base, salvo.secoes || {});
     var prof = salvo.profissional || (s.laudo && s.laudo.profissional) || (s.parecer && s.parecer.profissional) || "", reg = salvo.registro || (s.laudo && s.laudo.registro) || (s.parecer && s.parecer.registro) || "";
     $("ad-relatorio").innerHTML = '<div class="ad-rel-cab no-print"><button class="quiet" id="ad-dev-voltar">← Voltar ao relatório</button><div class="actions"><button class="secondary" id="ad-dev-salvar">Salvar</button><button class="secondary" id="ad-dev-whats">Enviar à família (WhatsApp)</button><button class="primary" id="ad-dev-imprimir">Imprimir / salvar PDF</button></div></div><div id="ad-dev-link" class="no-print"></div>' +
@@ -362,9 +433,9 @@
     function desenhar() {
       var v = function (k) { var x = document.querySelector('[data-dev="' + k + '"]'); return x ? x.value.trim() : ""; };
       var par = function (t) { var l = t.split("\n").filter(Boolean); return l.every(function (x) { return /^- /.test(x); }) ? "<ul>" + l.map(function (x) { return "<li>" + esc(x.slice(2)) + "</li>"; }).join("") + "</ul>" : l.map(function (x) { return "<p>" + esc(x) + "</p>"; }).join(""); };
-      $("ad-dev-doc").innerHTML = '<div class="ad-marca">NeuroTrilha</div><h2>Devolutiva da avaliação</h2><p class="muted">' + esc(p ? p.name : "") + " · " + new Date(s.criadoEm).toLocaleDateString("pt-BR") + "</p>" +
+      $("ad-dev-doc").innerHTML = (cabClinica() || '<div class="ad-marca">NeuroTrilha</div>') + '<h2>Devolutiva da avaliação</h2><p class="muted">' + esc(p ? p.name : "") + " · " + new Date(s.criadoEm).toLocaleDateString("pt-BR") + "</p>" +
         DEV_SECOES.map(function (k) { return v(k[0]) ? "<h3>" + esc(k[1]) + "</h3>" + par(v(k[0])) : ""; }).join("") +
-        '<p style="margin-top:36px">' + esc($("ad-dev-prof").value || "") + (($("ad-dev-reg").value || "") ? " · " + esc($("ad-dev-reg").value) : "") + "</p>";
+        '<p style="margin-top:36px">' + esc($("ad-dev-prof").value || "") + (($("ad-dev-reg").value || "") ? " · " + esc($("ad-dev-reg").value) : "") + "</p>" + RODAPE_MARCA;
     }
     desenhar();
     $("ad-relatorio").querySelectorAll("textarea,input").forEach(function (x) { x.addEventListener("input", desenhar); });
@@ -488,18 +559,41 @@
     try {
       var d = await api("/api/adaptativa?participante=" + encodeURIComponent(s.participantId)), lista = (d.sessoes || []).filter(function (x) { return x.qiEstimado != null && x.modo !== "estimulacao"; }).reverse();
       $("ad-estimulacao").innerHTML = progressoEstimulacao(d.sessoes || []);
+      $("ad-evolucao-areas").innerHTML = graficoAreas(d.sessoes || [], s.id);
       if (lista.length >= 2) $("ad-evolucao").innerHTML = "<h3>Evolução entre avaliações</h3>" + graficoEvolucao(lista) + '<div class="tablewrap"><p class="small muted">Mudança confiável: só é considerada mudança real quando a diferença passa de ' + M.mudancaConfiavel(100, 100).limiar + ' pontos (índice de mudança confiável, fidedignidade assumida 0,80). Diferenças menores podem ser só variação normal de uma aplicação para outra. As tarefas da reavaliação são formas paralelas (não repetem as já vistas).</p><table class="table"><thead><tr><th>Data</th><th>QI estimado (mudança)</th>' +
         M.DOMINIOS.filter(function (dm) { return lista.some(function (x) { return (x.areas || []).some(function (a) { return a.id === dm.id && a.indice != null; }); }); }).map(function (dm) { return "<th>" + esc(dm.curto) + "</th>"; }).join("") + "</tr></thead><tbody>" +
         lista.map(function (x, i) { var mc = i ? M.mudancaConfiavel(lista[i - 1].qiEstimado, x.qiEstimado) : null; return "<tr><td>" + dataHora(x.criadoEm) + (x.id === s.id ? " <b>(esta)</b>" : "") + "</td><td><b>" + x.qiEstimado + "</b>" + (mc ? ' <span class="small">(' + (mc.delta > 0 ? "+" : "") + mc.delta + ": " + (mc.confiavel ? "<b>" + mc.sentido + "</b>" : mc.sentido) + ")</span>" : "") + "</td>" + M.DOMINIOS.filter(function (dm) { return lista.some(function (y) { return (y.areas || []).some(function (a) { return a.id === dm.id && a.indice != null; }); }); }).map(function (dm) { var a = (x.areas || []).filter(function (z) { return z.id === dm.id; })[0]; return "<td>" + (a && a.indice != null ? a.indice : "—") + "</td>"; }).join("") + "</tr>"; }).join("") + "</tbody></table></div>";
     } catch (e) { /* sem evolução */ }
     montarQuestionarios($("ad-questionarios"), s.participantId, s.idadeAnos || 0, p ? (p.preferredName || p.name || "").split(" ")[0] : "");
   }
+  // evolução por área: nível alcançado (1 a 16) em cada avaliação e em cada sessão de exercícios em casa, numa linha do tempo
+  var CORES_AREAS = ["#2563A8", "#E8742F", "#0F7A6B", "#8B7FD1", "#B4532A", "#5B6B80"];
+  function graficoAreas(sessoes, atual) {
+    var lista = sessoes.filter(function (x) { return (x.areas || []).some(function (a) { return a.nivel != null; }); }).slice().reverse();
+    if (lista.length < 2) return "";
+    var conta = {}; lista.forEach(function (x) { x.areas.forEach(function (a) { if (a.nivel != null) conta[a.id] = (conta[a.id] || 0) + 1; }); });
+    var ids = Object.keys(conta).filter(function (k) { return conta[k] >= 2; }).sort(function (a, b) { return conta[b] - conta[a]; }).slice(0, 6);
+    if (!ids.length) return "";
+    var w = 620, h = 230, esq = 34, x = function (i) { return esq + 12 + i * ((w - esq - 30) / Math.max(1, lista.length - 1)); }, y = function (v) { return h - 30 - (Math.max(1, Math.min(16, v)) - 1) * ((h - 50) / 15); };
+    var guia = [1, 4, 8, 12, 16].map(function (v) { return '<line x1="' + esq + '" x2="' + (w - 8) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#E3E9F1"/><text x="' + (esq - 6) + '" y="' + (y(v) + 4) + '" font-size="11" text-anchor="end" fill="#5B6B80">' + v + "</text>"; }).join("");
+    var datas = lista.map(function (x2, i) { return '<text x="' + x(i) + '" y="' + (h - 10) + '" font-size="10" text-anchor="middle" fill="' + (x2.id === atual ? "#14304F" : "#5B6B80") + '"' + (x2.id === atual ? ' font-weight="700"' : "") + ">" + new Date(x2.criadoEm).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) + "</text>"; }).join("");
+    var linhas = ids.map(function (id, k) {
+      var cor = CORES_AREAS[k], pts = [];
+      lista.forEach(function (x2, i) { var a = x2.areas.filter(function (z) { return z.id === id; })[0]; if (a && a.nivel != null) pts.push({ i: i, v: a.nivel, casa: x2.modo === "estimulacao" }); });
+      return '<path d="' + pts.map(function (q, j) { return (j ? "L" : "M") + x(q.i) + " " + y(q.v); }).join(" ") + '" fill="none" stroke="' + cor + '" stroke-width="2.5" stroke-linejoin="round"/>' +
+        pts.map(function (q) { return '<circle cx="' + x(q.i) + '" cy="' + y(q.v) + '" r="4.5" fill="' + (q.casa ? "#fff" : cor) + '" stroke="' + cor + '" stroke-width="2"><title>' + esc(M.dominio(id).curto) + ": nível " + numero(q.v, 1) + (q.casa ? " (em casa)" : " (avaliação)") + "</title></circle>"; }).join("");
+    }).join("");
+    var legenda = ids.map(function (id, k) { return '<span class="ad-leg"><i style="background:' + CORES_AREAS[k] + '"></i>' + esc(M.dominio(id).curto) + "</span>"; }).join("") +
+      '<span class="ad-leg small muted">● avaliação · ○ exercício em casa</span>';
+    return '<h3>Evolução por área</h3><p class="small muted">Nível alcançado (1 a 16) em cada avaliação e em cada sessão de exercícios em casa. Linha subindo ao longo do tempo indica progresso.</p>' +
+      '<svg viewBox="0 0 ' + w + " " + h + '" class="ad-barras" role="img" aria-label="Evolução do nível por área ao longo do tempo">' + guia + linhas + datas + "</svg>" + '<div class="ad-legenda">' + legenda + "</div>";
+  }
   function graficoEvolucao(lista) {
     var w = 560, h = 160, x = function (i) { return 40 + i * ((w - 60) / Math.max(1, lista.length - 1)); }, y = function (v) { return h - 20 - (Math.max(40, Math.min(160, v)) - 40) * ((h - 40) / 120); };
-    var guia = [70, 100, 130].map(function (v) { return '<line x1="34" x2="' + (w - 10) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="' + (v === 100 ? "#2f6fe4" : "#e4ebf3") + '"/><text x="4" y="' + (y(v) + 4) + '" font-size="11" fill="#6b7b90">' + v + "</text>"; }).join("");
+    var guia = [70, 100, 130].map(function (v) { return '<line x1="34" x2="' + (w - 10) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="' + (v === 100 ? "#2563A8" : "#E3E9F1") + '"/><text x="4" y="' + (y(v) + 4) + '" font-size="11" fill="#6b7b90">' + v + "</text>"; }).join("");
     var linha = lista.map(function (s2, i) { return (i ? "L" : "M") + x(i) + " " + y(s2.qiEstimado); }).join(" ");
-    return '<svg viewBox="0 0 ' + w + " " + h + '" class="ad-barras" role="img" aria-label="Evolução do QI estimado">' + guia + '<path d="' + linha + '" fill="none" stroke="#17a895" stroke-width="3"/>' +
-      lista.map(function (s2, i) { return '<circle cx="' + x(i) + '" cy="' + y(s2.qiEstimado) + '" r="5" fill="#17a895"/><text x="' + x(i) + '" y="' + (y(s2.qiEstimado) - 10) + '" font-size="11" text-anchor="middle">' + s2.qiEstimado + '</text><text x="' + x(i) + '" y="' + (h - 4) + '" font-size="10" text-anchor="middle" fill="#6b7b90">' + new Date(s2.criadoEm).toLocaleDateString("pt-BR") + "</text>"; }).join("") + "</svg>";
+    return '<svg viewBox="0 0 ' + w + " " + h + '" class="ad-barras" role="img" aria-label="Evolução do QI estimado">' + guia + '<path d="' + linha + '" fill="none" stroke="#0F7A6B" stroke-width="3"/>' +
+      lista.map(function (s2, i) { return '<circle cx="' + x(i) + '" cy="' + y(s2.qiEstimado) + '" r="5" fill="#0F7A6B"/><text x="' + x(i) + '" y="' + (y(s2.qiEstimado) - 10) + '" font-size="11" text-anchor="middle">' + s2.qiEstimado + '</text><text x="' + x(i) + '" y="' + (h - 4) + '" font-size="10" text-anchor="middle" fill="#6b7b90">' + new Date(s2.criadoEm).toLocaleDateString("pt-BR") + "</text>"; }).join("") + "</svg>";
   }
 
   // ---- refinamentos do relatório: índices compostos, validade, erros, comportamento, encontros
@@ -562,6 +656,7 @@
     };
   }
   function mostrarLaudo(s) {
+    if (st.clinica === undefined) { carregarClinica().then(function () { mostrarLaudo(s); }); return; }
     var p = pessoa(s.participantId), r = s.resultado || {}, base = rascunhoLaudo(s, p, r), salvo = s.laudo || {}, txt = Object.assign({}, base, salvo.secoes || {});
     var prof = salvo.profissional || (s.parecer && s.parecer.profissional) || "", reg = salvo.registro || (s.parecer && s.parecer.registro) || "";
     var h = '<div class="ad-rel-cab no-print"><button class="quiet" id="ad-laudo-voltar">← Voltar ao relatório</button><div class="actions"><button class="secondary" id="ad-laudo-salvar">Salvar laudo</button><button class="primary" id="ad-laudo-imprimir">Imprimir / salvar PDF</button><a class="secondary" style="padding:9px 12px;border-radius:10px;text-decoration:none" href="https://assinador.iti.br/" target="_blank" rel="noopener">Assinar no gov.br</a></div></div>' +
@@ -573,7 +668,7 @@
     function desenhar() {
       var v = function (k) { var x = document.querySelector('[data-laudo="' + k + '"]'); return x ? x.value : ""; };
       var num = 0, par = function (t) { return esc(t).split(/\n{2,}/).map(function (x) { return "<p>" + x.replace(/\n/g, "<br>") + "</p>"; }).join(""); };
-      $("ad-laudo-doc").innerHTML = '<h2 style="text-align:center">LAUDO PSICOLÓGICO</h2>' +
+      $("ad-laudo-doc").innerHTML = cabClinica() + '<h2 style="text-align:center">LAUDO PSICOLÓGICO</h2>' +
         "<h3>" + (++num) + ". Identificação</h3><p><b>Autor(a):</b> " + esc($("ad-laudo-prof").value || "(nome)") + " — " + esc($("ad-laudo-reg").value || "CRP (número)") + "<br><b>Interessado(a):</b> " + esc(p ? p.name : "—") + (p && p.birthDate ? ", nascido(a) em " + p.birthDate.split("-").reverse().join("/") : "") + " (" + idadeTexto(s.idadeAnos) + ")" +
         (v("solicitante") ? "<br><b>Solicitante:</b> " + esc(v("solicitante")) : "") + "<br><b>Finalidade:</b> " + esc(v("finalidade")) + "</p>" +
         ["demanda", "procedimento", "analise", "conclusao", "referencias"].map(function (k) { var t = LAUDO_SECOES.filter(function (x) { return x[0] === k; })[0][1]; return "<h3>" + (++num) + ". " + esc(k === "demanda" ? "Descrição da demanda" : t) + "</h3>" + (v(k) ? par(v(k)) : '<p class="muted">(a completar)</p>'); }).join("") +
@@ -593,13 +688,14 @@
     window.scrollTo(0, 0);
   }
   function mostrarRelatorio(s) {
+    if (st.clinica === undefined) { carregarClinica().then(function () { mostrarRelatorio(s); }); return; }
     clearInterval(st.timer); st.sessao = s;
     var p = pessoa(s.participantId), r = s.resultado || {}, itens = s.historico.filter(function (h) { return !h.treino; });
     var ini = s.historico.length ? s.historico[0].em : s.criadoEm, fimT = s.historico.length ? s.historico[s.historico.length - 1].em : s.atualizadoEm;
     var dur = Math.max(0, Math.round((Date.parse(fimT) - Date.parse(ini)) / 60000));
     var num = 0, sec = function (titulo) { num++; return "<h3>" + num + ". " + titulo + "</h3>"; };
     var h = '<div class="ad-rel-cab no-print"><button class="quiet" id="ad-rel-voltar">← Voltar</button><div class="actions"><button class="secondary" id="ad-rel-csv">Exportar respostas (CSV)</button><button class="secondary" id="ad-rel-laudo">Laudo (modelo CFP)</button><button class="secondary" id="ad-rel-devolutiva">Para família e escola</button><button class="secondary" id="ad-rel-estim">Estimulação em casa</button><button class="primary" id="ad-rel-imprimir">Imprimir / salvar PDF</button></div></div>';
-    h += '<div class="panel ad-rel"><div class="ad-rel-topo"><div><div class="ad-marca">NeuroTrilha</div><h2>Relatório de avaliação cognitiva adaptativa</h2><p class="muted">Instrumento experimental de apoio ao profissional · desenvolvido por RMD</p></div><div class="ad-rel-id">Sessão ' + esc(s.id.slice(0, 11)) + "<br>" + dataHora(s.criadoEm) + "</div></div>";
+    h += '<div class="panel ad-rel">' + cabClinica() + '<div class="ad-rel-topo"><div><div class="ad-marca">NeuroTrilha</div><h2>Relatório de avaliação cognitiva adaptativa</h2><p class="muted">Instrumento experimental de apoio ao profissional · desenvolvido por RMD</p></div><div class="ad-rel-id">Sessão ' + esc(s.id.slice(0, 11)) + "<br>" + dataHora(s.criadoEm) + "</div></div>";
     h += sec("Identificação") + '<div class="ad-ficha">' + [["Nome", p ? p.name : "—"], ["Código", p ? p.code : "—"], ["Nascimento", p ? p.birthDate.split("-").reverse().join("/") : "—"], ["Idade na aplicação", idadeTexto(s.idadeAnos)],
       ["Sexo", p && p.sex || "—"], ["Escolaridade", p && p.education || "—"], ["Avaliador", s.avaliador || "—"], ["Duração aproximada", dur + " min"], ["Situação", NOME_STATUS[s.status] || s.status], ["Forma de aplicação", s.leitor ? "instruções escritas e faladas" : "instruções só faladas, respostas por figuras"]]
       .map(function (x) { return "<div><span>" + esc(x[0]) + "</span><b>" + esc(x[1]) + "</b></div>"; }).join("") + "</div>";
@@ -622,7 +718,7 @@
     h += errosHtml(r, sec);
     h += medidasNovasHtml(r, s, sec);
     h += sec("Como a dificuldade evoluiu em cada área") + "<div class=\"ad-curvas\">" + s.escadas.filter(function (e) { return !e.fixo; }).map(function (e) { return '<div class="ad-curvabox"><b>' + esc(M.dominio(e.dominio).nome) + "</b>" + curva(e.itens, 300, 120) + "</div>"; }).join("") + "</div>";
-    h += '<div id="ad-estim-link" class="no-print"></div><div id="ad-evolucao"></div><div id="ad-estimulacao"></div><div id="ad-questionarios"></div>';
+    h += '<div id="ad-estim-link" class="no-print"></div><div id="ad-evolucao-areas"></div><div id="ad-evolucao"></div><div id="ad-estimulacao"></div><div id="ad-questionarios"></div>';
     h += sec("Pontos fortes e frágeis (comparando a pessoa com ela mesma)") + "<div class=\"ad-ff\"><div><span>Mais fortes</span><b>" + esc((r.fortes || []).join(", ") || "nenhuma área se destacou") + "</b></div><div><span>Mais frágeis</span><b>" + esc((r.fracos || []).join(", ") || "nenhuma área ficou abaixo do restante") + "</b></div></div>";
     h += sec("Comportamento e observações") + comportamentoHtml(s) + ((r.alertas || []).length ? (r.alertas || []).map(function (a) { return '<div class="notice">' + esc(a.texto) + "</div>"; }).join("") : '<p class="muted">Nenhum alerta automático.</p>') +
       ((s.observacoes || []).length ? "<ul class=\"ad-obs\">" + s.observacoes.map(function (o) { return "<li><b>" + dataHora(o.em) + (o.dominio ? " · " + esc(M.dominio(o.dominio).curto) : "") + ":</b> " + esc((o.flags || []).join(", ")) + (o.nota ? " — " + esc(o.nota) : "") + "</li>"; }).join("") + "</ul>" : "");
