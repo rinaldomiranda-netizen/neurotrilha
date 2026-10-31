@@ -25,7 +25,7 @@ a{color:#2563A8}ul{padding-left:22px}li{margin:4px 0}
 <p class="aviso">Modelo em fase de testes. Os trechos destacados em amarelo precisam ser preenchidos pela RMD, e o texto deve ser revisado por um advogado antes do uso com pacientes reais.</p>
 
 <h2>1. Quem somos</h2>
-<p>O NeuroTrilha é um sistema de avaliação cognitiva adaptativa desenvolvido pela RMD (Rinaldo Miranda Dias), <span class="lacuna">[CPF ou CNPJ]</span>, <span class="lacuna">[endereço]</span>. Contato: <span class="lacuna">[e-mail]</span>.</p>
+<p>O NeuroTrilha é um sistema de avaliação cognitiva adaptativa desenvolvido pela RMD (Rinaldo Miranda Dias), <span class="lacuna" data-campo="documento">[CPF ou CNPJ]</span>, <span class="lacuna" data-campo="endereco">[endereço]</span>. Contato: <span class="lacuna" data-campo="email">[e-mail]</span>.</p>
 <p>Quem decide atender e avaliar o paciente é o <b>profissional ou a clínica</b> (controlador dos dados, pela Lei Geral de Proteção de Dados, Lei 13.709/2018). A RMD guarda e processa os dados <b>em nome do profissional</b> (operadora), só para o sistema funcionar.</p>
 
 <h2>2. Quais dados guardamos</h2>
@@ -69,11 +69,27 @@ a{color:#2563A8}ul{padding-left:22px}li{margin:4px 0}
 <p>Confirmar se há dados, ter acesso, corrigir, pedir a eliminação, receber uma cópia, saber com quem foram compartilhados e retirar o consentimento (art. 18 da LGPD). O pedido deve ser feito ao profissional ou à clínica que fez o atendimento; a RMD ajuda o profissional a atender.</p>
 
 <h2>8. Encarregado de dados</h2>
-<p>Encarregado pelo tratamento de dados pessoais da RMD: <span class="lacuna">[nome]</span>, <span class="lacuna">[e-mail]</span>.</p>
+<p>Encarregado pelo tratamento de dados pessoais da RMD: <span class="lacuna" data-campo="encarregado">[nome]</span>, <span class="lacuna" data-campo="email">[e-mail]</span>.</p>
 
 <h2>9. Mudanças</h2>
 <p>Se esta política mudar, a data e a versão no topo serão atualizadas, e os profissionais serão avisados no sistema.</p>
 </div>
 </main>
+<script src="config.js"></script>
+<script>
+/* Preenche os campos amarelos com os "Dados da RMD" salvos no painel do desenvolvedor (nuvem). Sem internet, ficam os campos amarelos. */
+(function () {
+  var c = window.NT_CONFIG; if (!c || !c.FUNCOES) return;
+  fetch(c.FUNCOES + "/api/empresa").then(function (r) { return r.json(); }).then(function (d) {
+    var e = (d && d.empresa) || {};
+    document.querySelectorAll(".lacuna[data-campo]").forEach(function (el) {
+      var v = el.getAttribute("data-campo").split("|").map(function (k) { return e[k]; }).filter(Boolean)[0];
+      if (v) { el.textContent = v; el.classList.remove("lacuna"); }
+    });
+    var aviso = document.querySelector(".aviso");
+    if (aviso && !document.querySelector(".lacuna")) aviso.textContent = "Modelo em fase de testes. O texto deve ser revisado por um advogado antes do uso com pacientes reais.";
+  }).catch(function () { /* sem internet: ficam os campos amarelos */ });
+})();
+</script>
 </body>
 </html>

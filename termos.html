@@ -25,7 +25,7 @@ a{color:#2563A8}ul{padding-left:22px}li{margin:4px 0}
 <p class="aviso">Modelo em fase de testes. Os trechos destacados em amarelo precisam ser preenchidos pela RMD, e o texto deve ser revisado por um advogado antes do uso com pacientes reais.</p>
 
 <h2>1. O que é o NeuroTrilha</h2>
-<p>Sistema de apoio à avaliação cognitiva, desenvolvido pela RMD (Rinaldo Miranda Dias), <span class="lacuna">[CPF ou CNPJ]</span>. Funciona pela internet (celular, tablet e computador) e também como programa no computador.</p>
+<p>Sistema de apoio à avaliação cognitiva, desenvolvido pela RMD (Rinaldo Miranda Dias), <span class="lacuna" data-campo="documento">[CPF ou CNPJ]</span>. Funciona pela internet (celular, tablet e computador) e também como programa no computador.</p>
 <p><b>O NeuroTrilha está em fase de desenvolvimento e testes.</b> Os resultados são estimativas de um instrumento experimental, ainda sem normas brasileiras próprias, e não substituem a avaliação clínica nem testes padronizados. O diagnóstico e o laudo são sempre responsabilidade do profissional.</p>
 
 <h2>2. Quem pode usar</h2>
@@ -57,14 +57,30 @@ a{color:#2563A8}ul{padding-left:22px}li{margin:4px 0}
 
 <h2>7. Conteúdo e direitos</h2>
 <p>O sistema, as tarefas e a marca NeuroTrilha pertencem à RMD. Os dados dos pacientes pertencem aos pacientes e ficam sob a responsabilidade do profissional que os atendeu.</p>
-<p>Créditos: algumas figuras usam o conjunto Twemoji (© Twitter, Inc. e colaboradores), licença CC-BY 4.0.</p>
+<p>Créditos: as figuras usam o conjunto Fluent Emoji 3D (© Microsoft Corporation, licença MIT) e o conjunto Twemoji (© Twitter, Inc. e colaboradores, licença CC-BY 4.0).</p>
 
 <h2>8. Suspensão</h2>
 <p>A RMD pode bloquear uma conta em caso de uso indevido, risco à segurança ou descumprimento destes termos, avisando o profissional sempre que possível.</p>
 
 <h2>9. Contato e foro</h2>
-<p>Dúvidas: <span class="lacuna">[e-mail ou WhatsApp]</span>. Fica eleito o foro de <span class="lacuna">[cidade/UF]</span>.</p>
+<p>Dúvidas: <span class="lacuna" data-campo="email|whatsapp">[e-mail ou WhatsApp]</span>. Fica eleito o foro de <span class="lacuna" data-campo="foro">[cidade/UF]</span>.</p>
 </div>
 </main>
+<script src="config.js"></script>
+<script>
+/* Preenche os campos amarelos com os "Dados da RMD" salvos no painel do desenvolvedor (nuvem). Sem internet, ficam os campos amarelos. */
+(function () {
+  var c = window.NT_CONFIG; if (!c || !c.FUNCOES) return;
+  fetch(c.FUNCOES + "/api/empresa").then(function (r) { return r.json(); }).then(function (d) {
+    var e = (d && d.empresa) || {};
+    document.querySelectorAll(".lacuna[data-campo]").forEach(function (el) {
+      var v = el.getAttribute("data-campo").split("|").map(function (k) { return e[k]; }).filter(Boolean)[0];
+      if (v) { el.textContent = v; el.classList.remove("lacuna"); }
+    });
+    var aviso = document.querySelector(".aviso");
+    if (aviso && !document.querySelector(".lacuna")) aviso.textContent = "Modelo em fase de testes. O texto deve ser revisado por um advogado antes do uso com pacientes reais.";
+  }).catch(function () { /* sem internet: ficam os campos amarelos */ });
+})();
+</script>
 </body>
 </html>

@@ -1,10 +1,12 @@
 /* NeuroTrilha (RMD) — figuras iguais em todos os aparelhos.
    Cada celular, tablet e computador desenha os emojis de um jeito (às vezes bem diferente). Este arquivo troca, na tela,
-   cada emoji pelo mesmo desenho guardado em figuras/ (conjunto Twemoji, licença CC-BY 4.0 — crédito nos Termos de uso).
-   Se a figura não existir ou o arquivo não carregar, o emoji do aparelho continua aparecendo. */
+   cada emoji pelo mesmo desenho guardado no sistema. Primeiro a figura 3D, mais realista e fácil de reconhecer
+   (figuras3d/: Fluent Emoji 3D da Microsoft, licença MIT); se não houver, o desenho plano (figuras/: Twemoji, CC-BY 4.0).
+   Créditos nos Termos de uso. Se a figura não existir ou o arquivo não carregar, o emoji do aparelho continua aparecendo. */
 (function () {
   "use strict";
-  var BASE = "figuras/", SVG = "http://www.w3.org/2000/svg", tem = null;
+  var BASE = "figuras/", BASE3D = "figuras3d/", SVG = "http://www.w3.org/2000/svg", tem = null, tem3d = new Set();
+  function arquivo(c) { return tem3d.has(c) ? BASE3D + c + ".webp" : BASE + c + ".svg"; }
   var EMO = /\p{Extended_Pictographic}/u, PULAR = /^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE|INPUT)$/;
   var seg = window.Intl && Intl.Segmenter ? new Intl.Segmenter("pt", { granularity: "grapheme" }) : null;
   function partes(t) { return seg ? Array.from(seg.segment(t), function (x) { return x.segment; }) : Array.from(t); }
@@ -18,10 +20,12 @@
   function trocarNoDesenho(el) {
     var t = el.textContent.trim(), c = codigo(t); if (!tem.has(c)) return;
     var fs = parseFloat(el.getAttribute("font-size")) || 16, x = parseFloat(el.getAttribute("x")) || 0, y = parseFloat(el.getAttribute("y")) || 0;
-    var img = document.createElementNS(SVG, "image");
-    img.setAttribute("href", BASE + c + ".svg");
-    img.setAttribute("x", el.getAttribute("text-anchor") === "middle" ? x - fs / 2 : x);
-    img.setAttribute("y", y - fs * 0.86); img.setAttribute("width", fs); img.setAttribute("height", fs);
+    var img = document.createElementNS(SVG, "image"), svg = el.ownerSVGElement;
+    // figura sozinha no cartão: um pouco maior, para ocupar bem o espaço (a letra do emoji deixava muita sobra)
+    var s = svg && svg.querySelectorAll("text,image").length <= 1 ? fs * 1.3 : fs;
+    var cx = el.getAttribute("text-anchor") === "middle" ? x : x + fs / 2, cy = y - fs * 0.36;
+    img.setAttribute("href", arquivo(c));
+    img.setAttribute("x", cx - s / 2); img.setAttribute("y", cy - s / 2); img.setAttribute("width", s); img.setAttribute("height", s);
     el.parentNode.replaceChild(img, el);
   }
   // emoji no meio de um texto normal: vira <img class="emo"> (tamanho acompanha a letra)
@@ -31,7 +35,7 @@
       var c = EMO.test(s) ? codigo(s) : null;
       if (c && tem.has(c)) {
         if (buf) { frag.appendChild(document.createTextNode(buf)); buf = ""; }
-        var i = document.createElement("img"); i.src = BASE + c + ".svg"; i.alt = s; i.className = "emo"; i.draggable = false;
+        var i = document.createElement("img"); i.src = arquivo(c); i.alt = s; i.className = "emo"; i.draggable = false;
         frag.appendChild(i); mudou = true;
       } else buf += s;
     });
@@ -56,8 +60,9 @@
     var nos = []; while (w.nextNode()) nos.push(w.currentNode);
     nos.forEach(trocarNoTexto);
   }
-  fetch(BASE + "indice.json").then(function (r) { return r.ok ? r.json() : []; }).then(function (lista) {
-    tem = new Set(lista); if (!tem.size) return;
+  var lerIndice = function (u) { return fetch(u).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; }); };
+  Promise.all([lerIndice(BASE + "indice.json"), lerIndice(BASE3D + "indice.json")]).then(function (l) {
+    tem3d = new Set(l[1]); tem = new Set(l[0].concat(l[1])); if (!tem.size) return;
     varrer(document.body);
     new MutationObserver(function (ms) {
       ms.forEach(function (m) { if (m.type === "characterData") varrer(m.target); else Array.prototype.forEach.call(m.addedNodes, varrer); });

@@ -13,6 +13,10 @@
 //   questionário: POST/GET /api/questionarios · GET/POST /api/q/:token      (pais e professores respondem sem login)
 //   pesquisa:     GET /api/admin/normas (só RMD; dados anônimos de quem autorizou)
 //   LGPD:         GET /api/participantes/:id/exportar · DELETE /api/participantes/:id · GET /api/admin/auditoria · POST /api/eu/2fa
+//   desenvolvedor (RMD): planos, preços e funções de cada cliente · problemas do sistema · dados da RMD nos termos
+//                 GET/PUT /api/admin/planos · GET /api/admin/erros · PUT /api/admin/erros/:id · GET/PUT /api/admin/empresa
+//   público:      GET /api/empresa (dados da RMD para os termos) · POST /api/erro (a tela avisa um problema, sem dados de paciente)
+// A conta do desenvolvedor (papel admin) NÃO vê nem cria fichas, avaliações ou questionários: só cuida das liberações.
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -21,6 +25,28 @@ const CORS = {
 };
 const SENHA_TESTE = '123456';  // senha de teste na nuvem (mínimo 6); a definitiva é pedida quando o uso for real
 const ESTACAO_VALIDADE_MS = 12 * 60 * 60 * 1000;
+
+// Funções que a RMD libera para cada cliente (o servidor confere em cada pedido)
+export const RECURSOS = {
+  avaliacao: 'Avaliação adaptativa no tablet',
+  laudo: 'Relatório, laudo e parecer',
+  clinica: 'Logo e dados da clínica no laudo',
+  devolutiva: 'Devolutiva para a família (link do WhatsApp)',
+  exercicios: 'Exercícios em casa',
+  questionarios: 'Questionários para pais e professores',
+};
+const TODOS = Object.keys(RECURSOS);
+// Planos base (pesquisa de preços de 31/10/2026). A RMD muda preço, limite e funções no painel do desenvolvedor.
+// pacientes = fichas que a conta pode ter (0 = sem limite) · dias = validade contada a partir de quando a RMD libera
+export const PLANOS_PADRAO = {
+  teste: { nome: 'Teste grátis', preco: 0, pacientes: 5, dias: 14, recursos: TODOS },
+  essencial: { nome: 'Essencial', preco: 79, pacientes: 30, dias: 30, recursos: ['avaliacao', 'laudo', 'clinica'] },
+  profissional: { nome: 'Profissional', preco: 129, pacientes: 80, dias: 30, recursos: ['avaliacao', 'laudo', 'clinica', 'devolutiva', 'exercicios'] },
+  completo: { nome: 'Completo', preco: 189, pacientes: 0, dias: 30, recursos: TODOS },
+};
+const CAMPOS_EMPRESA = ['documento', 'endereco', 'email', 'whatsapp', 'encarregado', 'foro'];
+// tira dos endereços as chaves de sessão e os códigos, para o registro de problemas nunca guardar acesso a nada
+const semChaves = (t) => String(t || '').replace(/[0-9a-f]{8}-[0-9a-f-]{27}/gi, ':id').replace(/[A-Za-z0-9_-]{20,64}/g, ':chave').slice(0, 200);
 
 function json(status, corpo) { return new Response(JSON.stringify(corpo), { status, headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } }); }
 function erro(status, mensagem) { return json(status, { error: mensagem }); }
@@ -49,7 +75,7 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
 
   // ---------------------------------------------------------------- ajudantes
   async function corpo(req) { try { const t = await req.text(); if (t.length > 2000000) throw new Error('grande'); return t ? JSON.parse(t) : {}; } catch (e) { return null; } }
-  const podeVer = (conta, dono) => conta.papel === 'admin' || dono === conta.user_id;
+  const podeVer = (conta, dono) => conta.papel !== 'admin' && dono === conta.user_id;  // o desenvolvedor não vê dados de pacientes
   function fichaValida(p) {
     if (!p.name || !p.birthDate || !p.consent) return 'Nome, nascimento e autorização são obrigatórios.';
     if (!/^\d{4}-\d{2}-\d{2}$/.test(p.birthDate) || p.birthDate > iso().slice(0, 10)) return 'Data de nascimento inválida.';
@@ -87,12 +113,49 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
     return linhas.sort(() => 0.5 - Math.random());  // ordem embaralhada: não dá para ligar à ordem de atendimento
   }
 
+  // ---------------------------------------------------------------- planos e liberações
+  async function planos() {
+    const salvos = (await armazem.config('planos')) || {}, r = {};
+    for (const k of Object.keys(PLANOS_PADRAO)) r[k] = { ...PLANOS_PADRAO[k], ...(salvos[k] || {}) };
+    return r;
+  }
+  // ao trocar o plano: funções, limite de fichas, valor e vencimento voltam ao padrão do plano (a RMD ajusta depois)
+  function camposDoPlano(pls, chave) {
+    const pl = pls[chave], venc = new Date(agora() + pl.dias * 24 * 3600 * 1000).toISOString().slice(0, 10);
+    return { plano: chave, recursos: pl.recursos.slice(), limite_pacientes: pl.pacientes, valor: pl.preco, vencimento: pl.dias ? venc : null };
+  }
+  // contas antigas, sem plano marcado, continuam com tudo liberado (nada para de funcionar)
+  function recursosDe(conta) { return Array.isArray(conta.recursos) ? conta.recursos : TODOS; }
+  function vencido(conta) { return !!(conta.vencimento && String(conta.vencimento).slice(0, 10) < iso().slice(0, 10)); }
+  function dataBr(d) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }
+  // null = pode; texto = motivo de não poder (aparece na tela do profissional)
+  function bloqueio(conta, recurso) {
+    if (conta.papel === 'admin') return 'A conta do desenvolvedor não atende pacientes. Entre com uma conta de profissional.';
+    if (vencido(conta)) return 'O seu plano venceu em ' + dataBr(conta.vencimento) + '. Fale com a RMD para renovar. Os seus dados continuam guardados.';
+    if (recurso && !recursosDe(conta).includes(recurso)) return 'A função "' + RECURSOS[recurso] + '" não está liberada no seu plano. Fale com a RMD.';
+    return null;
+  }
+  const erroPublico = new Map();  // limite de avisos de problema por endereço (evita enxurrada)
+
   // ---------------------------------------------------------------- tratamento das rotas
   return async function tratar(req) {
     if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
     const url = new URL(req.url);
     const caminho = url.pathname.replace(/^.*?(\/api\/)/, '/api/');
+    let quem = '';
     try {
+      // ---- dados da RMD para os termos de uso e a política de privacidade (públicos, como em qualquer site)
+      if (caminho === '/api/empresa' && req.method === 'GET') return json(200, { empresa: (await armazem.config('empresa')) || {} });
+      // ---- a tela avisa um problema (erro de programa). Só a mensagem técnica e a página, nunca dados de paciente.
+      if (caminho === '/api/erro' && req.method === 'POST') {
+        const ipE = String(req.headers.get('x-forwarded-for') || '').split(',')[0].trim().slice(0, 60) || '?', t = agora(), r = erroPublico.get(ipE) || { n: 0, t };
+        if (t - r.t > 3600000) { r.n = 0; r.t = t; }
+        r.n++; erroPublico.set(ipE, r); if (erroPublico.size > 5000) erroPublico.clear();
+        if (r.n > 30) return json(202, { ok: true });
+        const b = await corpo(req) || {};
+        await armazem.registrarErro({ origem: 'tela', mensagem: semChaves(b.mensagem).slice(0, 200) || 'erro sem mensagem', detalhe: semChaves(b.detalhe), pagina: semChaves(String(b.pagina || '').split('?')[0]).slice(0, 80), conta: '' });
+        return json(202, { ok: true });
+      }
       // ---- tela do paciente (sem login: só a chave da própria sessão)
       let m = caminho.match(/^\/api\/p\/([A-Za-z0-9_-]{20,64})\/(estado|resposta)$/);
       if (m) {
@@ -177,16 +240,24 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
       if (!userId) return erro(401, 'Entre com seu usuário e senha.');
       const conta = await armazem.conta(userId);
       if (!conta || !conta.ativo) return erro(403, 'Acesso não liberado. Fale com a RMD.');
+      quem = conta.usuario;
       // verificação em duas etapas: quem ligou só entra com o código do aplicativo (login de nível aal2)
       if (conta.mfa && aal !== 'aal2') return json(401, { error: 'Digite o código de 6 números do aplicativo autenticador.', precisa2fa: true });
       const ip = String(req.headers.get('x-forwarded-for') || '').split(',')[0].trim().slice(0, 60);
       const registrar = (acao, alvo = '', detalhe = '') => armazem.registrar({ user_id: userId, usuario: conta.usuario, acao, alvo: String(alvo).slice(0, 120), detalhe: String(detalhe).slice(0, 300), ip });
       const registrarLeitura = (acao, alvo = '') => { const k = userId + '|' + acao + '|' + alvo, t = agora(); if (t - (leituras.get(k) || 0) < 30 * 60 * 1000) return; leituras.set(k, t); if (leituras.size > 5000) leituras.clear(); return registrar(acao, alvo); };
 
-      if (caminho === '/api/eu' && req.method === 'GET') { await registrarLeitura('entrou'); return json(200, { usuario: conta.usuario, nome: conta.nome, papel: conta.papel, senhaProvisoria: conta.senha_provisoria, mfa: !!conta.mfa, aal }); }
+      if (caminho === '/api/eu' && req.method === 'GET') {
+        await registrarLeitura('entrou');
+        const pl = conta.plano ? (await planos())[conta.plano] : null;
+        return json(200, { usuario: conta.usuario, nome: conta.nome, papel: conta.papel, senhaProvisoria: conta.senha_provisoria, mfa: !!conta.mfa, aal,
+          plano: pl ? pl.nome : null, vencimento: conta.vencimento || null, vencido: vencido(conta), limitePacientes: conta.limite_pacientes || 0,
+          recursos: conta.papel === 'admin' ? [] : recursosDe(conta), nomesRecursos: RECURSOS });
+      }
       // dados da clínica deste profissional (logo, nome, endereço e contato no laudo e na devolutiva)
       if (caminho === '/api/eu/clinica' && req.method === 'GET') return json(200, { clinica: conta.clinica || null });
       if (caminho === '/api/eu/clinica' && req.method === 'PUT') {
+        const bq = bloqueio(conta, 'clinica'); if (bq) return erro(403, bq);
         const r = G.limparClinica(await corpo(req)); if (r.erro) return erro(400, r.erro);
         await armazem.atualizarConta(userId, { clinica: r.clinica }); await registrar('dados_clinica', '', r.clinica.nome);
         return json(200, { clinica: r.clinica });
@@ -205,11 +276,17 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
       }
 
       // fichas
-      if (caminho === '/api/participantes' && req.method === 'GET') { await registrarLeitura('listar_fichas'); return json(200, { participants: await armazem.participantes(conta.papel === 'admin' ? null : userId) }); }
+      if (caminho === '/api/participantes' && req.method === 'GET') {
+        if (conta.papel === 'admin') return json(200, { participants: [] });  // o desenvolvedor não vê pacientes
+        await registrarLeitura('listar_fichas'); return json(200, { participants: await armazem.participantes(userId) });
+      }
       if (caminho === '/api/participantes' && req.method === 'POST') {
+        const bq = bloqueio(conta); if (bq) return erro(403, bq);
         const b = await corpo(req); if (!b) return erro(400, 'Dados inválidos.');
         const p = limparFicha(b), msg = fichaValida(p); if (msg) return erro(400, msg);
-        const iguais = (await armazem.participantes(userId)).filter((x) => normalizar(x.name) === normalizar(p.name) && x.birthDate === p.birthDate);
+        const minhas = await armazem.participantes(userId);
+        if (conta.limite_pacientes > 0 && minhas.length >= conta.limite_pacientes) return erro(403, 'O seu plano permite até ' + conta.limite_pacientes + ' fichas de pacientes. Fale com a RMD para aumentar.');
+        const iguais = minhas.filter((x) => normalizar(x.name) === normalizar(p.name) && x.birthDate === p.birthDate);
         if (iguais.length) return erro(409, 'Já existe uma ficha com este nome e nascimento (' + iguais[0].code + ').');
         p.id = uuid(); p.createdAt = iso(); p.updatedAt = p.createdAt;
         const criada = await armazem.criarParticipante({ id: p.id, dono: userId, nome_busca: normalizar(p.name), nascimento: p.birthDate, dados: p });
@@ -247,6 +324,7 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
 
       // plano de exercícios em casa (estimulação): o profissional cria e manda o link pelo WhatsApp
       if (caminho === '/api/planos' && req.method === 'POST') {
+        const bq = bloqueio(conta, 'exercicios'); if (bq) return erro(403, bq);
         const b = await corpo(req) || {}, part = await armazem.participante(String(b.participantId || ''));
         if (!part || !podeVer(conta, part.dono)) return erro(404, 'Ficha não encontrada.');
         const doms = (Array.isArray(b.dominios) ? b.dominios : []).filter((d) => { const x = Motor.dominio(d); return x && !x.fixo; });
@@ -258,6 +336,7 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
       }
       // questionários dos pais/professores
       if (caminho === '/api/questionarios' && req.method === 'POST') {
+        const bq = bloqueio(conta, 'questionarios'); if (bq) return erro(403, bq);
         const b = await corpo(req) || {}, part = await armazem.participante(String(b.participantId || ''));
         if (!part || !podeVer(conta, part.dono)) return erro(404, 'Ficha não encontrada.');
         const instrumento = Object.prototype.hasOwnProperty.call(Questionario.INSTRUMENTOS, b.instrumento) ? b.instrumento : 'snap', quem = Questionario.INSTRUMENTOS[instrumento].respondentes;
@@ -278,7 +357,31 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
       // RMD: contas dos profissionais (senha de teste 123456; a pessoa troca na primeira entrada quando o uso for real)
       if (caminho.startsWith('/api/admin/')) {
         if (conta.papel !== 'admin') return erro(403, 'Só a RMD gerencia as contas.');
-        if (caminho === '/api/admin/contas' && req.method === 'GET') return json(200, { contas: await armazem.contas() });
+        if (caminho === '/api/admin/contas' && req.method === 'GET') {
+          // só números de uso (quantas fichas e aplicações), nunca nomes ou dados de pacientes
+          const uso = await armazem.usoPorConta(new Date(agora() - 30 * 24 * 3600 * 1000).toISOString());
+          return json(200, { contas: (await armazem.contas()).map((c) => ({ ...c, recursos: c.papel === 'admin' ? [] : recursosDe(c), vencido: vencido(c), fichas: (uso[c.user_id] || {}).fichas || 0, aplicacoes30: (uso[c.user_id] || {}).aplicacoes || 0 })) });
+        }
+        if (caminho === '/api/admin/planos' && req.method === 'GET') return json(200, { planos: await planos(), recursos: RECURSOS });
+        if (caminho === '/api/admin/planos' && req.method === 'PUT') {
+          const b = await corpo(req) || {}, salvos = {};
+          for (const k of Object.keys(PLANOS_PADRAO)) {
+            const x = (b.planos || {})[k]; if (!x) continue;
+            salvos[k] = { preco: Math.max(0, Math.min(99999, Math.round(Number(x.preco) * 100) / 100 || 0)), pacientes: Math.max(0, Math.min(100000, parseInt(x.pacientes, 10) || 0)),
+              recursos: (Array.isArray(x.recursos) ? x.recursos : PLANOS_PADRAO[k].recursos).filter((r) => TODOS.includes(r)) };
+          }
+          await armazem.salvarConfig('planos', salvos); await registrar('alterou_planos');
+          return json(200, { planos: await planos() });
+        }
+        if (caminho === '/api/admin/empresa' && req.method === 'GET') return json(200, { empresa: (await armazem.config('empresa')) || {} });
+        if (caminho === '/api/admin/empresa' && req.method === 'PUT') {
+          const b = await corpo(req) || {}, e = {}; CAMPOS_EMPRESA.forEach((k) => { const v = String(b[k] || '').trim().slice(0, 200); if (v) e[k] = v; });
+          await armazem.salvarConfig('empresa', e); await registrar('alterou_dados_rmd');
+          return json(200, { empresa: e });
+        }
+        if (caminho === '/api/admin/erros' && req.method === 'GET') return json(200, { erros: await armazem.erros(300) });
+        m = caminho.match(/^\/api\/admin\/erros\/(\d{1,12})$/);
+        if (m && req.method === 'PUT') { const b = await corpo(req) || {}; await armazem.marcarErro(Number(m[1]), !!b.resolvido); return json(200, { ok: true }); }
         // cópia completa de tudo (para guardar no computador da RMD; o programa do computador é o backup)
         if (caminho === '/api/admin/backup' && req.method === 'GET') { await registrar('backup_completo'); return json(200, { geradoEm: iso(), sistema: 'NeuroTrilha (RMD)', ...(await armazem.backupCompleto()) }); }
         if (caminho === '/api/admin/auditoria' && req.method === 'GET') { await registrar('ver_registro_acessos'); return json(200, { registros: await armazem.auditoria(1000) }); }
@@ -287,21 +390,44 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
           if (!/^[a-z0-9._-]{3,40}$/.test(usuario)) return erro(400, 'Usuário: 3 a 40 letras minúsculas, números, ponto, hífen ou sublinhado.');
           if (nome.length < 2) return erro(400, 'Informe o nome do profissional.');
           if ((await armazem.contas()).some((c) => c.usuario === usuario)) return erro(409, 'Já existe esse usuário.');
+          const pls = await planos(), chave = Object.prototype.hasOwnProperty.call(pls, b.plano) ? b.plano : 'teste';
           // sem senha definida pela RMD: a conta fica aguardando a própria pessoa criar a senha no primeiro acesso
           const nova = await armazem.criarConta({ usuario, nome, papel: 'profissional', senha: base64url(rnd(24)) });
-          await armazem.atualizarConta(nova.user_id, { primeiro_acesso: true, senha_provisoria: false });
-          await registrar('liberar_conta', usuario);
-          return json(201, { conta: { ...nova, primeiro_acesso: true } });
+          const campos = { primeiro_acesso: true, senha_provisoria: false, ...camposDoPlano(pls, chave) };
+          await armazem.atualizarConta(nova.user_id, campos);
+          await registrar('liberar_conta', usuario, pls[chave].nome);
+          return json(201, { conta: { ...nova, ...campos } });
         }
         m = caminho.match(/^\/api\/admin\/contas\/([0-9a-f-]{36})(\/senha)?$/);
         if (m) {
           const alvo = await armazem.conta(m[1]);
           if (!alvo || alvo.papel === 'admin') return erro(404, 'Conta de profissional não encontrada.');
-          if (!m[2] && req.method === 'PUT') { const b = await corpo(req) || {}; await armazem.atualizarConta(m[1], { ativo: !!b.ativo }); return json(200, { ok: true }); }
-          // excluir conta: as fichas, avaliações e questionários dela passam para a RMD (nenhum dado de paciente se perde)
+          // liberar/bloquear, trocar o plano, o valor, o vencimento, o limite de fichas e as funções liberadas
+          if (!m[2] && req.method === 'PUT') {
+            const b = await corpo(req) || {}, campos = {}, pls = await planos();
+            if (b.ativo !== undefined) campos.ativo = !!b.ativo;
+            if (b.plano !== undefined) { if (!Object.prototype.hasOwnProperty.call(pls, b.plano)) return erro(400, 'Plano desconhecido.'); Object.assign(campos, camposDoPlano(pls, b.plano)); }
+            if (b.valor !== undefined) campos.valor = Math.max(0, Math.min(99999, Math.round(Number(b.valor) * 100) / 100 || 0));
+            if (b.vencimento !== undefined) { if (b.vencimento && !/^\d{4}-\d{2}-\d{2}$/.test(b.vencimento)) return erro(400, 'Data de vencimento inválida.'); campos.vencimento = b.vencimento || null; }
+            if (b.limite_pacientes !== undefined) campos.limite_pacientes = Math.max(0, Math.min(100000, parseInt(b.limite_pacientes, 10) || 0));
+            if (b.recursos !== undefined) campos.recursos = (Array.isArray(b.recursos) ? b.recursos : []).filter((r) => TODOS.includes(r));
+            await armazem.atualizarConta(m[1], campos);
+            const mud = Object.keys(campos).filter((k) => k !== 'ativo');
+            if (mud.length) await registrar('alterou_liberacao', alvo.usuario, mud.join(', '));
+            return json(200, { ok: true, conta: { ...alvo, ...campos } });
+          }
+          // excluir conta: as fichas dos pacientes NÃO vão para a RMD (o desenvolvedor não vê pacientes).
+          // Sem fichas: exclui. Com fichas: passam para outro profissional escolhido; sem ele, a exclusão é recusada.
           if (!m[2] && req.method === 'DELETE') {
-            const movidas = await armazem.excluirConta(m[1], userId);
-            await registrar('excluir_conta', alvo.usuario, movidas + ' ficha(s) passaram para ' + conta.usuario);
+            const b = await corpo(req) || {}, tem = (await armazem.participantes(m[1])).length;
+            let para = null;
+            if (tem) {
+              const d = b.destino ? await armazem.contaPorUsuario(String(b.destino).trim().toLowerCase()) : null;
+              if (!d || d.papel === 'admin' || d.user_id === m[1]) return json(409, { error: 'Esta conta tem ' + tem + ' ficha(s) de pacientes. Para excluir, informe o usuário de outro profissional que vai ficar com elas, ou só bloqueie a conta.', fichas: tem });
+              para = d.user_id;
+            }
+            const movidas = await armazem.excluirConta(m[1], para);
+            await registrar('excluir_conta', alvo.usuario, movidas ? movidas + ' ficha(s) passaram para ' + b.destino : 'sem fichas');
             return json(200, { ok: true, fichasMovidas: movidas });
           }
           if (m[2] && req.method === 'POST') {  // novo primeiro acesso (esqueceu a senha, celular perdido): a pessoa cria outra senha ao entrar
@@ -314,12 +440,14 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
 
       // sessões adaptativas
       if (caminho === '/api/adaptativa' && req.method === 'GET') {
-        const lista = await armazem.sessoes(conta.papel === 'admin' ? null : userId, url.searchParams.get('participante') || null);
+        if (conta.papel === 'admin') return json(200, { sessoes: [] });  // o desenvolvedor não vê avaliações
+        const lista = await armazem.sessoes(userId, url.searchParams.get('participante') || null);
         return json(200, { sessoes: lista.map((r) => ({ id: r.id, participantId: r.participante, status: r.status, criadoEm: r.dados.criadoEm, atualizadoEm: r.dados.atualizadoEm, dominios: r.dados.dominios,
           modo: r.dados.modo || 'avaliacao', qiEstimado: r.dados.resultadoFinal ? r.dados.resultadoFinal.qiEstimado : null, areas: r.dados.resultadoFinal ? r.dados.resultadoFinal.areas.map((a) => ({ id: a.id, indice: a.indice, nivel: a.nivel })) : null, parecer: r.dados.parecer || null })) });
       }
       if (caminho === '/api/adaptativa' && req.method === 'POST') {
         const b = await corpo(req) || {}, part = await armazem.participante(String(b.participantId || ''));
+        const bq0 = bloqueio(conta, b.modo === 'estimulacao' ? 'exercicios' : 'avaliacao'); if (bq0) return erro(403, bq0);
         if (!part || !podeVer(conta, part.dono)) return erro(400, 'Escolha uma ficha de participante desta conta.');
         const doms = (Array.isArray(b.dominios) ? b.dominios : []).filter((d) => Motor.dominio(d));
         if (!doms.length) return erro(400, 'Escolha pelo menos uma área.');
@@ -343,8 +471,12 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
         if (!m[2] && req.method === 'GET') { await registrarLeitura('ver_avaliacao', s.id); return json(200, paraAvaliador(s)); }
         // excluir uma aplicação (ex.: pausada por engano): apaga só esta sessão; a ficha e as outras aplicações ficam
         if (!m[2] && req.method === 'DELETE') { await armazem.apagarSessao(s.id, s.token); await registrar('excluir_aplicacao', s.id, s.status || ''); return json(200, { ok: true }); }
-        if (m[2] === 'controle' && req.method === 'POST') { const r = controle(s, await corpo(req) || {}); if (r.erro) return erro(409, r.erro); await salvar(s); return json(200, paraAvaliador(s)); }
+        if (m[2] === 'controle' && req.method === 'POST') {
+          const bc = await corpo(req) || {}, precisa = { compartilharDevolutiva: 'devolutiva', laudo: 'laudo' }[bc.acao];
+          if (precisa) { const bq = bloqueio(conta, precisa); if (bq) return erro(403, bq); }
+          const r = controle(s, bc); if (r.erro) return erro(409, r.erro); await salvar(s); return json(200, paraAvaliador(s)); }
         if (m[2] === 'parecer' && req.method === 'PUT') {
+          const bq = bloqueio(conta, 'laudo'); if (bq) return erro(403, bq);
           const b = await corpo(req) || {}, decisao = String(b.decisao || '');
           if (!['aceito', 'aceito_ressalvas', 'nao_aceito'].includes(decisao)) return erro(400, 'Escolha a decisão do profissional.');
           s.parecer = { decisao, texto: String(b.texto || '').slice(0, 6000), profissional: String(b.profissional || conta.nome).slice(0, 120), registro: String(b.registro || '').slice(0, 40), em: iso() };
@@ -364,6 +496,8 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
       return erro(404, 'Rota não encontrada.');
     } catch (e) {
       console.error('neurotrilha:', e && e.message);
+      // vai para "Problemas" no painel do desenvolvedor (sem chaves nem dados de paciente)
+      try { await armazem.registrarErro({ origem: 'servidor', mensagem: semChaves(e && e.message).slice(0, 200) || 'erro', detalhe: req.method + ' ' + semChaves(caminho), pagina: '', conta: quem }); } catch (e2) { /* nunca piora o erro */ }
       return erro(500, 'Erro interno. Tente de novo.');
     }
   };

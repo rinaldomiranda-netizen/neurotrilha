@@ -99,11 +99,27 @@ footer{padding:30px 0 40px;color:#4A5B72;font-size:14px;text-align:center}
   <h2>Participe da fase de testes</h2>
   <p class="sub" style="margin:0 auto 22px">Clínicas e profissionais parceiros usam o NeuroTrilha de graça durante o desenvolvimento e continuam com acesso gratuito depois. A sua experiência ajuda a definir o sistema.</p>
   <div class="botoes" style="justify-content:center"><a class="bt azul" href="app.html">Já tenho acesso: entrar</a><a class="bt sol" href="index.html">Instalar no aparelho</a></div>
-  <p style="margin:18px 0 0;color:#4A5B72">Fale com a RMD: <span class="lacuna">[telefone / WhatsApp]</span> · <span class="lacuna">[e-mail]</span></p>
+  <p style="margin:18px 0 0;color:#4A5B72">Fale com a RMD: <span class="lacuna" data-campo="whatsapp">[telefone / WhatsApp]</span> · <span class="lacuna" data-campo="email">[e-mail]</span></p>
  </div>
  <p class="sub" style="margin:26px auto 0;text-align:center;font-size:14px">O NeuroTrilha está em desenvolvimento: os resultados são estimativas de um instrumento experimental, sem normas brasileiras próprias, e não substituem a avaliação do profissional.</p>
 </div></section>
 </main>
 <footer><div class="faixa">NeuroTrilha · uma solução RMD — Rinaldo Miranda Dias · <a href="termos.html">Termos de uso</a> · <a href="privacidade.html">Privacidade</a></div></footer>
+<script src="config.js"></script>
+<script>
+/* Preenche os campos amarelos com os "Dados da RMD" salvos no painel do desenvolvedor (nuvem). Sem internet, ficam os campos amarelos. */
+(function () {
+  var c = window.NT_CONFIG; if (!c || !c.FUNCOES) return;
+  fetch(c.FUNCOES + "/api/empresa").then(function (r) { return r.json(); }).then(function (d) {
+    var e = (d && d.empresa) || {};
+    document.querySelectorAll(".lacuna[data-campo]").forEach(function (el) {
+      var v = el.getAttribute("data-campo").split("|").map(function (k) { return e[k]; }).filter(Boolean)[0];
+      if (v) { el.textContent = v; el.classList.remove("lacuna"); }
+    });
+    var aviso = document.querySelector(".aviso");
+    if (aviso && !document.querySelector(".lacuna")) aviso.textContent = "Modelo em fase de testes. O texto deve ser revisado por um advogado antes do uso com pacientes reais.";
+  }).catch(function () { /* sem internet: ficam os campos amarelos */ });
+})();
+</script>
 </body>
 </html>

@@ -7,7 +7,7 @@ export function criarArmazem(sb) {
   return {
     async conta(id) { return ok(await sb.from('nt_contas').select('*').eq('user_id', id).maybeSingle()); },
     async contaPorUsuario(usuario) { return ok(await sb.from('nt_contas').select('*').eq('usuario', usuario).maybeSingle()); },
-    async contas() { return ok(await sb.from('nt_contas').select('user_id,usuario,nome,papel,ativo,senha_provisoria,mfa,primeiro_acesso,criado_em').order('papel').order('usuario')); },
+    async contas() { return ok(await sb.from('nt_contas').select('user_id,usuario,nome,papel,ativo,senha_provisoria,mfa,primeiro_acesso,criado_em,plano,valor,vencimento,recursos,limite_pacientes').order('papel').order('usuario')); },
     async criarConta({ usuario, nome, papel, senha }) {
       const { data, error } = await sb.auth.admin.createUser({ email: usuario + '@' + DOMINIO_EMAIL, password: senha, email_confirm: true, user_metadata: { usuario, nome, app: 'neurotrilha' } });
       if (error || !data || !data.user) throw new Error(error ? error.message : 'conta não criada');
@@ -75,13 +75,26 @@ export function criarArmazem(sb) {
     },
     async excluirConta(id, para) {
       const movidas = ok(await sb.from('nt_participantes').select('id').eq('dono', id)).length;
-      for (const t of ['nt_participantes', 'nt_sessoes', 'nt_questionarios']) ok(await sb.from(t).update({ dono: para }).eq('dono', id));
+      if (para) for (const t of ['nt_participantes', 'nt_sessoes', 'nt_questionarios']) ok(await sb.from(t).update({ dono: para }).eq('dono', id));
       const { error } = await sb.auth.admin.deleteUser(id); if (error) throw new Error(error.message);  // apaga também a linha em nt_contas (cascade)
       return movidas;
     },
     async limparMfa(id) {
       const { data } = await sb.auth.admin.mfa.listFactors({ userId: id });
       for (const f of (data && data.factors) || []) await sb.auth.admin.mfa.deleteFactor({ id: f.id, userId: id });
+    },
+
+    // painel do desenvolvedor: configurações (planos, dados da RMD), problemas do sistema e números de uso
+    async config(chave) { const r = ok(await sb.from('nt_config').select('valor').eq('chave', chave).maybeSingle()); return r ? r.valor : null; },
+    async salvarConfig(chave, valor) { ok(await sb.from('nt_config').upsert({ chave, valor, atualizado_em: new Date().toISOString() })); },
+    async registrarErro(reg) { try { await sb.from('nt_erros').insert(reg); } catch (e) { /* nunca derruba o atendimento */ } },
+    async erros(limite) { return ok(await sb.from('nt_erros').select('id,em,origem,mensagem,detalhe,pagina,conta,resolvido').order('id', { ascending: false }).limit(limite)); },
+    async marcarErro(id, resolvido) { ok(await sb.from('nt_erros').update({ resolvido }).eq('id', id)); },
+    async usoPorConta(desde) {
+      const r = {}, um = (id) => (r[id] = r[id] || { fichas: 0, aplicacoes: 0 });
+      ok(await sb.from('nt_participantes').select('dono').limit(100000)).forEach((x) => { um(x.dono).fichas++; });
+      ok(await sb.from('nt_sessoes').select('dono').gte('criado_em', desde).limit(100000)).forEach((x) => { um(x.dono).aplicacoes++; });
+      return r;
     },
 
     async criarEstacao(reg) { ok(await sb.from('nt_estacoes').insert(reg)); },
