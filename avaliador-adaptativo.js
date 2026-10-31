@@ -212,9 +212,16 @@
         var p = pessoa(x.participantId), fim = ["concluida", "encerrada"].indexOf(x.status) >= 0;
         return "<tr><td><b>" + esc(p ? p.name : "—") + '</b><br><span class="small muted">' + esc(p ? p.code : "") + "</span></td><td>" + dataHora(x.criadoEm) + "</td><td>" + esc(NOME_STATUS[x.status] || x.status) + (x.modo === "estimulacao" ? ' <span class="pill">estimulação</span>' : "") + "</td><td>" + (x.dominios || []).length +
           "</td><td>" + (x.qiEstimado == null ? "—" : "<b>" + x.qiEstimado + "</b>") + "</td><td>" + (x.parecer ? esc(DECISAO[x.parecer.decisao]) : '<span class="small muted">pendente</span>') +
-          '</td><td><button class="secondary" data-ad-abrir="' + esc(x.id) + '" data-fim="' + (fim ? 1 : 0) + '">' + (fim ? "Relatório" : "Acompanhar") + "</button></td></tr>";
+          '</td><td style="white-space:nowrap"><button class="secondary" data-ad-abrir="' + esc(x.id) + '" data-fim="' + (fim ? 1 : 0) + '">' + (fim ? "Relatório" : "Acompanhar") + '</button> <button class="danger" data-ad-excluir="' + esc(x.id) + '" aria-label="Excluir esta aplicação">Excluir</button></td></tr>';
       }).join("") + "</tbody></table>" : '<div class="empty"><b>Nenhuma aplicação adaptativa ainda</b>Prepare a primeira acima.</div>';
     } catch (e) { host.innerHTML = '<div class="notice danger-note">' + esc(e.message) + "</div>"; }
+  }
+  // excluir uma aplicação (ex.: pausada por engano). Pergunta antes, para não apagar por um toque errado.
+  async function excluirAplicacao(id) {
+    var x = (st.lista || []).find(function (s) { return s.id === id; }); if (!x) return;
+    var p = pessoa(x.participantId), nome = p ? p.name : "esta pessoa";
+    if (!confirm("Excluir a aplicação de " + nome + " (" + dataHora(x.criadoEm) + ", " + (NOME_STATUS[x.status] || x.status) + ")?\n\nAs respostas e o relatório desta aplicação serão apagados e NÃO dá para desfazer. A ficha da pessoa e as outras aplicações continuam.")) return;
+    try { await api("/api/adaptativa/" + encodeURIComponent(id), { method: "DELETE" }); toast("Aplicação excluída."); listar(); } catch (e) { toast(e.message); }
   }
   async function abrirPorId(id, relatorio) {
     try { var s = await api("/api/adaptativa/" + encodeURIComponent(id)); if (relatorio) mostrarRelatorio(s); else abrirSessao(s); } catch (e) { toast(e.message); }
@@ -669,7 +676,7 @@
   $("ad-voltar").addEventListener("click", voltar);
   ["pausar", "continuar", "subir", "descer", "pular", "repetir"].forEach(function (a) { $("ad-c-" + a).addEventListener("click", function () { controle(a); }); });
   $("ad-c-encerrar").addEventListener("click", function () { if (confirm("Encerrar a sessão agora? O relatório usará o que já foi respondido.")) controle("encerrar"); });
-  $("ad-lista").addEventListener("click", function (ev) { var b = ev.target.closest("[data-ad-abrir]"); if (b) abrirPorId(b.dataset.adAbrir, b.dataset.fim === "1"); });
+  $("ad-lista").addEventListener("click", function (ev) { var b = ev.target.closest("[data-ad-abrir]"); if (b) abrirPorId(b.dataset.adAbrir, b.dataset.fim === "1"); var x = ev.target.closest("[data-ad-excluir]"); if (x) excluirAplicacao(x.dataset.adExcluir); });
   // ao abrir a tela (pelo menu ou por um atalho do painel) prepara a sessão e lista as anteriores
   var trocarTela = switchView;
   switchView = function (v) { trocarTela(v); if (v === "adaptive" && !st.sessao) { prepararSetup(); listar(); } };

@@ -7,7 +7,7 @@
 //   conta:        GET /api/eu · POST /api/eu/senha
 //   fichas:       GET/POST /api/participantes · PUT /api/participantes/:id
 //   RMD (admin):  GET/POST /api/admin/contas · PUT /api/admin/contas/:id · POST /api/admin/contas/:id/senha
-//   sessões:      GET/POST /api/adaptativa · GET /api/adaptativa/:id · POST .../controle · PUT .../parecer · POST .../enviar
+//   sessões:      GET/POST /api/adaptativa · GET/DELETE /api/adaptativa/:id · POST .../controle · PUT .../parecer · POST .../enviar
 //   paciente:     GET /api/p/:token/estado · POST /api/p/:token/resposta   (sem login: só a chave da sessão)
 //   tablet:       POST /api/estacao · GET /api/estacao/:chave              (código de 6 números para parear)
 //   questionário: POST/GET /api/questionarios · GET/POST /api/q/:token      (pais e professores respondem sem login)
@@ -330,6 +330,8 @@ export function criarNucleo({ Motor, Sessao, Questionario, Assinatura, armazem, 
         if (!reg || !podeVer(conta, reg.dono)) return erro(404, 'Sessão não encontrada.');
         const s = reg.dados;
         if (!m[2] && req.method === 'GET') { await registrarLeitura('ver_avaliacao', s.id); return json(200, paraAvaliador(s)); }
+        // excluir uma aplicação (ex.: pausada por engano): apaga só esta sessão; a ficha e as outras aplicações ficam
+        if (!m[2] && req.method === 'DELETE') { await armazem.apagarSessao(s.id, s.token); await registrar('excluir_aplicacao', s.id, s.status || ''); return json(200, { ok: true }); }
         if (m[2] === 'controle' && req.method === 'POST') { const r = controle(s, await corpo(req) || {}); if (r.erro) return erro(409, r.erro); await salvar(s); return json(200, paraAvaliador(s)); }
         if (m[2] === 'parecer' && req.method === 'PUT') {
           const b = await corpo(req) || {}, decisao = String(b.decisao || '');

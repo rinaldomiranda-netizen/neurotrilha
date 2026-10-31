@@ -58,6 +58,10 @@ export function criarArmazem(sb) {
       ok(await sb.from('nt_sessoes').delete().eq('participante', id));
       ok(await sb.from('nt_participantes').delete().eq('id', id));
     },
+    async apagarSessao(id, token) {
+      if (token) ok(await sb.from('nt_estacoes').update({ sessao_token: null }).eq('sessao_token', token));
+      ok(await sb.from('nt_sessoes').delete().eq('id', id));
+    },
     async sessaoPorDevolutiva(token) { const r = ok(await sb.from('nt_sessoes').select('dados').eq('dados->>devolutivaLink', token).maybeSingle()); return r ? r.dados : null; },
     async participantePorPlano(token) { const r = ok(await sb.from('nt_participantes').select('id,dono,dados').contains('dados', { planos: [{ token }] }).limit(1)); return r[0] || null; },
     async backupCompleto() {
