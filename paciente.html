@@ -161,9 +161,21 @@ let ultimaFala = "", estado = null, versaoMostrada = 0, itemAtual = null, inicio
 
 // Voz: 1º a gravação com voz natural (pasta audio/, igual em qualquer aparelho);
 // 2º a melhor voz do aparelho (vozes "naturais"/neurais primeiro); 3º o avaliador lê em voz alta.
-let gravadas = new Set(), tocador = new Audio();
+// Para não travar nem cortar: as gravações são baixadas ANTES (frases comuns ao abrir e as da tarefa quando ela aparece);
+// uma gravação que demora a chegar dá lugar à voz do aparelho; e uma frase curta de abertura ("Vamos começar!")
+// termina antes da próxima começar, em vez de ser cortada.
+let gravadas = new Set(), tocador = new Audio(), prontas = new Map(), atual = null, fila = [];
 tocador.preload = "auto";
-fetch("audio/indice.json", { cache: "no-store" }).then((r) => r.ok ? r.json() : []).then((l) => { gravadas = new Set(l); }).catch(() => {});
+const FRASES_COMUNS = ["Vamos começar!", "Agora você!", "Agora de trás para frente!", "Isso mesmo! Agora vamos de verdade.", "Quase! Agora vamos de verdade.",
+  "Agora toque nas figuras que você viu.", "Agora diga as palavras que você lembra!", "Tempo! Muito bem.", "zero", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove"];
+fetch("audio/indice.json", { cache: "no-store" }).then((r) => r.ok ? r.json() : []).then((l) => { gravadas = new Set(l); preCarregar(FRASES_COMUNS); }).catch(() => {});
+function preCarregar(textos) {
+  (textos || []).forEach((t) => {
+    if (!t) return; const id = M.idFala(String(t).trim()); if (!gravadas.has(id) || prontas.has(id)) return;
+    prontas.set(id, null);
+    fetch("audio/" + id + ".mp3").then((r) => r.ok ? r.blob() : null).then((b) => { if (b) prontas.set(id, URL.createObjectURL(b)); else prontas.delete(id); }).catch(() => prontas.delete(id));
+  });
+}
 function pontuarVoz(v) {
   let p = 0;
   if (/pt-BR/i.test(v.lang)) p += 100; else if (/^pt/i.test(v.lang)) p += 40; else return -1;
@@ -177,23 +189,51 @@ function escolherVoz() {
   try { voz = speechSynthesis.getVoices().map((v) => [pontuarVoz(v), v]).filter((x) => x[0] >= 0).sort((a, b) => b[0] - a[0]).map((x) => x[1])[0] || null; } catch (e) { voz = null; }
 }
 if ("speechSynthesis" in window) { escolherVoz(); speechSynthesis.onvoiceschanged = escolherVoz; }
-function falarSintetico(texto) {
-  if (!("speechSynthesis" in window)) return;
-  try {
-    speechSynthesis.cancel();
-    // frase por frase, com uma pausa curta: fica mais fácil de entender
-    texto.split(/(?<=[.!?])\s+/).forEach((parte) => { const u = new SpeechSynthesisUtterance(parte); u.lang = "pt-BR"; u.rate = 0.88; u.pitch = 1.05; if (voz) u.voice = voz; speechSynthesis.speak(u); });
-  } catch (e) { /* sem voz: o avaliador lê */ }
+function pararVoz() {
+  try { tocador.onended = tocador.onerror = null; tocador.pause(); } catch (e) { /* nada */ }
+  try { if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch (e) { /* nada */ }
 }
-function falar(texto) {
+function falarSintetico(texto, vez, fim) {
+  if (!("speechSynthesis" in window)) { if (fim) fim(); return; }
+  try {
+    pararVoz();
+    const partes = texto.split(/(?<=[.!?])\s+/);
+    // pequena espera depois de parar: no Chrome do Android, falar logo em seguida às vezes engole o começo da frase
+    setTimeout(() => {
+      if (vez && atual !== vez) return;
+      partes.forEach((parte, i) => {
+        const u = new SpeechSynthesisUtterance(parte); u.lang = "pt-BR"; u.rate = 0.88; u.pitch = 1.05; if (voz) u.voice = voz;
+        if (i === partes.length - 1 && fim) { u.onend = fim; u.onerror = fim; }
+        speechSynthesis.speak(u);
+      });
+    }, 90);
+  } catch (e) { if (fim) fim(); }
+}
+function falando() { return (!tocador.paused && !tocador.ended) || (("speechSynthesis" in window) && (speechSynthesis.speaking || speechSynthesis.pending)); }
+// preambulo = frase curta de abertura: se a próxima vier logo em seguida, espera esta acabar
+function falar(texto, preambulo) {
   if (!texto) return;
   texto = String(texto).trim();
-  const id = M.idFala(texto);
-  try { if ("speechSynthesis" in window) speechSynthesis.cancel(); } catch (e) { /* nada */ }
-  if (gravadas.has(id)) {
-    try { tocador.pause(); tocador.src = "audio/" + id + ".mp3"; tocador.currentTime = 0; const p = tocador.play(); if (p && p.catch) p.catch(() => falarSintetico(texto)); return; } catch (e) { /* cai na voz do aparelho */ }
-  }
-  falarSintetico(texto);
+  if (atual && atual.preambulo && falando()) { fila = [{ texto, preambulo }]; return; }
+  fila = []; tocarAgora(texto, preambulo);
+}
+function tocarAgora(texto, preambulo) {
+  pararVoz();
+  const id = M.idFala(texto), vez = atual = { texto, preambulo };
+  const fim = () => { if (atual !== vez) return; atual = null; const p = fila.shift(); if (p) tocarAgora(p.texto, p.preambulo); };
+  if (!gravadas.has(id)) { falarSintetico(texto, vez, fim); return; }
+  const pronta = prontas.get(id);
+  const naVozDoAparelho = () => { if (atual === vez) falarSintetico(texto, vez, fim); };
+  try {
+    tocador.onended = fim; tocador.onerror = naVozDoAparelho;
+    tocador.src = pronta || ("audio/" + id + ".mp3"); tocador.currentTime = 0;
+    const p = tocador.play(); if (p && p.catch) p.catch(naVozDoAparelho);
+    if (!pronta) {
+      preCarregar([texto]);
+      // a gravação ainda não chegou: se demorar, fala com a voz do aparelho para não atrasar a tarefa
+      setTimeout(() => { if (atual === vez && tocador.currentTime < 0.05) naVozDoAparelho(); }, 1200);
+    }
+  } catch (e) { naVozDoAparelho(); }
 }
 function mostrarTela(id) { ["tela-inicio", "tela-pausa", "tela-fim", "tela-area", "tela-estacao", "tela-erro"].forEach((t) => $(t).classList.toggle("hidden", t !== id)); }
 
@@ -248,6 +288,7 @@ function botoes(item, classe) {
 }
 const ESPERA = '<div class="espera"><div class="grande">⭐</div><div class="aviso">Muito bem! Espere um pouquinho…</div></div>';
 function desenhar(item) {
+  preCarregar([item.fala].concat(item.lista || []));
   itemAtual = item; enviando = false; clearTimeout(timerLimite); clearInterval(timerContagem);
   // tarefa pontuada pelo avaliador e já entregue (desenho, leitura, minuto): só espera
   if (item.entregue) { $("palco").innerHTML = ESPERA; return; }
@@ -496,7 +537,7 @@ async function responder(resposta, tempoGuardado, tentativa) {
       const certa = document.querySelector('[data-op="' + s.retorno.certo + '"]'); if (certa) certa.classList.add("certa");
       if (!item.treino) { mostrarRetorno(s.retorno.correto ? "✔ Isso!" : "Era esta 👆", s.retorno.correto); segurar = true; setTimeout(() => { segurar = false; aplicar(s); }, 1100); return; }
       mostrarRetorno(s.retorno.correto ? "✔ Isso mesmo!" : "Olha: era esta 👆", s.retorno.correto);
-      falar(s.retorno.correto ? "Isso mesmo! Agora vamos de verdade." : "Quase! Agora vamos de verdade.");
+      falar(s.retorno.correto ? "Isso mesmo! Agora vamos de verdade." : "Quase! Agora vamos de verdade.", true);
       segurar = true; setTimeout(() => { segurar = false; aplicar(s); }, 1800);
     } else { mostrarRetorno("👍", true); segurar = true; setTimeout(() => { segurar = false; aplicar(s); }, 450); }
   } catch (e) { semRede(true); setTimeout(() => { if (itemAtual === item) responder(resposta, tempoMs, (tentativa || 0) + 1); else enviando = false; }, Math.min(5000, 1500 + 500 * (tentativa || 0))); }
@@ -509,7 +550,7 @@ document.addEventListener("click", (ev) => {
   if (ev.target.closest("[data-ouvir]") && itemAtual) falar(itemAtual.fala);
 });
 $("ouvir").addEventListener("click", () => { if (itemAtual) falar(itemAtual.fala); });
-$("comecar").addEventListener("click", () => { comecou = true; falar("Vamos começar!"); versaoMostrada = 0; mostrarTela(null); if (estado) aplicar(estado); });
+$("comecar").addEventListener("click", () => { comecou = true; falar("Vamos começar!", true); versaoMostrada = 0; mostrarTela(null); if (estado) aplicar(estado); });
 // ------------------------------------------------------------ modo tablet (pareado por código)
 let chaveEstacao = null, ultimoToken = "";
 function iniciarSessao(tok) {
