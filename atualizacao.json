@@ -1,6 +1,6 @@
 {
-  "versionCode": 2,
-  "versionName": "1.0.1",
-  "cliente": "https://github.com/rinaldomiranda-netizen/neurotrilha/releases/download/v1.0.1/NeuroTrilha.apk",
-  "cliente_sha256": "36740cf2b4d9c8b6d3433d95a715206f4bf2306a0935267e66451ee45b08660e"
+  "versionCode": 3,
+  "versionName": "1.0.2",
+  "cliente": "https://github.com/rinaldomiranda-netizen/neurotrilha/releases/download/v1.0.2/NeuroTrilha.apk",
+  "cliente_sha256": "f7008e44214c91ac9e2f74b26be86fbf0f79d5c345637eeec538a9260822db21"
 }
