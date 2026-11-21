@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NeuroTrilha — atualizando</title>
+<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0b1820;color:#e8f3f6;font-family:system-ui,Roboto,sans-serif;text-align:center;padding:1.5rem}</style>
+</head>
+<body>
+<p>⏳ Atualizando o NeuroTrilha…</p>
+<script>
+// 20/11/2026: o NeuroTrilha mudou para endereço próprio (rmd-neurotrilha.github.io).
+// O aplicativo abre esta página primeiro no endereço ANTIGO (pega o login do avaliador, a chave do tablet do paciente
+// e o "modo calmo") e depois no NOVO (grava esses dados lá). Nada sai do aparelho.
+(function () {
+  var CHAVES = ["nt_sessao", "nt_estacao_chave", "nt_calmo"];
+  var app = window.NeuroTrilhaApp;
+  var novo = location.hostname === "rmd-neurotrilha.github.io";
+  try {
+    if (!app || !app.dadosDoEnderecoAntigo) { location.replace(novo ? "./app.html" : "https://rmd-neurotrilha.github.io/"); return; }
+    if (!novo) {
+      var d = {};
+      CHAVES.forEach(function (k) { var v = localStorage.getItem(k); if (v != null) d[k] = v; });
+      app.dadosDoEnderecoAntigo(JSON.stringify(d));
+    } else {
+      var dados = {};
+      try { dados = JSON.parse(app.dadosParaEnderecoNovo() || "{}"); } catch (e) { dados = {}; }
+      CHAVES.forEach(function (k) { if (dados[k] != null && localStorage.getItem(k) == null) localStorage.setItem(k, dados[k]); });
+      app.mudancaDeEnderecoPronta();
+    }
+  } catch (e) {
+    try { if (app && app.mudancaDeEnderecoPronta && novo) app.mudancaDeEnderecoPronta(); } catch (e2) { /* ok */ }
+  }
+})();
+</script>
+</body>
+</html>
